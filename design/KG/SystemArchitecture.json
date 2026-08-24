@@ -65,7 +65,13 @@
       "id": "kb-admin-session-20260824",
       "name": "会话记录 2026-08-24",
       "type": "Business Object",
-      "description": "2026-08-24 会话摘要：完成 graph-wiki 个人知识库 ARGO 环境初始化（argo-init overall ok，MCP/Neo4j/初始同步/语义生命周期均就绪）；确认本项目为个人知识库，本 Agent 职责角色为「个人知识库管理员」（Business Actor kb-admin-actor）；创建其下长期记忆子视图 kb-admin-memory 并纳入顶层 SystemArchitecture 视图；附加可执行验收测试 kb-admin-actor-registered（GIVEN-WHEN-THEN，1/1 通过）。关键决策：以个人知识库管理员角色承接后续知识库组织/维护/发布任务。TODO：等待用户分配具体知识库任务。"
+      "description": "2026-08-24 会话摘要：完成 graph-wiki 个人知识库 ARGO 环境初始化（argo-init overall ok，MCP/Neo4j/初始同步/语义生命周期均就绪）；确认本项目为个人知识库，本 Agent 职责角色为「个人知识库管理员」（Business Actor kb-admin-actor）；创建其下长期记忆子视图 kb-admin-memory 并纳入顶层 SystemArchitecture 视图；附加可执行验收测试 kb-admin-actor-registered（GIVEN-WHEN-THEN，1/1 通过）。关键决策：以个人知识库管理员角色承接后续知识库组织/维护/发布任务。TODO：等待用户分配具体知识库任务。",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "ecb7c2f: design/KG/SystemArchitecture.json"
+        }
+      ]
     }
   ],
   "relationships": [
