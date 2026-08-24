@@ -1,83 +1,120 @@
 {
-    "name": "System",
-    "description": "Exported from EA package System",
-    "elements": [
+  "name": "System",
+  "description": "Exported from EA package System",
+  "elements": [
+    {
+      "id": "1240",
+      "name": "Application Cooperation Viewpoint",
+      "alias": "1211",
+      "type": "Grouping",
+      "subdiagram_views": [
         {
-            "id": "1240",
-            "name": "Application Cooperation Viewpoint",
-            "alias": "1211",
-            "type": "Grouping",
-            "subdiagram_views": [
-                {
-                    "view_id": "169",
-                    "view_name": "Application Cooperation"
-                }
-            ]
-        },
-        {
-            "id": "1249",
-            "name": "Implementation and Migration Viewpoint",
-            "alias": "1211",
-            "type": "Grouping",
-            "subdiagram_views": [
-                {
-                    "view_id": "176",
-                    "view_name": "AgentCapabilities"
-                },
-                {
-                    "view_id": "174",
-                    "view_name": "Implementation and Migration"
-                }
-            ]
+          "view_id": "169",
+          "view_name": "Application Cooperation"
         }
-    ],
-    "relationships": [
+      ]
+    },
+    {
+      "id": "1249",
+      "name": "Implementation and Migration Viewpoint",
+      "alias": "1211",
+      "type": "Grouping",
+      "subdiagram_views": [
         {
-            "id": "1161",
-            "statement": "Implementation and Migration Viewpoint --(Association)--> Application Cooperation Viewpoint",
-            "name": "Association",
-            "type": "Association",
-            "source_id": "1249",
-            "target_id": "1240",
-            "source_name": "Implementation and Migration Viewpoint",
-            "target_name": "Application Cooperation Viewpoint"
+          "view_id": "176",
+          "view_name": "AgentCapabilities"
+        },
+        {
+          "view_id": "174",
+          "view_name": "Implementation and Migration"
         }
-    ],
-    "views": [
+      ]
+    },
+    {
+      "id": "kb-admin-actor",
+      "name": "个人知识库管理员",
+      "type": "Business Actor",
+      "description": "graph-wiki 个人知识库的管理员角色：负责知识库内容的组织、维护、发布协调，以及自身长期记忆（SUBVIEW 层级）的归档。",
+      "testcases": [
         {
-            "view_id": "176",
-            "view_name": "AgentCapabilities",
-            "parent_element_id": "1249",
-            "parent_element_name": "Implementation and Migration Viewpoint",
-            "included_elements": [],
-            "included_relationships": []
-        },
-        {
-            "view_id": "174",
-            "view_name": "Implementation and Migration",
-            "parent_element_id": "1249",
-            "parent_element_name": "Implementation and Migration Viewpoint",
-            "included_elements": [],
-            "included_relationships": []
-        },
-        {
-            "view_id": "169",
-            "view_name": "Application Cooperation",
-            "parent_element_id": "1240",
-            "parent_element_name": "Application Cooperation Viewpoint",
-            "included_elements": [],
-            "included_relationships": []
-        },
-        {
-            "view_id": "170",
-            "view_name": "SystemArchitecture",
-            "included_elements": [
-                "1249",
-                "1240"
-            ],
-            "included_relationships": [
-                "1161"
-            ]
+          "name": "kb-admin-actor-registered",
+          "description": "外部视角验收：个人知识库管理员 Business Actor 必须已在意图图中正确登记（身份/类型）、其下挂载长期记忆子视图，并被纳入顶层 SystemArchitecture 视图。",
+          "type": "Acceptance Test",
+          "Input": "GIVEN canonical intent graph 位于 design/KG/SystemArchitecture.json\nWHEN 在图中查找「个人知识库管理员」Business Actor 及其记忆挂载结构\nTHEN 该 Actor 存在且为 Business Actor 类型、其下挂载长期记忆子视图、且被纳入顶层 SystemArchitecture 视图",
+          "acceptanceCriteria": "tests/acceptance/kb_admin_actor.js"
         }
-    ]
+      ],
+      "subdiagram_views": [
+        {
+          "view_id": "kb-admin-memory",
+          "view_name": "个人知识库管理员-长期记忆"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "deliveryStatus",
+          "value": "delivered"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "1161",
+      "statement": "Implementation and Migration Viewpoint --(Association)--> Application Cooperation Viewpoint",
+      "name": "Association",
+      "type": "Association",
+      "source_id": "1249",
+      "target_id": "1240",
+      "source_name": "Implementation and Migration Viewpoint",
+      "target_name": "Application Cooperation Viewpoint"
+    }
+  ],
+  "views": [
+    {
+      "view_id": "176",
+      "view_name": "AgentCapabilities",
+      "parent_element_id": "1249",
+      "parent_element_name": "Implementation and Migration Viewpoint",
+      "included_elements": [],
+      "included_relationships": []
+    },
+    {
+      "view_id": "174",
+      "view_name": "Implementation and Migration",
+      "parent_element_id": "1249",
+      "parent_element_name": "Implementation and Migration Viewpoint",
+      "included_elements": [],
+      "included_relationships": []
+    },
+    {
+      "view_id": "169",
+      "view_name": "Application Cooperation",
+      "parent_element_id": "1240",
+      "parent_element_name": "Application Cooperation Viewpoint",
+      "included_elements": [],
+      "included_relationships": []
+    },
+    {
+      "view_id": "170",
+      "view_name": "SystemArchitecture",
+      "included_elements": [
+        "1249",
+        "1240",
+        "kb-admin-actor"
+      ],
+      "included_relationships": [
+        "1161"
+      ]
+    },
+    {
+      "view_id": "kb-admin-memory",
+      "view_name": "个人知识库管理员-长期记忆",
+      "parent_element_id": "kb-admin-actor",
+      "parent_element_name": "个人知识库管理员",
+      "description": "个人知识库管理员 Business Actor 的长期记忆子视图挂载点（SUBVIEW hierarchy）。历史工作信息、关键决策、经验教训等写入此层级。",
+      "included_elements": [],
+      "included_relationships": []
+    }
+  ]
 }
