@@ -54,6 +54,10 @@
         {
           "name": "deliveryStatus",
           "value": "delivered"
+        },
+        {
+          "name": "commit",
+          "value": "4e2e116: design/KG/SystemArchitecture.json, design/KG/test-failure-records.json, tests/acceptance/kb_admin_actor.js"
         }
       ]
     }
