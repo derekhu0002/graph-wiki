@@ -60,6 +60,12 @@
           "value": "4e2e116: design/KG/SystemArchitecture.json, design/KG/test-failure-records.json, tests/acceptance/kb_admin_actor.js"
         }
       ]
+    },
+    {
+      "id": "kb-admin-session-20260824",
+      "name": "会话记录 2026-08-24",
+      "type": "Business Object",
+      "description": "2026-08-24 会话摘要：完成 graph-wiki 个人知识库 ARGO 环境初始化（argo-init overall ok，MCP/Neo4j/初始同步/语义生命周期均就绪）；确认本项目为个人知识库，本 Agent 职责角色为「个人知识库管理员」（Business Actor kb-admin-actor）；创建其下长期记忆子视图 kb-admin-memory 并纳入顶层 SystemArchitecture 视图；附加可执行验收测试 kb-admin-actor-registered（GIVEN-WHEN-THEN，1/1 通过）。关键决策：以个人知识库管理员角色承接后续知识库组织/维护/发布任务。TODO：等待用户分配具体知识库任务。"
     }
   ],
   "relationships": [
@@ -117,7 +123,9 @@
       "parent_element_id": "kb-admin-actor",
       "parent_element_name": "个人知识库管理员",
       "description": "个人知识库管理员 Business Actor 的长期记忆子视图挂载点（SUBVIEW hierarchy）。历史工作信息、关键决策、经验教训等写入此层级。",
-      "included_elements": [],
+      "included_elements": [
+        "kb-admin-session-20260824"
+      ],
       "included_relationships": []
     }
   ]
