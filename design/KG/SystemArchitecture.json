@@ -93,8 +93,8 @@
       "type": "Rule",
       "attributes": [
         {
-          "name": "deliveryStatus",
-          "value": "delivered"
+          "name": "commit",
+          "value": "17cc277: design/KG/SystemArchitecture.json, tests/acceptance/kb_rule_knowledge_to_kg.js"
         }
       ]
     }
