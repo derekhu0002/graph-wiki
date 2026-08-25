@@ -48,16 +48,20 @@
         {
           "view_id": "kb-admin-memory",
           "view_name": "个人知识库管理员-长期记忆"
+        },
+        {
+          "view_id": "kb-admin-rules",
+          "view_name": "个人知识库规则"
         }
       ],
       "attributes": [
         {
-          "name": "deliveryStatus",
-          "value": "delivered"
-        },
-        {
           "name": "commit",
           "value": "4e2e116: design/KG/SystemArchitecture.json, design/KG/test-failure-records.json, tests/acceptance/kb_admin_actor.js"
+        },
+        {
+          "name": "deliveryStatus",
+          "value": "delivered"
         }
       ]
     },
@@ -70,6 +74,27 @@
         {
           "name": "commit",
           "value": "ecb7c2f: design/KG/SystemArchitecture.json"
+        }
+      ]
+    },
+    {
+      "description": "graph-wiki 个人知识库的核心治理规则：所有知识内容（知识条目、决策、经验教训、验收记录等）一律写入意图图 design/KG/SystemArchitecture.json（KG），不得仅存放在散落文件中。",
+      "id": "kb-rule-knowledge-to-kg",
+      "name": "知识写入 KG 规则",
+      "testcases": [
+        {
+          "Input": "GIVEN canonical intent graph 位于 design/KG/SystemArchitecture.json\nWHEN 在图中查找「知识写入 KG 规则」Rule 元素及其所属规则视图\nTHEN 该规则存在且为 Rule 类型、被纳入 kb-admin-rules 视图、且该视图挂载在 kb-admin-actor 之下",
+          "acceptanceCriteria": "tests/acceptance/kb_rule_knowledge_to_kg.js",
+          "description": "外部视角验收：知识写入 KG 规则必须已在意图图中正确登记（身份/类型），并被纳入挂载在个人知识库管理员之下的规则子视图。",
+          "name": "kb-rule-knowledge-to-kg-registered",
+          "type": "Acceptance Test"
+        }
+      ],
+      "type": "Rule",
+      "attributes": [
+        {
+          "name": "deliveryStatus",
+          "value": "delivered"
         }
       ]
     }
@@ -133,6 +158,16 @@
         "kb-admin-session-20260824"
       ],
       "included_relationships": []
+    },
+    {
+      "description": "个人知识库治理规则视图：集中登记知识库的工作规则（Rule 元素），随工作推进持续补充。",
+      "parent_element_id": "kb-admin-actor",
+      "parent_element_name": "个人知识库管理员",
+      "view_id": "kb-admin-rules",
+      "view_name": "个人知识库规则",
+      "included_elements": [
+        "kb-rule-knowledge-to-kg"
+      ]
     }
   ]
 }
