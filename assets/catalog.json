@@ -15,20 +15,6 @@
         "relationships": 2,
         "views": 1
       }
-    },
-    {
-      "id": "graph-test2",
-      "name": "测试图谱2",
-      "version": "1.0.0",
-      "path": "graphs/graph-test2/graph.json",
-      "sourceRepo": "graph-wiki",
-      "sourceCommit": "pending",
-      "description": "第二个图谱",
-      "stats": {
-        "elements": 1,
-        "relationships": 0,
-        "views": 0
-      }
     }
   ]
 }

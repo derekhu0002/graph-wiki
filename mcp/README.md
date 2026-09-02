@@ -1,7 +1,8 @@
-# AI 组织资产 MCP 服务
+# 图谱资产 MCP 服务
 
-轻量的远程 MCP HTTP/SSE 服务，供本机各 AI AGENT 查询、获取、提交 AI 组织资产。
-参考 [teamai-cli](https://github.com/Tencent/teamai-cli) 的做法：Git 仓库管理资产 + MCP 服务分发。
+轻量的远程 MCP HTTP/SSE 服务，供本机各 AI AGENT 查询、获取、提交**图谱资产**。
+参考 teamai-cli 的思路：Git 仓库管理 + MCP 服务分发，但资产统一为整张
+ARCHGRAPH 图谱（不是独立单文件）。
 
 ## 服务端点
 
@@ -15,28 +16,14 @@
 
 | 工具 | 说明 |
 |---|---|
-| `asset_list` | 列出资产（可按 `type` 过滤） |
-| `asset_get` | 获取单个资产（元数据 + 内容） |
-| `asset_search` | 关键词搜索资产 |
-| `asset_register` | 登记/提交新资产（写文件 + 更新 catalog.json + git commit） |
-| `asset_update` | 更新资产（内容/版本/描述 + git commit） |
-| `asset_types` | 列出资产类型与目录映射 |
 | `graph_list` | 列出图谱资产 |
 | `graph_get` | 获取一张图谱资产（元数据 + 完整 ARCHGRAPH 图谱） |
-| `graph_validate` | 校验一张 ARCHGRAPH 图谱（提交前自检） |
-| `graph_submit` | 提交新图谱资产（schema 校验 + 写入 + catalog + git commit） |
-| `graph_update` | 更新图谱资产（schema 校验 + git commit） |
+| `graph_submit` | 提交新图谱资产（内部自动 schema 校验，不通过则拒收不入库） |
+| `graph_update` | 更新图谱资产（内部自动 schema 校验，不通过则拒收不入库） |
 
-资产类型: `AGENT` / `SKILL` / `RULE` / `HOOKS` / `KNOWLEDGE` / `GRAPH`，分别对应
-`assets/agents/` `assets/skills/` `assets/rules/` `assets/hooks/` `assets/knowledge/` `assets/graphs/`。
-
-> **图谱资产**：`GRAPH` 类型是一张完整的 ARCHGRAPH 图谱（`elements`/`relationships`/`views`，
-> ArchiMate 元素/关系类型体系），存为 `assets/graphs/<id>/graph.json`。
-> 提交时自动做 schema 校验：结构完整性、ArchiMate 类型合法性、id 唯一、关系端点存在。
-> 独立资产（AGENT/SKILL/RULE 等）与图谱资产（把元素串成的关系图）都可共建共享。
-
-> 变更入口唯一化：所有资产变更必须通过 `asset_register` / `asset_update` / `graph_submit` / `graph_update`
-> 完成（内部自动 git commit）。不支持外部直接写 `assets/` 文件。
+> 所有写入接口内部自动执行 ARCHGRAPH schema 校验（结构完整性、ArchiMate 类型
+> 合法性、id 唯一、关系端点引用存在、view 成员存在、顶层视图唯一）。
+> 校验不通过则返回错误并停止入库。变更入口唯一化，不支持外部直接写文件。
 
 ## 接入方式
 
@@ -47,7 +34,7 @@
 ```json
 {
   "mcp": {
-    "asset-mcp": {
+    "graph-mcp": {
       "type": "remote",
       "url": "https://argo.derekworkspacev5.com/mcp",
       "enabled": true
@@ -60,25 +47,40 @@
 
 配置一个 http 传输的 MCP server，url 指向 `https://argo.derekworkspacev5.com/mcp`。
 
+## 图谱资产格式
+
+一张图是一个对象：`{ name, description, elements[], relationships[], views[] }`：
+
+```json
+{
+  "name": "AI组织资产协作图谱",
+  "description": "把组织资产串成的关系图谱",
+  "elements": [
+    { "id": "proj-a", "name": "项目A", "type": "Business Actor" },
+    { "id": "skill-x", "name": "构建技能", "type": "Skill" }
+  ],
+  "relationships": [
+    { "id": "r1", "type": "Association", "source_id": "proj-a", "target_id": "skill-x",
+      "source_name": "项目A", "target_name": "构建技能",
+      "statement": "项目A --(Association)--> 构建技能" }
+  ],
+  "views": [
+    { "view_id": "v1", "view_name": "协作视图", "parent_element_id": "proj-a",
+      "included_elements": ["proj-a", "skill-x"] }
+  ]
+}
+```
+
 ## 使用示例（Agent 视角）
 
 ```
-# 开工前获取资产
-1. asset_list           → 查看有哪些组织资产
-2. asset_list --type SKILL → 只看技能
-3. asset_get {id}       → 获取资产内容
-4. asset_search "rule"  → 关键词搜索
+# 开工前获取
+1. graph_list            → 看有哪些图谱资产
+2. graph_get {id}        → 获取整张图谱作为上下文/基线
 
-# 贡献独立资产
-5. asset_register {id} --type SKILL --name ... --content ...
-6. asset_update {id} --version 1.1.0
-
-# 图谱资产（整张 ARCHGRAPH 图谱，元素串成关系图）
-7. graph_validate {graph}          → 提交前自检 schema
-8. graph_list                      → 看有哪些图谱资产
-9. graph_get {graphId}             → 获取整张图
-10. graph_submit {id} --graph {...} → 提交一张完整图谱（elements/relationships/views）
-11. graph_update {id} --graph {...} → 更新图谱
+# 贡献图谱
+3. graph_submit {id} --graph {...}  → 提交（内部校验，不过拒收）
+4. graph_update {id} --graph {...}  → 更新（内部校验）
 ```
 
 ## 部署
@@ -91,7 +93,7 @@ bash mcp/deploy-asset-mcp.sh root@120.24.114.13
 远程服务:
 - systemd: `asset-mcp`
 - 资产根: `/opt/graph-wiki/assets`（Git 仓库管理）
-- 提交: 每次 register/update 自动 git commit
+- 提交: 每次 graph_submit/graph_update 自动 git commit
 
 ## 环境变量
 
