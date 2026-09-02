@@ -364,6 +364,18 @@
           "value": "94f1256: assets/catalog.json, assets/README.md, assets/skills/argo.md"
         }
       ]
+    },
+    {
+      "id": "kb-admin-session-20260902-assetmcp",
+      "name": "会话记录 2026-09-02 资产MCP服务",
+      "type": "Business Object",
+      "description": "2026-09-02 会话摘要：参考 teamai-cli（Git 仓库管理 skills/rules/agents/hooks/mcp + HTTP 模式分发）实现轻量远程 MCP 服务。完成：纯 Node 零依赖 asset MCP HTTP/SSE 服务（mcp/asset-mcp-server.js，7 工具：asset_list/get/search/register/update/commit/types），部署到远程服务器 120.24.114.13（systemd: asset-mcp，Nginx 反代 /mcp），公网 https://argo.derekworkspacev5.com/mcp 已验证全链路。资产库：/opt/graph-wiki/assets（Git 管理），catalog.json 登记 3 资产（skill-argo/rule-conventional-commits/rule-python-style）。本机 opencode.json 新增 asset-mcp 远程配置。关键决策：参考 teamai-cli 的 MCP 分发思路但用纯 Node 精简实现；register/update 自动 git commit；资产以远程线上库为准。commit 5a8761c/2f1d4dc/bcb6b1a。",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "bcb6b1a: mcp/asset-mcp-server.js, mcp/README.md, mcp/deploy-asset-mcp.sh, assets/catalog.json"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -617,7 +629,8 @@
         "kb-admin-session-20260901",
         "kb-admin-session-20260902-deploy",
         "kb-admin-session-20260902-assets",
-        "kb-admin-session-20260902-simplify"
+        "kb-admin-session-20260902-simplify",
+        "kb-admin-session-20260902-assetmcp"
       ],
       "included_relationships": []
     },
