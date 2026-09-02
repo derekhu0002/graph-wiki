@@ -1,0 +1,91 @@
+---
+sidebar_position: 2
+title: 核心概念与元素
+---
+
+# ArchiMate 核心概念与元素
+
+基于 ArchiMate 3.2 Specification 整理的学习速览。
+
+## 核心框架：三层 × 三面
+
+ArchiMate Core Framework 用**三个层（Layer）× 三个面（Aspect）**组织语言：
+
+| | 主动结构<br/>Active Structure | 行为<br/>Behavior | 被动结构<br/>Passive Structure |
+|---|---|---|---|
+| **业务层 Business** | Actor / Role | Process / Function / Service | Business Object |
+| **应用层 Application** | Application Component | Application Function / Service | Data Object |
+| **技术层 Technology** | Node / Device / System Software | Technology Function / Service | Artifact |
+
+- **层（Layer）**：业务 / 应用 / 技术，由高到低"实现/服务"关系贯通
+- **面（Aspect）**：谁做（主动结构）→ 做什么（行为）→ 对什么做（被动结构）
+
+> 另有 **Motivation（动机）层**（Goal / Outcome / Principle / Requirement）与
+> **Strategy / Implementation** 扩展，建模"为什么"与"怎么落地"。
+
+## 元素分类速览
+
+### 业务层
+| 类别 | 元素 |
+|---|---|
+| 主动结构 | Business Actor（人/Agent）、Business Role、Business Collaboration、Business Interface |
+| 行为 | Business Process、Business Function、Business Interaction、Business Event、Business Service |
+| 被动结构 | Business Object、Contract、Representation、Product |
+
+### 应用层
+| 类别 | 元素 |
+|---|---|
+| 主动结构 | Application Component、Application Collaboration、Application Interface |
+| 行为 | Application Function、Application Process、Application Interaction、Application Service |
+| 被动结构 | Data Object |
+
+### 技术层
+| 类别 | 元素 |
+|---|---|
+| 主动结构 | Node、Device、System Software、Technology Collaboration、Technology Interface |
+| 行为 | Technology Function、Technology Process、Technology Service |
+| 被动结构 | Artifact、Technology Object |
+
+### 跨层 / 扩展
+- **Composite**：Grouping、Location
+- **Motivation**：Stakeholder、Driver、Goal、Outcome、Principle、Requirement、Constraint
+- **Implementation**：Work Package、Deliverable、Plateau、Gap
+- ArchGraph 常用：`Skill`、`Rule`、`Capability`、`Value Stream`、`Course of Action`
+
+## 关系分类
+
+ArchiMate 3.2 关系分四大类（均为有向），遵循**关系矩阵**约束两端元素类型：
+
+| 类别 | 关系 | 语义 |
+|---|---|---|
+| **结构** | Composition / Aggregation | 整体-部分（存在依赖 / 非依赖） |
+| | Assignment | 职责/行为指派（Actor 执行 Process） |
+| | Realization | 实现/落实（下层实现上层） |
+| **依赖** | Serving | 服务提供（Service 服务上层） |
+| | Access | 访问（行为读/写对象） |
+| **动态** | Triggering / Flow | 触发 / 流转 |
+| **其他** | Association / Influence / Specialization | 关联 / 影响 / 特化 |
+
+**示例（正确语义）：**
+```
+项目总管(Business Actor) --(Assignment)--> 验收把关流程(Business Process)
+意图图(Artifact)          --(Realization)--> 长期记忆层(Business Object)
+调度服务(Application Service) --(Serving)--> 业务流程(Business Process)
+验收流程(Business Process)     --(Access)--> 测试报告(Business Object)
+```
+
+> **常见误区**：一切关系都用 Association。应尽量用
+> Assignment（执行）、Realization（实现）、Serving（服务）、Access（访问）等
+> 表达真实语义，图才具备可推理的结构。
+
+## 视图与视角
+
+- **View（视图）**：从某一关注点看系统的一种表示，由元素的子集 + 关系组成
+- **Viewpoint（视角）**：某类视图的约定（如 Layered / Capability / Cooperation / Implementation）
+- ArchGraph 中每个子图至少含 1 个视图表达主视角；子视图可挂到父元素之下
+- 顶层视图（无父）在一张图中最多 1 个
+
+## 官方资源
+
+- **ArchiMate 3.2 Specification**（The Open Group 标准）
+- **ArchiMate 学习站点 / 工具**（见 [学习资源](/docs/archimate/learning)）

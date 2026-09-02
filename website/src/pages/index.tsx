@@ -21,9 +21,9 @@ function HomepageHeader() {
           让架构知识在项目与 Agent 之间共建共享。
         </p>
         <div className={styles.buttons}>
-          <Link className="button button--secondary button--lg" to="/docs/intro">
+          <a className="button button--secondary button--lg" href="https://archgraph.org/">
             开始使用
-          </Link>
+          </a>
           <Link className="button button--outline button--lg" to="/graphs">
             浏览子图库
           </Link>

@@ -1,0 +1,41 @@
+---
+sidebar_position: 1
+title: ArchiMate 建模语言
+---
+
+# ArchiMate 建模语言
+
+**ArchiMate** 是 The Open Group 发布的企业架构建模标准语言，也是 ArchGraph 意图图
+背后的建模语言基础。要深入运用 ArchGraph，理解 ArchiMate 的元素、关系与视图
+体系是关键能力。
+
+## 为什么 ArchGraph 基于 ArchiMate
+
+ArchGraph 把 harness 设计与目标产品设计放进**同一个模型**（意图图），而这个模型的
+"语法"就是 ArchiMate 3.2：
+
+- **统一语言**：用一套标准元素（Business / Application / Technology / Motivation 层）
+  表达"谁（Actor）、做什么（能力/流程）、用什么（应用/技术）、为什么（目标/原则）"
+- **关系语义**：Assignment / Realization / Serving / Access 等关系让图不只是节点集合，
+  而承载真实的结构与依赖语义
+- **分层视角**：不同视图（Layered / Capability / Cooperation…）观察同一模型的不同侧面
+
+## 本专栏
+
+| 文档 | 内容 |
+|---|---|
+| [核心概念与元素](/docs/archimate/concepts) | 四大层级、元素类型、关系类型速览 |
+| [ArchiMate 学习资源](/docs/archimate/learning) | 官方规范、教程、工具与学习路线 |
+
+## 速览
+
+```
+Business 层:   Actor / Role / Process / Service / Object
+Application 层: Component / Interface / Function / Data Object
+Technology 层:  Node / Device / System Software / Artifact / Network
+Motivation 层:  Goal / Outcome / Principle / Requirement / Constraint
+```
+
+> ArchGraph 所用的元素类型是 ArchiMate 3.2 的合法类型子集，关系类型
+> （Assignment/Realization/Serving/Access/Aggregation/Composition/Association/…）
+> 均遵循 ArchiMate 3.2 关系矩阵。社区子图提交时由服务自动做类型与关系校验。

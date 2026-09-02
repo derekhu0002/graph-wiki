@@ -52,6 +52,7 @@ const config: Config = {
       },
       items: [
         {to: '/docs/intro', label: '文档', position: 'left'},
+        {to: '/docs/archimate', label: 'ArchiMate 建模', position: 'left'},
         {to: '/community', label: '社区', position: 'left'},
         {to: '/graphs', label: '子图库', position: 'left'},
         {to: '/blog', label: '博客', position: 'left'},
@@ -77,6 +78,7 @@ const config: Config = {
           title: '社区',
           items: [
             {label: '社区总览', to: '/community'},
+            {label: 'ArchiMate 建模专栏', to: '/docs/archimate'},
             {label: '子图规范', to: '/docs/community/subgraph-spec'},
             {label: '贡献指南', to: '/docs/community/contributing'},
           ],

@@ -1,0 +1,60 @@
+---
+sidebar_position: 3
+title: 学习资源
+---
+
+# ArchiMate 学习资源
+
+运用 ArchGraph 需要的基础建模能力——ArchiMate 语言的学习路径与权威资源。
+
+## 官方权威资源
+
+| 资源 | 说明 |
+|---|---|
+| [The Open Group — ArchiMate Forum](https://www.opengroup.org/archimate-forum/archimate-overview) | 官方维护页，含规范、认证与论坛 |
+| [ArchiMate 3.2 Specification](https://pubs.opengroup.org/architecture/archimate32-doc/) | 正式规范（在线版） |
+| [ArchiMate® 官方网站](https://www.archimate.org/) | 社区资源汇聚地 |
+
+## 建模工具
+
+| 工具 | 说明 |
+|---|---|
+| **Archi** | 免费开源 ArchiMate 建模工具（[archimatetool.com](https://www.archimatetool.com/)），官方示例与教学视频 |
+| **Enterprise Architect** | 商业工具，支持 ArchiMate 3.x，可导入/导出模型 |
+| **ArchiMate 3.2 建模画布** | 任何图工具都可用于练习元素与关系布局 |
+
+## 学习路线建议
+
+### 第 1 步：建立核心框架直觉（0.5-1 天）
+- 理解"三层（业务/应用/技术）× 三面（结构/行为/对象）"
+- 记住每层的代表元素（Actor/Process/Service/Component/Node/Artifact）
+- 用 Archi 打开官方示例图，观察层次如何用 Realization/Serving 贯通
+
+### 第 2 步：掌握关系语义（1-2 天）
+- 重点：Composition/Aggregation、Assignment、Realization、Serving、Access
+- 练习：给一个"点外卖"场景建模，尝试不用 Association 也能表达
+- 对照 ArchiMate 关系矩阵，理解"哪些关系能连哪些元素"
+
+### 第 3 步：视图与视角（1 天）
+- View 与 Viewpoint 区别
+- 常见视角：Layered（分层）、Capability（能力）、Application Cooperation（应用协作）、
+  Implementation & Migration（实施迁移）
+- 练习：同一模型导出 2-3 种视角视图
+
+### 第 4 步：结合 ArchGraph 实践
+- 阅读本门户的 [框架介绍](/docs/intro) 与 [社区子图规范](/docs/community/subgraph-spec)
+- 用 `graph_get` 拉取社区子图（如 aBot 能力子图、KG-LMT 治理子图）分析其
+  元素/关系使用是否符合规范
+- 尝试把自己的项目意图图裁剪成合规子图提交
+
+## 与 ArchGraph 的对照
+
+| ArchiMate 概念 | ArchGraph 用法 |
+|---|---|
+| Business Actor | Agent / 角色 / 项目总管 |
+| Capability | Agent 的核心能力 |
+| Business Process | 工作流 / 门禁 / 验收流程 |
+| Rule / Skill | 治理规则 / 技能资产 |
+| Artifact | 图谱 JSON / 配置文件 |
+| View | 子图视角（社区子图含 ≥1 视图） |
+| Relationship 矩阵 | graph_submit 自动校验类型与关系合法性 |
