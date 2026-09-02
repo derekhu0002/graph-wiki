@@ -388,6 +388,18 @@
           "value": "d39085c: mcp/asset-mcp-server.js, mcp/README.md, assets/catalog.json"
         }
       ]
+    },
+    {
+      "id": "kb-admin-session-20260902-graphonly",
+      "name": "会话记录 2026-09-02 图谱only精简",
+      "type": "Business Object",
+      "description": "2026-09-02 会话摘要：asset MCP 服务精简为纯图谱服务。决策：1) 去掉 graph_validate 独立接口，schema 校验内嵌到 graph_submit/graph_update 内部（写入自动校验，不通过返回错误并停止入库）；2) 只保留 graph 接口（graph_list/get/submit/update 4 工具），移除全部 asset_* 工具；3) 资产库只保留图谱资产（GRAPH），移除独立 skill/rule 文件与分类目录，catalog 结构改为 graphs[]。服务现 4 工具，serverInfo 改名 graph-mcp。schema 校验：结构必填+64 元素类型/11 关系类型合法性+id 唯一+关系端点/view成员引用存在+顶层视图唯一。已登记 graph-collab-demo（3元素2关系1视图）。公网验证通过（非法图拒收）。commit 3f7d087。",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "3f7d087: mcp/asset-mcp-server.js, mcp/README.md, assets/README.md, assets/catalog.json"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -643,7 +655,8 @@
         "kb-admin-session-20260902-assets",
         "kb-admin-session-20260902-simplify",
         "kb-admin-session-20260902-assetmcp",
-        "kb-admin-session-20260902-graphasset"
+        "kb-admin-session-20260902-graphasset",
+        "kb-admin-session-20260902-graphonly"
       ],
       "included_relationships": []
     },
