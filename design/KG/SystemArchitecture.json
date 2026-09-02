@@ -308,6 +308,34 @@
       "id": "org-asset-knowledge",
       "name": "知识库资产",
       "type": "Business Object"
+    },
+    {
+      "id": "org-asset-skill-argo",
+      "name": "ARGO知识图谱操作技能",
+      "type": "Artifact",
+      "description": "通过 ARGO MCP 工具读写意图知识图谱的技能（语义查询/图谱变更/验收测试）。登记于 AI 组织资产目录，资产本体位于 D:/Projects/graph-wiki（assets/README.md）。",
+      "attributes": [
+        {
+          "name": "assetType",
+          "value": "SKILL"
+        },
+        {
+          "name": "version",
+          "value": "1.0.0"
+        },
+        {
+          "name": "sourceRepo",
+          "value": "D:/Projects/graph-wiki"
+        },
+        {
+          "name": "sourceCommit",
+          "value": "8d79570"
+        },
+        {
+          "name": "assetPath",
+          "value": "assets/README.md"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -620,7 +648,8 @@
         "org-asset-hooks",
         "org-asset-knowledge",
         "kg-consumer-actor",
-        "kg-master-graph"
+        "kg-master-graph",
+        "org-asset-skill-argo"
       ],
       "included_relationships": [
         "org-asset-catalog-agent-rel",
