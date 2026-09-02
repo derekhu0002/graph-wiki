@@ -39,7 +39,7 @@
       "version": "1.0.0",
       "path": "graphs/graph-collab-demo/graph.json",
       "sourceRepo": "graph-wiki",
-      "sourceCommit": "pending",
+      "sourceCommit": "187b64c48ff49680007f2bdac05615534df3982d",
       "description": "示例：展示项目与资产的协作图谱",
       "graphStats": {
         "elements": 3,
