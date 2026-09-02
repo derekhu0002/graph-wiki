@@ -1,91 +1,85 @@
-# AI 组织资产共建共享
+# AI 组织资产库（静态）
 
-总知识图谱是 **AI 组织资产的共建共享中心**，不是 Agent 工作过程中的查询对象。
+本仓库是 **AI 组织资产的共建共享中心**，采用 **Git 仓库 + 静态目录文件** 的轻量方案：
+无服务依赖、无需数据库、无需外部 API，资产即文件。
 
-它登记 AGENT、SKILL、RULE、HOOKS、知识库等组织资产的 **目录与元数据**（名称/类型/版本/来源项目/来源commit/获取路径），
-资产本体文件留在各项目仓库中。图谱负责"发现"和"定位"，各项目仓库负责"存储"。
+## 定位
 
-## 定位与场景
+- **不是** Agent 工作过程中的运行时查询对象。
+- **是** 组织资产（AGENT / SKILL / RULE / HOOKS / 知识库）的注册表与发现目录。
+- **获取场景**：某项目要开工时，该项目的 Agent 自行或经用户指引，
+  从本资产库获取组织资产（加载某 SKILL、套用某 RULE、装配某 HOOKS、引用某知识库）。
+- **贡献场景**：某项目在用户指引下，把自有的组织资产贡献到这里，供其他项目复用。
 
-- **不是** Agent 运行时的数据查询/读写对象。
-- **是** 组织资产（AGENT/SKILL/RULE/HOOKS/知识库）的注册表与发现目录。
-- **获取场景**：当某项目要开工时，该项目的 Agent 可以自己或经用户指引，
-  到这个中心获取组织资产（如加载某 SKILL、套用某 RULE、装配某 HOOKS、引用某知识库），
-  以引导开工阶段的能力与约束。
-- **贡献场景**：某项目在用户指引下，把自有的组织资产登记/贡献到这个中心，
-  供其他项目复用。资产本体留在本项目仓库，图谱登记元数据（含来源项目与 commit）。
+## 目录结构
 
-## 资产类型
+```
+assets/
+├── catalog.json       # 资产索引（唯一事实源，登记全部资产元数据）
+├── README.md          # 本说明
+├── agents/            # AGENT 资产（agent 配置/定义）
+├── skills/            # SKILL 资产（技能定义/工作流）
+├── rules/             # RULE 资产（跨项目规则/约束）
+├── hooks/             # HOOKS 资产（生命周期钩子）
+└── knowledge/         # 知识库资产（文档/数据）
+```
 
-| 类型 | 图谱元素 | 说明 |
-|---|---|---|
-| AGENT | Artifact | Agent 配置/定义（agent 类型、tools、指令） |
-| SKILL | Artifact | 技能定义（描述、工作流、指令） |
-| RULE | Rule | 跨项目规则/约束（AGENTS.md 规则、治理规则） |
-| HOOKS | Artifact | 生命周期钩子脚本 |
-| KNOWLEDGE | Business Object | 知识库（文档/数据）引用 |
+## 资产条目规范
 
-## 资产元数据
+每项资产在 `catalog.json` 中登记一个条目，资产本体是分类目录下的文件：
 
-每项资产登记在总图谱的元素上，携带以下元数据属性：
+```json
+{
+  "id": "skill-argo",
+  "type": "SKILL",
+  "name": "ARGO 知识图谱操作技能",
+  "version": "1.0.0",
+  "path": "skills/argo.md",
+  "sourceRepo": "graph-wiki",
+  "sourceCommit": "abc123",
+  "description": "通过 ARGO MCP 工具读写知识图谱的技能"
+}
+```
 
-| 属性 | 说明 |
+| 字段 | 说明 |
 |---|---|
-| `assetType` | AGENT/SKILL/RULE/HOOKS/KNOWLEDGE |
-| `version` | 资产版本号 |
-| `sourceRepo` | 来源项目仓库路径 |
-| `sourceCommit` | 来源 commit |
-| `assetPath` | 资产本体在来源仓库的路径 |
+| `id` | 唯一标识（kebab-case，含类型前缀） |
+| `type` | AGENT / SKILL / RULE / HOOKS / KNOWLEDGE |
+| `name` | 资产名称 |
+| `version` | 版本号 |
+| `path` | 资产本体在本仓库的路径 |
+| `sourceRepo` | 来源项目仓库 |
+| `sourceCommit` | 来源 commit（可追溯） |
+| `description` | 简短描述 |
 
-## 使用方式
-
-总知识图谱通过远端服务 `https://argo.derekworkspacev5.com/mcp` 提供资产目录能力。
-有两种使用方式：
-
-### 1. 通过 MCP 工具（Agent 直接使用）
-
-任意项目配置远端 MCP 后，Agent 可用现有 ARGO 工具直接操作资产目录：
-
-- 列出资产：`getArchitectureViewContext` (view_id: `org-asset-catalog-view`)
-- 查看资产：`getIntentElementContext` (elementId: 资产 id)
-- 登记资产：`addArchitectureElement` (元素 + view_ids: `org-asset-catalog-view`)
-- 更新资产：`updateArchitectureElement` (更新 version/sourceCommit 等)
-
-### 2. 通过资产目录 CLI
+## 获取流程（项目开工前）
 
 ```bash
-# 列出所有资产
-node assets/asset-catalog.js list
+# 1. 获取资产库（clone 一次，之后 git pull）
+git clone <本仓库地址> ai-assets
+# 或作为 submodule 引入：
+git submodule add <本仓库地址> ai-assets
 
-# 按类型过滤
-node assets/asset-catalog.js list --type SKILL
+# 2. 浏览资产索引
+cat ai-assets/catalog.json
 
-# 查看单个资产
-node assets/asset-catalog.js get org-asset-skill-deep-dive
-
-# 登记新资产（AGENT/SKILL/RULE/HOOKS/KNOWLEDGE）
-node assets/asset-catalog.js register org-asset-skill-deep-dive \
-  --type SKILL --name "深度分析技能" --version 1.0.0 \
-  --repo "D:/Projects/foo" --commit abc123 --path "skills/deep-dive.md" \
-  --desc "用于代码深度分析的技能"
-
-# 更新资产版本/来源commit
-node assets/asset-catalog.js update org-asset-skill-deep-dive --version 1.1.0 --commit abc456
+# 3. 按需获取资产本体（按 catalog.json 的 path 读取）
+cat ai-assets/skills/argo.md
 ```
 
-> CLI 默认连接 `https://argo.derekworkspacev5.com/mcp`，可用环境变量覆盖：
-> `KG_MCP_URL` 指定远端地址；自签名证书时设 `KG_MCP_INSECURE=1`。
+## 贡献流程
 
-## 开工流程建议
-
+```bash
+# 1. 在对应分类目录添加资产文件（如 skills/my-skill.md）
+# 2. 在 catalog.json 追加登记条目（含 version / sourceCommit）
+# 3. 提交并推送
+git add assets/
+git commit -m "feat(assets): register my-skill"
+git push
 ```
-开工前（获取资产）:
-  1. Agent 查询资产目录（list）→ 按需 get 资产元数据
-  2. 根据元数据 sourceRepo/sourceCommit/assetPath 获取资产本体
-  3. 加载/装配资产（SKILL/RULE/HOOKS/知识库）到本项目工作上下文
 
-收尾或贡献时（贡献资产）:
-  1. 资产在项目仓库中开发完成（含版本号）
-  2. 用户指引下 register/update 登记资产元数据到总图谱目录
-  3. 图谱记录来源 commit，保证可追溯
-```
+## 约定
+
+- 资产本体文件留在本仓库，`catalog.json` 是唯一的索引入口。
+- 更新资产时递增 `version` 并记录 `sourceCommit`，保证可追溯。
+- 大型/二进制资产不建议直接入库，可在描述中记录外部地址。

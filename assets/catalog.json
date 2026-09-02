@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1.0",
+  "lastUpdated": "2026-09-02",
+  "assets": [
+    {
+      "id": "skill-argo",
+      "type": "SKILL",
+      "name": "ARGO 知识图谱操作技能",
+      "version": "1.0.0",
+      "path": "skills/argo.md",
+      "sourceRepo": "graph-wiki",
+      "sourceCommit": "pending",
+      "description": "通过 ARGO MCP 工具读写意图知识图谱的技能"
+    }
+  ]
+}
