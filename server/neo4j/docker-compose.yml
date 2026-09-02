@@ -1,0 +1,36 @@
+# 总知识图谱 - Neo4j 投影与语义存储
+#
+# 在远程服务器上用 Docker 部署 Neo4j 社区版，为 ARGO MCP 网关提供：
+#   - 结构化图投影存储（queryNeo4jGraph）
+#   - embedding 语义检索（memory_search / getSystemArchitecture）
+#
+# 用法: docker compose -f server/neo4j/docker-compose.yml up -d
+# 数据卷: /opt/graph-wiki/server/neo4j/data
+#
+# 注意:
+#   - 镜像经 DaoCloud 加速器拉取（服务器直连 Docker Hub 受限）
+#   - 生产环境请修改 NEO4J_AUTH 密码并通过环境变量注入，勿硬编码
+services:
+  neo4j:
+    image: docker.m.daocloud.io/library/neo4j:5-community
+    container_name: kg-neo4j
+    restart: unless-stopped
+    ports:
+      # 仅绑定内网，供本机 ARGO 网关访问；不暴露公网
+      - "127.0.0.1:7687:7687"   # Bolt
+      - "127.0.0.1:7474:7474"   # HTTP
+    environment:
+      - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:?set NEO4J_PASSWORD in env}
+      - NEO4J_server_memory_heap_initial__size=256m
+      - NEO4J_server_memory_heap_max__size=1g
+      - NEO4J_server_memory_pagecache_size=256m
+    volumes:
+      - ./data:/data
+      - ./logs:/logs
+      - ./plugins:/plugins
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
