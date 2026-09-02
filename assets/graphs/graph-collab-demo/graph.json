@@ -1,0 +1,58 @@
+{
+  "name": "AI组织资产协作图谱",
+  "description": "展示项目与资产的协作关系",
+  "elements": [
+    {
+      "id": "proj-a",
+      "name": "项目A",
+      "type": "Business Actor",
+      "description": "Android 项目"
+    },
+    {
+      "id": "skill-x",
+      "name": "构建技能",
+      "type": "Skill",
+      "description": "Gradle 技能"
+    },
+    {
+      "id": "rule-y",
+      "name": "代码规范",
+      "type": "Rule",
+      "description": "编码规范"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "r1",
+      "name": "使用",
+      "type": "Association",
+      "source_id": "proj-a",
+      "target_id": "skill-x",
+      "source_name": "项目A",
+      "target_name": "构建技能",
+      "statement": "项目A --(Association)--> 构建技能"
+    },
+    {
+      "id": "r2",
+      "name": "遵循",
+      "type": "Association",
+      "source_id": "proj-a",
+      "target_id": "rule-y",
+      "source_name": "项目A",
+      "target_name": "代码规范",
+      "statement": "项目A --(Association)--> 代码规范"
+    }
+  ],
+  "views": [
+    {
+      "view_id": "v1",
+      "view_name": "协作视图",
+      "parent_element_id": "proj-a",
+      "included_elements": [
+        "proj-a",
+        "skill-x",
+        "rule-y"
+      ]
+    }
+  ]
+}

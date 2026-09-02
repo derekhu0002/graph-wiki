@@ -31,6 +31,21 @@
       "sourceRepo": "graph-wiki",
       "sourceCommit": "5deef09bd9e141862de11917f33224a4c1f48176",
       "description": "团队 Python 开发规范"
+    },
+    {
+      "id": "graph-collab-demo",
+      "type": "GRAPH",
+      "name": "AI组织资产协作图谱",
+      "version": "1.0.0",
+      "path": "graphs/graph-collab-demo/graph.json",
+      "sourceRepo": "graph-wiki",
+      "sourceCommit": "pending",
+      "description": "示例：展示项目与资产的协作图谱",
+      "graphStats": {
+        "elements": 3,
+        "relationships": 2,
+        "views": 1
+      }
     }
   ]
 }
