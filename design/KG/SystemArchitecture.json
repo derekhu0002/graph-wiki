@@ -376,6 +376,18 @@
           "value": "bcb6b1a: mcp/asset-mcp-server.js, mcp/README.md, mcp/deploy-asset-mcp.sh, assets/catalog.json"
         }
       ]
+    },
+    {
+      "id": "kb-admin-session-20260902-graphasset",
+      "name": "会话记录 2026-09-02 图谱资产扩展",
+      "type": "Business Object",
+      "description": "2026-09-02 会话摘要：资产 MCP 服务扩展支持 ARCHGRAPH 图谱资产（整图作为图谱资产）。背景：组织资产常是完整图谱（elements/relationships/views，ArchiMate 类型体系），不单是独立文件。已实现：新增 GRAPH 类型（assets/graphs/<id>/graph.json 存储）；新增 5 图谱工具 graph_list/get/validate/submit/update；内嵌 ARCHGRAPH schema 校验（结构必填字段 + 64 元素类型/11 关系类型合法性 + id 唯一 + 关系端点引用完整性 + view 成员引用 + 顶层视图唯一）；asset_register 对 GRAPH 拒绝引导走 graph_submit。服务现 11 工具。已登记首个示例图谱 graph-collab-demo。公网 https://argo.derekworkspacev5.com/mcp 验证全链路。commit d39085c。关键决策：schema 校验采用内嵌结构级校验（保持纯 Node 零依赖，未引入 ajv/archimate32-rules）。",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "d39085c: mcp/asset-mcp-server.js, mcp/README.md, assets/catalog.json"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -630,7 +642,8 @@
         "kb-admin-session-20260902-deploy",
         "kb-admin-session-20260902-assets",
         "kb-admin-session-20260902-simplify",
-        "kb-admin-session-20260902-assetmcp"
+        "kb-admin-session-20260902-assetmcp",
+        "kb-admin-session-20260902-graphasset"
       ],
       "included_relationships": []
     },
