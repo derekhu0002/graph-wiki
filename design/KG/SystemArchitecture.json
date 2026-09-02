@@ -99,7 +99,7 @@
       ]
     },
     {
-      "description": "总知识图谱服务化架构域：graph-wiki 作为总知识图谱管理中心，通过部署在远程服务器的 ARGO MCP HTTP/SSE 网关向各项目提供知识图谱查询与贡献能力。",
+      "description": "总知识图谱服务化架构域：graph-wiki 作为 AI 组织资产共建共享中心（AGENT/SKILL/RULE/HOOKS/知识库等组织资产的目录+元数据），通过部署在远程服务器的 ARGO MCP HTTP/SSE 网关，供各项目开工前获取或贡献组织资产；图谱仅存目录与元数据，资产本体留在各项目仓库。",
       "id": "kg-service-domain",
       "name": "总知识图谱服务",
       "type": "Grouping",
@@ -107,6 +107,10 @@
         {
           "view_id": "kg-service-arch",
           "view_name": "总知识图谱服务架构"
+        },
+        {
+          "view_id": "org-asset-catalog-view",
+          "view_name": "AI 组织资产目录"
         }
       ],
       "testcases": [
@@ -253,6 +257,51 @@
           "value": "80314db: design/KG/SystemArchitecture.json"
         }
       ]
+    },
+    {
+      "description": "AI 组织资产共建共享目录：登记 AGENT、SKILL、RULE、HOOKS、知识库等组织资产的元数据，供各项目开工前获取或贡献，图谱仅存目录与元数据，资产本体留在各项目仓库。",
+      "id": "org-asset-catalog",
+      "name": "AI 组织资产目录",
+      "type": "Business Object",
+      "testcases": [
+        {
+          "name": "org-asset-catalog-registered",
+          "description": "外部视角验收：AI 组织资产目录视图必须挂载在总知识图谱服务域之下，登记 5 类组织资产（AGENT/SKILL/RULE/HOOKS/知识库），并具备项目获取（Access）与图谱承载（Association）关系。",
+          "type": "Acceptance Test",
+          "Input": "GIVEN canonical intent graph 位于 design/KG/SystemArchitecture.json\nWHEN 在图中查找「AI 组织资产目录」视图及其资产类型登记\nTHEN 该视图挂载在 kg-service-domain 之下、包含 5 类资产登记元素与目录元素、存在项目 Access 关系与图谱 Association 关系",
+          "acceptanceCriteria": "tests/acceptance/org_asset_catalog.js"
+        }
+      ]
+    },
+    {
+      "description": "AGENT 类组织资产：可复用的 Agent 配置/定义（agent 类型、tools、指令等），通过资产目录登记元数据，供各项目开工时获取使用。",
+      "id": "org-asset-agent",
+      "name": "AGENT 资产",
+      "type": "Artifact"
+    },
+    {
+      "description": "SKILL 类组织资产：可复用的技能定义（skill 描述、工作流、指令），通过资产目录登记元数据，供各项目开工时加载使用。",
+      "id": "org-asset-skill",
+      "name": "SKILL 资产",
+      "type": "Artifact"
+    },
+    {
+      "description": "RULE 类组织资产：跨项目复用的规则/约束（AGENTS.md 规则、治理规则等），通过资产目录登记元数据。",
+      "id": "org-asset-rule",
+      "name": "RULE 资产",
+      "type": "Rule"
+    },
+    {
+      "description": "HOOKS 类组织资产：可复用的 hooks 定义（生命周期钩子脚本），通过资产目录登记元数据，供各项目开工时装配。",
+      "id": "org-asset-hooks",
+      "name": "HOOKS 资产",
+      "type": "Artifact"
+    },
+    {
+      "description": "知识库类组织资产：可复用的知识库（文档/数据），通过资产目录登记元数据，供各项目开工时引用。",
+      "id": "org-asset-knowledge",
+      "name": "知识库资产",
+      "type": "Business Object"
     }
   ],
   "relationships": [
@@ -385,6 +434,76 @@
       "target_id": "kg-nginx",
       "target_name": "Nginx 反向代理",
       "type": "Realization"
+    },
+    {
+      "id": "org-asset-catalog-agent-rel",
+      "name": "目录登记",
+      "source_id": "org-asset-catalog",
+      "source_name": "AI 组织资产目录",
+      "statement": "AI 组织资产目录 --(Association)--> AGENT 资产",
+      "target_id": "org-asset-agent",
+      "target_name": "AGENT 资产",
+      "type": "Association"
+    },
+    {
+      "id": "org-asset-catalog-skill-rel",
+      "name": "目录登记",
+      "source_id": "org-asset-catalog",
+      "source_name": "AI 组织资产目录",
+      "statement": "AI 组织资产目录 --(Association)--> SKILL 资产",
+      "target_id": "org-asset-skill",
+      "target_name": "SKILL 资产",
+      "type": "Association"
+    },
+    {
+      "id": "org-asset-catalog-rule-rel",
+      "name": "目录登记",
+      "source_id": "org-asset-catalog",
+      "source_name": "AI 组织资产目录",
+      "statement": "AI 组织资产目录 --(Association)--> RULE 资产",
+      "target_id": "org-asset-rule",
+      "target_name": "RULE 资产",
+      "type": "Association"
+    },
+    {
+      "id": "org-asset-catalog-hooks-rel",
+      "name": "目录登记",
+      "source_id": "org-asset-catalog",
+      "source_name": "AI 组织资产目录",
+      "statement": "AI 组织资产目录 --(Association)--> HOOKS 资产",
+      "target_id": "org-asset-hooks",
+      "target_name": "HOOKS 资产",
+      "type": "Association"
+    },
+    {
+      "id": "org-asset-catalog-knowledge-rel",
+      "name": "目录登记",
+      "source_id": "org-asset-catalog",
+      "source_name": "AI 组织资产目录",
+      "statement": "AI 组织资产目录 --(Association)--> 知识库资产",
+      "target_id": "org-asset-knowledge",
+      "target_name": "知识库资产",
+      "type": "Association"
+    },
+    {
+      "id": "org-asset-consumer-access-rel",
+      "name": "项目获取资产",
+      "source_id": "kg-consumer-actor",
+      "source_name": "知识消费/贡献项目",
+      "statement": "知识消费/贡献项目 --(Access)--> AI 组织资产目录",
+      "target_id": "org-asset-catalog",
+      "target_name": "AI 组织资产目录",
+      "type": "Access"
+    },
+    {
+      "id": "org-asset-graph-assoc-rel",
+      "name": "图谱承载目录",
+      "source_id": "kg-master-graph",
+      "source_name": "总知识图谱",
+      "statement": "总知识图谱 --(Association)--> AI 组织资产目录",
+      "target_id": "org-asset-catalog",
+      "target_name": "AI 组织资产目录",
+      "type": "Association"
     }
   ],
   "views": [
@@ -446,7 +565,8 @@
       "view_name": "个人知识库规则",
       "included_elements": [
         "kb-rule-knowledge-to-kg"
-      ]
+      ],
+      "included_relationships": []
     },
     {
       "description": "总知识图谱服务化部署架构视图：展示远程服务器上的 ARGO MCP 网关、Neo4j 投影与语义存储、Nginx 反向代理，以及各项目通过远端接口获取/贡献总知识图谱的协作关系。",
@@ -479,6 +599,31 @@
         "kg-gateway-realize-artifact-rel",
         "kg-deploy-assign-artifact-rel",
         "kg-nginx-conf-realize-rel"
+      ]
+    },
+    {
+      "view_id": "org-asset-catalog-view",
+      "view_name": "AI 组织资产目录",
+      "parent_element_id": "kg-service-domain",
+      "description": "AI 组织资产共建共享目录视图：登记 AGENT、SKILL、RULE、HOOKS、知识库等组织资产元数据（名称/类型/版本/来源项目/来源commit/获取路径），供各项目开工前获取或贡献资产。图谱仅存目录与元数据，资产本体留在各项目仓库。",
+      "included_elements": [
+        "org-asset-catalog",
+        "org-asset-agent",
+        "org-asset-skill",
+        "org-asset-rule",
+        "org-asset-hooks",
+        "org-asset-knowledge",
+        "kg-consumer-actor",
+        "kg-master-graph"
+      ],
+      "included_relationships": [
+        "org-asset-catalog-agent-rel",
+        "org-asset-catalog-skill-rel",
+        "org-asset-catalog-rule-rel",
+        "org-asset-catalog-hooks-rel",
+        "org-asset-catalog-knowledge-rel",
+        "org-asset-consumer-access-rel",
+        "org-asset-graph-assoc-rel"
       ]
     }
   ]
