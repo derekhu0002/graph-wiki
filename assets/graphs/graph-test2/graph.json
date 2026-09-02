@@ -1,0 +1,14 @@
+{
+  "name": "测试图谱2",
+  "description": "第二个图谱",
+  "elements": [
+    {
+      "id": "e1",
+      "name": "元素1",
+      "type": "Skill",
+      "description": "技能"
+    }
+  ],
+  "relationships": [],
+  "views": []
+}
