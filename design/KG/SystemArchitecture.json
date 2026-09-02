@@ -117,6 +117,12 @@
           "Input": "GIVEN canonical intent graph 位于 design/KG/SystemArchitecture.json\nWHEN 在图中查找「总知识图谱服务」Grouping 及其服务化部署子视图\nTHEN 该 Grouping 存在且被纳入顶层 SystemArchitecture 视图、其下挂载「总知识图谱服务架构」子视图、且该子视图包含总知识图谱远端服务/ARGO MCP 网关/总知识图谱/知识图谱服务器/Neo4j 投影等关键部署元素",
           "acceptanceCriteria": "tests/acceptance/kg_service_architecture.js"
         }
+      ],
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "2aa9a57: design/KG/SystemArchitecture.json, tests/acceptance/kg_service_architecture.js"
+        }
       ]
     },
     {
