@@ -9,7 +9,7 @@
       "version": "1.0.0",
       "path": "skills/argo.md",
       "sourceRepo": "graph-wiki",
-      "sourceCommit": "pending",
+      "sourceCommit": "dd4466e",
       "description": "通过 ARGO MCP 工具读写意图知识图谱的技能"
     }
   ]
