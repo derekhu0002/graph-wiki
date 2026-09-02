@@ -203,6 +203,10 @@
         {
           "name": "commit",
           "value": "600e2a8: server/argo-mcp-http-gateway.js, tests/acceptance/kg_mcp_gateway.js"
+        },
+        {
+          "name": "commit",
+          "value": "9e0f432: server/README.md, server/nginx-kg-mcp.conf"
         }
       ]
     },
@@ -215,6 +219,10 @@
         {
           "name": "commit",
           "value": "600e2a8: server/deploy-remote.sh, server/README.md"
+        },
+        {
+          "name": "commit",
+          "value": "9e0f432: server/deploy-remote.sh"
         }
       ]
     },
@@ -227,6 +235,10 @@
         {
           "name": "commit",
           "value": "600e2a8: server/nginx-kg-mcp.conf"
+        },
+        {
+          "name": "commit",
+          "value": "9e0f432: server/nginx-kg-mcp.conf"
         }
       ]
     }
