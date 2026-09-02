@@ -11,6 +11,16 @@
       "sourceRepo": "graph-wiki",
       "sourceCommit": "dd4466e",
       "description": "通过 ARGO MCP 工具读写意图知识图谱的技能"
+    },
+    {
+      "id": "rule-conventional-commits",
+      "type": "RULE",
+      "name": "Conventional Commits 规范",
+      "version": "1.0.0",
+      "path": "rules/rule-conventional-commits.md",
+      "sourceRepo": "graph-wiki",
+      "sourceCommit": "pending",
+      "description": "团队提交信息规范"
     }
   ]
 }
