@@ -15,6 +15,20 @@
         "relationships": 2,
         "views": 1
       }
+    },
+    {
+      "id": "abot-overseer-capability-001",
+      "name": "aBot 项目总管能力子图",
+      "version": "1.0.0",
+      "path": "graphs/abot-overseer-capability-001/graph.json",
+      "sourceRepo": "github.com/derekhu0002/aBot",
+      "sourceCommit": "68ba057fbdec49ee2aa70609d486b3cc5e870ac1",
+      "description": "aBot 项目总管（project-overseer-001）的能力子图：长期记忆维护、多角色协调委派、验收把关、技术洞察与选型、数字孪生→MCP→真机工程推进等核心能力及其关联资产。",
+      "stats": {
+        "elements": 9,
+        "relationships": 8,
+        "views": 1
+      }
     }
   ]
 }

@@ -1,0 +1,169 @@
+{
+  "name": "aBot 项目总管能力子图",
+  "description": "项目总管 project-overseer-001 的核心能力及关联：记忆/协调/验收/洞察/工程，支撑 aBot 愿景，驱动技术洞察流程与开发过程。",
+  "elements": [
+    {
+      "id": "project-overseer-001",
+      "name": "项目总管",
+      "type": "Business Actor",
+      "description": "ArchGraph/aBot 项目总管：全局目标、长期记忆维护、角色协调与委派、验收把关。稳定身份 project-overseer-001。"
+    },
+    {
+      "id": "cap-memory",
+      "name": "长期记忆与知识管理",
+      "type": "Capability",
+      "description": "ARGO 意图图（T1/T2/T3）记忆维护：会话总结幂等写入、里程碑即时记录、跨会话不遗忘；KG 优先检索。"
+    },
+    {
+      "id": "cap-coord",
+      "name": "多角色协调与委派",
+      "type": "Capability",
+      "description": "协调 8 个 Business Actor（视觉分析员/建模员/技术洞察团队/aBot 本体），按 CoperationGuideline 正式委派与复核闭环。"
+    },
+    {
+      "id": "cap-accept",
+      "name": "验收把关与质量门禁",
+      "type": "Capability",
+      "description": "AcceptanceTestFirst：可执行 GIVEN-WHEN-THEN 验收用例 + validateSystemArchitecture + 回归门禁（当前 21 用例全绿）。"
+    },
+    {
+      "id": "cap-insight",
+      "name": "技术洞察与选型决策",
+      "type": "Capability",
+      "description": "驱动技术洞察团队（雷达侦察→四环评估→PoC→报告），支撑 MuJoCo/桌面人形/组装 BOM 等选型决策。"
+    },
+    {
+      "id": "cap-dev",
+      "name": "数字孪生→MCP→真机工程推进",
+      "type": "Capability",
+      "description": "推进三阶段开发：Blender 孪生/9动作/键盘/MCP/人格 Agent/P2 物理化（MJCF+平衡控制），契约不变后端扩三。"
+    },
+    {
+      "id": "abot-robot-001",
+      "name": "aBot 机器人本体（数字孪生）",
+      "type": "Business Actor",
+      "description": "桌面 chibi 机器人本体；数字孪生是身体，人格 Agent 'abot'，用户可直接对话控制。"
+    },
+    {
+      "id": "tech-insight-process-001",
+      "name": "技术洞察流程",
+      "type": "Business Process",
+      "description": "雷达周期：主题→扫描 blips→委员会四环评审→实验验证→报告成稿→验收入库。"
+    },
+    {
+      "id": "abot-dev-process-001",
+      "name": "aBot 开发过程",
+      "type": "Business Process",
+      "description": "三阶段：数字孪生（键盘）→ MCP 接口（Agent 控制）→ 真实物理 ROBOT（同一契约 hardware_adapter）。"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "r-overseer-memory",
+      "name": "具备记忆能力",
+      "type": "Association",
+      "source_id": "project-overseer-001",
+      "source_name": "项目总管",
+      "target_id": "cap-memory",
+      "target_name": "长期记忆与知识管理",
+      "statement": "项目总管 --(Association)--> 长期记忆与知识管理"
+    },
+    {
+      "id": "r-overseer-coord",
+      "name": "具备协调能力",
+      "type": "Association",
+      "source_id": "project-overseer-001",
+      "source_name": "项目总管",
+      "target_id": "cap-coord",
+      "target_name": "多角色协调与委派",
+      "statement": "项目总管 --(Association)--> 多角色协调与委派"
+    },
+    {
+      "id": "r-overseer-accept",
+      "name": "具备验收能力",
+      "type": "Association",
+      "source_id": "project-overseer-001",
+      "source_name": "项目总管",
+      "target_id": "cap-accept",
+      "target_name": "验收把关与质量门禁",
+      "statement": "项目总管 --(Association)--> 验收把关与质量门禁"
+    },
+    {
+      "id": "r-overseer-insight",
+      "name": "具备洞察能力",
+      "type": "Association",
+      "source_id": "project-overseer-001",
+      "source_name": "项目总管",
+      "target_id": "cap-insight",
+      "target_name": "技术洞察与选型决策",
+      "statement": "项目总管 --(Association)--> 技术洞察与选型决策"
+    },
+    {
+      "id": "r-overseer-dev",
+      "name": "具备工程推进能力",
+      "type": "Association",
+      "source_id": "project-overseer-001",
+      "source_name": "项目总管",
+      "target_id": "cap-dev",
+      "target_name": "数字孪生→MCP→真机工程推进",
+      "statement": "项目总管 --(Association)--> 数字孪生→MCP→真机工程推进"
+    },
+    {
+      "id": "r-cap-insight-process",
+      "name": "洞察能力依托流程",
+      "type": "Association",
+      "source_id": "cap-insight",
+      "source_name": "技术洞察与选型决策",
+      "target_id": "tech-insight-process-001",
+      "target_name": "技术洞察流程",
+      "statement": "技术洞察与选型决策 --(Association)--> 技术洞察流程"
+    },
+    {
+      "id": "r-cap-dev-process",
+      "name": "工程能力依托开发过程",
+      "type": "Association",
+      "source_id": "cap-dev",
+      "source_name": "数字孪生→MCP→真机工程推进",
+      "target_id": "abot-dev-process-001",
+      "target_name": "aBot 开发过程",
+      "statement": "数字孪生→MCP→真机工程推进 --(Association)--> aBot 开发过程"
+    },
+    {
+      "id": "r-overseer-abot",
+      "name": "协调 aBot 本体",
+      "type": "Association",
+      "source_id": "project-overseer-001",
+      "source_name": "项目总管",
+      "target_id": "abot-robot-001",
+      "target_name": "aBot 机器人本体（数字孪生）",
+      "statement": "项目总管 --(Association)--> aBot 机器人本体（数字孪生）"
+    }
+  ],
+  "views": [
+    {
+      "view_id": "v-overseer-capability",
+      "view_name": "项目总管能力视图",
+      "included_elements": [
+        "project-overseer-001",
+        "cap-memory",
+        "cap-coord",
+        "cap-accept",
+        "cap-insight",
+        "cap-dev",
+        "abot-robot-001",
+        "tech-insight-process-001",
+        "abot-dev-process-001"
+      ],
+      "included_relationships": [
+        "r-overseer-memory",
+        "r-overseer-coord",
+        "r-overseer-accept",
+        "r-overseer-insight",
+        "r-overseer-dev",
+        "r-cap-insight-process",
+        "r-cap-dev-process",
+        "r-overseer-abot"
+      ]
+    }
+  ]
+}
