@@ -340,6 +340,18 @@
           "value": "6f9302d: design/KG/SystemArchitecture.json"
         }
       ]
+    },
+    {
+      "id": "kb-admin-session-20260902-assets",
+      "name": "会话记录 2026-09-02 资产目录",
+      "type": "Business Object",
+      "description": "2026-09-02 会话摘要：明确总知识图谱定位为 AI 组织资产共建共享中心（非 Agent 运行时查询对象）。主要场景：项目 Agent 开工前自行/经用户指引从中心获取组织资产（AGENT/SKILL/RULE/HOOKS/知识库），或在用户指引下贡献自有资产。图谱做目录+元数据（assetType/version/sourceRepo/sourceCommit/assetPath），资产本体留各项目仓库。已在意图图创建 org-asset-catalog-view 视图（挂 kg-service-domain 下）+ 5 类资产元素 + 关系；实现 assets/asset-catalog.js CLI（list/get/register/update，走 MCP 网关）+ README 流程；验收测试 org_asset_catalog.js 通过；公网 HTTPS 验证全链路。已登记首个真实资产 org-asset-skill-argo。commit 45f2592/8d79570/6f9302d/b1fb13f。",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "b1fb13f: design/KG/SystemArchitecture.json"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -591,7 +603,8 @@
       "included_elements": [
         "kb-admin-session-20260824",
         "kb-admin-session-20260901",
-        "kb-admin-session-20260902-deploy"
+        "kb-admin-session-20260902-deploy",
+        "kb-admin-session-20260902-assets"
       ],
       "included_relationships": []
     },
