@@ -15,7 +15,7 @@ type GraphAsset = {
   stats?: {elements?: number; relationships?: number; views?: number};
 };
 
-const MCP_URL = 'https://argo.derekworkspacev5.com/mcp';
+const MCP_URL = '/mcp';
 
 async function mcpCall(name: string, args: Record<string, unknown>) {
   const res = await fetch(MCP_URL, {

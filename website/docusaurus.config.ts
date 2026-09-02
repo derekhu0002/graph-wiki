@@ -7,8 +7,8 @@ const config: Config = {
   tagline: 'An architecture-graph driven framework for Agentic Engineering',
   favicon: 'img/favicon.ico',
 
-  url: 'https://archgraph.org',
-  baseUrl: '/',
+  url: 'https://argo.derekworkspacev5.com',
+  baseUrl: '/archgraph/',
 
   organizationName: 'derekhu0002',
   projectName: 'graph-wiki',
