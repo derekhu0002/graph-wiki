@@ -436,6 +436,18 @@
           "value": "154f456: website/"
         }
       ]
+    },
+    {
+      "id": "kb-admin-session-20260902-archimate-col",
+      "name": "会话记录 2026-09-02 ArchiMate专栏",
+      "type": "Business Object",
+      "description": "2026-09-02 会话摘要：门户新增 ArchiMate 建模专栏。内容：docs/archimate/index.mdx（ArchiMate 是什么+为何 ArchGraph 需要+速览）、concepts.mdx（三层三面框架/元素分类/关系分类/视图视角，引导性概括，未转载 The Open Group 版权正文）、learning.mdx（官方资源外链 opengroup.org/archimate.org + Archi 工具 + 4步学习路线）。导航：navbar+footer 新增 ArchiMate 建模入口。首页开始使用按钮改外链 https://archgraph.org/（GitHub Pages 框架官网，确认已启用 built/cname approved）。已验证公网：/archgraph/docs/archimate/* 全 200。经验：MDX 中 <br> 需自闭合 <br/>。commit 69a99f0。",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "69a99f0: website/docs/archimate/, website/docusaurus.config.ts, website/src/pages/index.tsx"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -695,7 +707,8 @@
         "kb-admin-session-20260902-graphonly",
         "kb-admin-session-20260902-community",
         "kb-admin-session-20260902-website",
-        "kb-admin-session-20260902-portal-live"
+        "kb-admin-session-20260902-portal-live",
+        "kb-admin-session-20260902-archimate-col"
       ],
       "included_relationships": []
     },
