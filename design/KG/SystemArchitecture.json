@@ -241,6 +241,18 @@
           "value": "9e0f432: server/nginx-kg-mcp.conf"
         }
       ]
+    },
+    {
+      "id": "kb-admin-session-20260902-deploy",
+      "name": "会话记录 2026-09-02 远程部署",
+      "type": "Business Object",
+      "description": "2026-09-02 会话摘要：完成总知识图谱远端服务真机部署。编写 ARGO MCP HTTP/SSE 网关（server/argo-mcp-http-gateway.js，复用 argo-mcp-server handleRequest，19 工具暴露），部署脚本 server/deploy-remote.sh，Nginx 反向代理（合并进 argo.derekworkspacev5.com）。远程服务器（120.24.114.13，Ubuntu22.04）部署 Docker Neo4j 5 社区版（DaoCloud 镜像加速器）+ 网关 systemd 服务 + Nginx。公网端点 https://argo.derekworkspacev5.com/mcp 已验证：健康检查/initialize/tools-list/语义查询/验收测试全通过（4/4）。关键决策：Neo4j 用默认数据库(ARGO_NEO4J_DATABASE=neo4j)；语义初始化用 ensureArgoHarnessEnvironment（非 CLI journey）；E2E 门控须为 1。经验教训：WSL ssh HOME 需设 /home/derek；服务器 Docker Hub 不可达需加速器；nginx server_name 冲突需合并配置；PowerShell curl JSON 需无 BOM 文件。commit 600e2a8/9e0f432/80314db。",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "80314db: design/KG/SystemArchitecture.json"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -421,7 +433,8 @@
       "description": "个人知识库管理员 Business Actor 的长期记忆子视图挂载点（SUBVIEW hierarchy）。历史工作信息、关键决策、经验教训等写入此层级。",
       "included_elements": [
         "kb-admin-session-20260824",
-        "kb-admin-session-20260901"
+        "kb-admin-session-20260901",
+        "kb-admin-session-20260902-deploy"
       ],
       "included_relationships": []
     },
