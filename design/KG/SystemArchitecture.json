@@ -400,6 +400,18 @@
           "value": "3f7d087: mcp/asset-mcp-server.js, mcp/README.md, assets/README.md, assets/catalog.json"
         }
       ]
+    },
+    {
+      "id": "kb-admin-session-20260902-community",
+      "name": "会话记录 2026-09-02 社区规划",
+      "type": "Business Object",
+      "description": "2026-09-02 会话摘要：为 ArchGraph 共建共享社区做总体规划并落地。定位：开源共建社区，核心共享物为架构子图（能力/角色/治理/业务子图）。现有生态：archgraph 框架+graph-wiki 图谱库+MCP 服务+aBot（已提交首个能力子图 9元素8关系）。已产出：community/PLAN.md（总体规划：愿景/社区架构/治理/运营里程碑）、community/SUBGRAPH-SPEC.md（子图命名<project>-<domain>-<type>-<seq>与质量门槛）、community/CONTRIBUTING.md（贡献/获取流程）、根 README.md。已同步 aBot 子图到本地资产库（现 2 图谱）。关键决策：graph_submit 自动 schema 校验为硬门槛，人工规范补充命名/语义约定；以 GitHub 主仓为准多设备 pull/push。commit 9ae8050。",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "9ae8050: README.md, community/PLAN.md, community/SUBGRAPH-SPEC.md, community/CONTRIBUTING.md, assets/catalog.json"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -656,7 +668,8 @@
         "kb-admin-session-20260902-simplify",
         "kb-admin-session-20260902-assetmcp",
         "kb-admin-session-20260902-graphasset",
-        "kb-admin-session-20260902-graphonly"
+        "kb-admin-session-20260902-graphonly",
+        "kb-admin-session-20260902-community"
       ],
       "included_relationships": []
     },
