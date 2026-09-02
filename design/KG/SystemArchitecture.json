@@ -184,6 +184,24 @@
           "value": "2d62ba0: design/KG/SystemArchitecture.json, tests/acceptance/kg_service_architecture.js"
         }
       ]
+    },
+    {
+      "description": "ARGO MCP HTTP/SSE 网关服务代码（server/argo-mcp-http-gateway.js），复用 argo-mcp-server.js 的 JSON-RPC 处理，将 ARGO MCP 工具集以 MCP Streamable HTTP 传输暴露为远端接口。",
+      "id": "kg-gateway-artifact",
+      "name": "ARGO MCP HTTP/SSE 网关服务代码",
+      "type": "Artifact"
+    },
+    {
+      "description": "远程服务器一键部署脚本（server/deploy-remote.sh）：同步 ARGO 工具链+总图谱仓库、安装依赖、配置 systemd 服务与 Nginx 反向代理。",
+      "id": "kg-deploy-artifact",
+      "name": "远程部署脚本",
+      "type": "Artifact"
+    },
+    {
+      "description": "Nginx 反向代理配置（server/nginx-kg-mcp.conf）：将公网域名 /mcp 端点代理到本机网关服务，支持 SSE 流式响应。",
+      "id": "kg-nginx-conf-artifact",
+      "name": "Nginx 反向代理配置",
+      "type": "Artifact"
     }
   ],
   "relationships": [
@@ -286,6 +304,36 @@
       "target_id": "kg-docker",
       "target_name": "Docker Engine",
       "type": "Assignment"
+    },
+    {
+      "id": "kg-gateway-realize-artifact-rel",
+      "name": "网关实现代码",
+      "source_id": "kg-gateway-artifact",
+      "source_name": "ARGO MCP HTTP/SSE 网关服务代码",
+      "statement": "ARGO MCP HTTP/SSE 网关服务代码 --(Realization)--> ARGO MCP HTTP/SSE 网关",
+      "target_id": "kg-argo-gateway",
+      "target_name": "ARGO MCP HTTP/SSE 网关",
+      "type": "Realization"
+    },
+    {
+      "id": "kg-deploy-assign-artifact-rel",
+      "name": "部署脚本承载",
+      "source_id": "kg-server-node",
+      "source_name": "知识图谱服务器",
+      "statement": "知识图谱服务器 --(Assignment)--> 远程部署脚本",
+      "target_id": "kg-deploy-artifact",
+      "target_name": "远程部署脚本",
+      "type": "Assignment"
+    },
+    {
+      "id": "kg-nginx-conf-realize-rel",
+      "name": "代理配置实现",
+      "source_id": "kg-nginx-conf-artifact",
+      "source_name": "Nginx 反向代理配置",
+      "statement": "Nginx 反向代理配置 --(Realization)--> Nginx 反向代理",
+      "target_id": "kg-nginx",
+      "target_name": "Nginx 反向代理",
+      "type": "Realization"
     }
   ],
   "views": [
@@ -361,7 +409,10 @@
         "kg-server-node",
         "kg-neo4j",
         "kg-nginx",
-        "kg-docker"
+        "kg-docker",
+        "kg-gateway-artifact",
+        "kg-deploy-artifact",
+        "kg-nginx-conf-artifact"
       ],
       "included_relationships": [
         "kg-consume-rel",
@@ -372,7 +423,10 @@
         "kg-nginx-serving-rel",
         "kg-node-assign-neo4j-rel",
         "kg-node-assign-nginx-rel",
-        "kg-node-assign-docker-rel"
+        "kg-node-assign-docker-rel",
+        "kg-gateway-realize-artifact-rel",
+        "kg-deploy-assign-artifact-rel",
+        "kg-nginx-conf-realize-rel"
       ]
     }
   ]
