@@ -1,9 +1,11 @@
-import {useMemo} from 'react';
+import {useCallback, useMemo} from 'react';
 import {
   ReactFlow,
   Background,
   Controls,
   MiniMap,
+  MarkerType,
+  useNodesState,
   type Node,
   type Edge,
   type NodeProps,
@@ -90,6 +92,7 @@ function ElementNode({data}: NodeProps) {
         textAlign: 'center',
         boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
         fontFamily: 'inherit',
+        cursor: 'grab',
       }}>
       <Handle type="target" position={Position.Top} style={{opacity: 0}} />
       <div style={{fontSize: 13, fontWeight: 600, color: '#0f172a', wordBreak: 'break-word'}}>
@@ -109,7 +112,7 @@ type Props = {
 };
 
 export default function GraphVisualizer({elements, relationships}: Props) {
-  const nodes: Node[] = useMemo(() => {
+  const initialNodes: Node[] = useMemo(() => {
     const count = elements.length;
     const radius = Math.max(220, count * 42);
     const pos = circlePositions(count, radius);
@@ -125,22 +128,33 @@ export default function GraphVisualizer({elements, relationships}: Props) {
     }));
   }, [elements]);
 
+  const [nodes, , onNodesChange] = useNodesState(initialNodes);
+
   const edges: Edge[] = useMemo(() => {
     return relationships
       .filter((r) => elements.some((e) => e.id === r.source_id) && elements.some((e) => e.id === r.target_id))
-      .map((r, i) => ({
-        id: r.id || `e-${i}`,
-        source: r.source_id,
-        target: r.target_id,
-        label: r.type,
-        type: 'smoothstep',
-        animated: false,
-        style: {stroke: '#94a3b8', strokeWidth: 1.5},
-        labelStyle: {fill: '#475569', fontSize: 11, fontWeight: 600},
-        labelBgStyle: {fill: '#fff', fillOpacity: 0.9},
-        labelBgPadding: [4, 2] as [number, number],
-        labelBgBorderRadius: 3,
-      }));
+      .map((r, i) => {
+        const label = r.name && r.name !== r.type ? `${r.name} / ${r.type}` : r.type;
+        return {
+          id: r.id || `e-${i}`,
+          source: r.source_id,
+          target: r.target_id,
+          label,
+          type: 'smoothstep',
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: '#64748b',
+            width: 18,
+            height: 18,
+          },
+          animated: false,
+          style: {stroke: '#94a3b8', strokeWidth: 1.5},
+          labelStyle: {fill: '#475569', fontSize: 11, fontWeight: 600},
+          labelBgStyle: {fill: '#fff', fillOpacity: 0.92},
+          labelBgPadding: [4, 2] as [number, number],
+          labelBgBorderRadius: 3,
+        };
+      });
   }, [relationships, elements]);
 
   return (
@@ -148,6 +162,7 @@ export default function GraphVisualizer({elements, relationships}: Props) {
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        onNodesChange={onNodesChange}
         nodeTypes={nodeTypes}
         fitView
         fitViewOptions={{padding: 0.15}}
