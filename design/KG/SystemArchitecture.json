@@ -271,6 +271,12 @@
           "Input": "GIVEN canonical intent graph 位于 design/KG/SystemArchitecture.json\nWHEN 在图中查找「AI 组织资产目录」视图及其资产类型登记\nTHEN 该视图挂载在 kg-service-domain 之下、包含 5 类资产登记元素与目录元素、存在项目 Access 关系与图谱 Association 关系",
           "acceptanceCriteria": "tests/acceptance/org_asset_catalog.js"
         }
+      ],
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "45f2592: design/KG/SystemArchitecture.json, assets/asset-catalog.js, assets/README.md, tests/acceptance/org_asset_catalog.js"
+        }
       ]
     },
     {
