@@ -172,6 +172,18 @@
       "id": "kg-docker",
       "name": "Docker Engine",
       "type": "System Software"
+    },
+    {
+      "id": "kb-admin-session-20260901",
+      "name": "会话记录 2026-09-01",
+      "type": "Business Object",
+      "description": "2026-09-01 会话摘要：1) C 盘清理迁移（已迁移 Android SDK/AVD/Huawei SDK/Emulator/DevEcoStudio6.1 至 D:\\tools，释放约 49GB，采用复制+验证+删源及 junction 方案）；2) 架构设计「总知识图谱服务化」：确认 graph-wiki 作为总知识图谱管理中心，远程 Linux 服务器（Ubuntu 22.04，120.24.114.13，Docker+Nginx+Node22）承载 ARGO MCP HTTP/SSE 网关+Neo4j 投影与语义存储，各项目通过远端接口获取/贡献总图谱。已创建 kg-service-domain 架构域（Grouping）挂载 kg-service-arch 子视图，含 8 元素 9 关系，验收测试 kg_service_architecture.js 通过，提交 2aa9a57/2d62ba0。关键决策：MCP over HTTP/SSE + 远程 Neo4j+嵌入 + 本项目 Git 托管总图（总图与本项目图分离）。TODO：实现 HTTP/SSE 网关部署（服务器部署实施待下一步）。",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "2d62ba0: design/KG/SystemArchitecture.json, tests/acceptance/kg_service_architecture.js"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -321,7 +333,8 @@
       "parent_element_name": "个人知识库管理员",
       "description": "个人知识库管理员 Business Actor 的长期记忆子视图挂载点（SUBVIEW hierarchy）。历史工作信息、关键决策、经验教训等写入此层级。",
       "included_elements": [
-        "kb-admin-session-20260824"
+        "kb-admin-session-20260824",
+        "kb-admin-session-20260901"
       ],
       "included_relationships": []
     },
