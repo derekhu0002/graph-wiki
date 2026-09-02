@@ -1,0 +1,14 @@
+.card {
+  margin-bottom: 1rem;
+  height: 100%;
+}
+
+.meta {
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.9rem;
+  margin-bottom: 0;
+}
+
+.error {
+  color: var(--ifm-color-danger);
+}

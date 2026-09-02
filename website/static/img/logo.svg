@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="ag" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4d6bfe"/>
+      <stop offset="100%" stop-color="#7f95fe"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#ag)"/>
+  <!-- graph nodes + edges: three connected nodes -->
+  <g stroke="#ffffff" stroke-width="2.4" fill="none" opacity="0.9">
+    <line x1="20" y1="18" x2="44" y2="32"/>
+    <line x1="44" y1="32" x2="24" y2="48"/>
+    <line x1="20" y1="18" x2="24" y2="48"/>
+  </g>
+  <g fill="#ffffff">
+    <circle cx="20" cy="18" r="5.5"/>
+    <circle cx="44" cy="32" r="5.5"/>
+    <circle cx="24" cy="48" r="5.5"/>
+  </g>
+  <g fill="#4d6bfe">
+    <circle cx="20" cy="18" r="2.4"/>
+    <circle cx="44" cy="32" r="2.4"/>
+    <circle cx="24" cy="48" r="2.4"/>
+  </g>
+</svg>

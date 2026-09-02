@@ -1,0 +1,37 @@
+---
+sidebar_position: 2
+title: 子图规范
+---
+
+# 架构子图规范
+
+> 权威源见仓库 [`community/SUBGRAPH-SPEC.md`](https://github.com/derekhu0002/graph-wiki/blob/main/community/SUBGRAPH-SPEC.md)
+
+## 什么是子图
+
+**子图（subgraph）** = 从某项目完整意图图中裁剪出的一块，具备**独立复用价值**，
+由 elements + relationships + views 组成，遵循 ARCHGRAPH 图谱 Schema。
+
+## 子图类型
+
+| 类型 | 特征 | 命名域 |
+|---|---|---|
+| 能力子图 | Actor + Capability | `capability` |
+| 角色子图 | Actor/Role + 职责关系 | `role` |
+| 治理子图 | Rule/Process + 门禁 | `governance` |
+| 业务子图 | 业务域元素 + 技术关联 | `business` |
+| 协作子图 | 多 Actor + 协作流 | `collab` |
+
+## 命名规范
+
+```
+<project>-<domain>-<type>-<seq>
+  如: abot-overseer-capability-001
+```
+
+## 质量门槛
+
+提交时服务自动执行 ARCHGRAPH schema 校验（结构完整、ArchiMate 类型合法、
+id 唯一、关系端点引用存在、view 成员存在、顶层视图唯一），不通过拒收不入库。
+
+详见 [子图规范完整文档](https://github.com/derekhu0002/graph-wiki/blob/main/community/SUBGRAPH-SPEC.md)。

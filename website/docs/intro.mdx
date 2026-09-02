@@ -1,0 +1,48 @@
+---
+sidebar_position: 1
+title: 介绍
+---
+
+# ArchGraph — 意图图驱动的 Agentic Engineering 框架
+
+**ArchGraph** 构建一种**统一语言**，把 harness 设计与目标产品设计放进**同一个模型**——
+让你用单一视图工作和观察，对你的 Agent 拥有真实控制力。
+
+## 核心理念
+
+```
+人 / Coding Agent ←→ ARGO MCP ←→ 意图架构图 (ArchiMate 3.2) ←→ Enterprise Architect
+```
+
+- **意图图是唯一事实源**：架构图（ArchiMate 3.2 建模）是 Agentic Engineering 的中心
+- **Harness 无关**：ARGO 工具链可分发到 GitHub Copilot / Cursor / OpenCode /
+  DeepSeek Harness / OpenClaw 等主流编码 Agent 环境
+- **Test-first 工作流**：GIVEN-WHEN-THEN 可执行验收 + 每次 commit 回溯到图
+
+## 工作原理
+
+Agent 在项目里工作时会自动：
+
+1. **定位**：改动任何东西前，先在意图图中定位任务背后的架构元素
+2. **武装**：用该元素的 Skills 与 Rules 武装自己
+3. **验收**：test-first（GIVEN-WHEN-THEN），每次 commit 都回溯到图
+
+## 安装
+
+```bash
+npm install -g archgraph-argo
+argo-deploy
+```
+
+一条命令把 ARGO 工具链、skills、rules 部署到 GitHub Copilot / Cursor / OpenCode /
+DeepSeek Harness / OpenClaw，并自动注册 `argo` MCP server。
+
+> 语义（Graph RAG）查询还需要在 `~/.argo/.env` 配置 Neo4j 与向量引擎；
+> 其余开箱即用。
+
+## 相关资源
+
+- [GitHub 仓库](https://github.com/derekhu0002/archgraph)
+- [社区图谱库](https://github.com/derekhu0002/graph-wiki)
+- [子图规范](/docs/community/subgraph-spec)
+- [贡献指南](/docs/community/contributing)

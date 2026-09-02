@@ -1,0 +1,29 @@
+---
+sidebar_position: 3
+title: 贡献指南
+---
+
+# 贡献指南
+
+> 权威源见仓库 [`community/CONTRIBUTING.md`](https://github.com/derekhu0002/graph-wiki/blob/main/community/CONTRIBUTING.md)
+
+## 获取子图（Consume）
+
+```jsonc
+graph_list                        // 看社区子图
+graph_get { id: "abot-overseer-capability-001" }  // 获取整张图
+```
+
+## 贡献子图（Contribute）
+
+1. **裁剪**：从项目意图图切出有独立复用价值的子图
+2. **提交**：`graph_submit { id: "...", graph: {...}, name, version, description }`
+3. 服务自动做 schema 校验 → 通过则入库 + git commit
+
+更新用 `graph_update { id: "...", graph: {...}, version: "1.1.0" }`。
+
+## 行为约定
+
+- 只提交你有权共享的内容
+- 不提交含敏感/密钥信息的图
+- 尊重来源：复用他图时保留 sourceRepo/sourceCommit
