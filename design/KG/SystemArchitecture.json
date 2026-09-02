@@ -329,11 +329,15 @@
         },
         {
           "name": "sourceCommit",
-          "value": "8d79570"
+          "value": "6f9302d"
         },
         {
           "name": "assetPath",
           "value": "assets/README.md"
+        },
+        {
+          "name": "commit",
+          "value": "6f9302d: design/KG/SystemArchitecture.json"
         }
       ]
     }
