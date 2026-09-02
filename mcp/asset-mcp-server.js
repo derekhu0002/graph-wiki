@@ -16,7 +16,9 @@
  *   asset_search    关键词搜索资产
  *   asset_register  登记/提交新资产（写入分类目录 + 更新 catalog.json + git commit）
  *   asset_update    更新资产（内容/元数据 + git commit）
- *   asset_commit    手动 git 提交（用于资产内容已由外部写入的场景）
+ *
+ * 变更入口唯一化：所有资产变更必须通过 asset_register / asset_update（内部自动 git commit），
+ * 不允许外部直接写 assets/ 文件后手动提交。
  *
  * 环境变量:
  *   ASSET_MCP_PORT   监听端口（默认 18792）
@@ -247,12 +249,6 @@ function toolAssetUpdate(args) {
   return { status: 'ok', assetId: id, commit: commitResult };
 }
 
-function toolAssetCommit(args) {
-  const message = (args && args.message) || 'chore(assets): commit asset changes';
-  const commitResult = gitCommit(message, [ASSET_ROOT]);
-  return { status: 'ok', commit: commitResult };
-}
-
 function toolAssetTypes() {
   return { status: 'ok', types: ASSET_TYPES, directories: TYPE_DIRS };
 }
@@ -265,7 +261,6 @@ const TOOLS = [
   { name: 'asset_search', description: '关键词搜索资产', inputSchema: { type: 'object', required: ['query'], properties: { query: { type: 'string' } } } },
   { name: 'asset_register', description: '登记/提交新资产（写入分类目录 + 更新 catalog.json + git commit）', inputSchema: { type: 'object', required: ['id', 'type', 'content'], properties: { id: { type: 'string' }, type: { type: 'string', enum: ASSET_TYPES }, name: { type: 'string' }, content: { type: 'string' }, version: { type: 'string' }, description: { type: 'string' }, sourceRepo: { type: 'string' } } } },
   { name: 'asset_update', description: '更新资产（内容/版本/描述 + git commit）', inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' }, content: { type: 'string' }, version: { type: 'string' }, description: { type: 'string' }, name: { type: 'string' } } } },
-  { name: 'asset_commit', description: '手动 git 提交资产变更', inputSchema: { type: 'object', properties: { message: { type: 'string' } } } },
   { name: 'asset_types', description: '列出资产类型与目录映射', inputSchema: { type: 'object', properties: {} } },
 ];
 
@@ -275,7 +270,6 @@ const TOOL_HANDLERS = {
   asset_search: toolAssetSearch,
   asset_register: toolAssetRegister,
   asset_update: toolAssetUpdate,
-  asset_commit: toolAssetCommit,
   asset_types: toolAssetTypes,
 };
 

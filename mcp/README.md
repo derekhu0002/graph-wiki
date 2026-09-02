@@ -20,11 +20,13 @@
 | `asset_search` | 关键词搜索资产 |
 | `asset_register` | 登记/提交新资产（写文件 + 更新 catalog.json + git commit） |
 | `asset_update` | 更新资产（内容/版本/描述 + git commit） |
-| `asset_commit` | 手动 git 提交资产变更 |
 | `asset_types` | 列出资产类型与目录映射 |
 
 资产类型: `AGENT` / `SKILL` / `RULE` / `HOOKS` / `KNOWLEDGE`，分别对应
 `assets/agents/` `assets/skills/` `assets/rules/` `assets/hooks/` `assets/knowledge/`。
+
+> 变更入口唯一化：所有资产变更必须通过 `asset_register` / `asset_update` 完成
+> （内部自动 git commit）。不支持外部直接写 `assets/` 文件。
 
 ## 接入方式
 
