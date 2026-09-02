@@ -189,19 +189,46 @@
       "description": "ARGO MCP HTTP/SSE 网关服务代码（server/argo-mcp-http-gateway.js），复用 argo-mcp-server.js 的 JSON-RPC 处理，将 ARGO MCP 工具集以 MCP Streamable HTTP 传输暴露为远端接口。",
       "id": "kg-gateway-artifact",
       "name": "ARGO MCP HTTP/SSE 网关服务代码",
-      "type": "Artifact"
+      "type": "Artifact",
+      "testcases": [
+        {
+          "name": "kg-mcp-gateway-runnable",
+          "description": "外部视角验收：总知识图谱 ARGO MCP HTTP/SSE 网关必须可通过 HTTP 健康检查、MCP 握手、工具列表与语义查询真实调用。",
+          "type": "Acceptance Test",
+          "Input": "GIVEN 网关已启动于 http://127.0.0.1:18789\nWHEN 通过 HTTP 调用 /health 与 /mcp 端点（initialize/tools/list/tools/call getSystemArchitecture）\nTHEN 健康检查返回 ok、MCP 握手为 argo 协议、工具列表含 getSystemArchitecture、语义查询返回总知识图谱服务相关内容",
+          "acceptanceCriteria": "tests/acceptance/kg_mcp_gateway.js"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "600e2a8: server/argo-mcp-http-gateway.js, tests/acceptance/kg_mcp_gateway.js"
+        }
+      ]
     },
     {
       "description": "远程服务器一键部署脚本（server/deploy-remote.sh）：同步 ARGO 工具链+总图谱仓库、安装依赖、配置 systemd 服务与 Nginx 反向代理。",
       "id": "kg-deploy-artifact",
       "name": "远程部署脚本",
-      "type": "Artifact"
+      "type": "Artifact",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "600e2a8: server/deploy-remote.sh, server/README.md"
+        }
+      ]
     },
     {
       "description": "Nginx 反向代理配置（server/nginx-kg-mcp.conf）：将公网域名 /mcp 端点代理到本机网关服务，支持 SSE 流式响应。",
       "id": "kg-nginx-conf-artifact",
       "name": "Nginx 反向代理配置",
-      "type": "Artifact"
+      "type": "Artifact",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "600e2a8: server/nginx-kg-mcp.conf"
+        }
+      ]
     }
   ],
   "relationships": [
