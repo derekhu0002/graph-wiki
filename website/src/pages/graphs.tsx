@@ -1,42 +1,20 @@
 import {useEffect, useState} from 'react';
 import clsx from 'clsx';
 import Layout from '@theme/Layout';
+import Link from '@docusaurus/Link';
 import Heading from '@theme/Heading';
 
+import {graphList, type GraphAssetMeta} from '../lib/mcp';
 import styles from './graphs.module.css';
 
-type GraphAsset = {
-  id: string;
-  name: string;
-  version: string;
-  sourceRepo: string;
-  sourceCommit: string;
-  description: string;
-  stats?: {elements?: number; relationships?: number; views?: number};
-};
-
-const MCP_URL = '/mcp';
-
-async function mcpCall(name: string, args: Record<string, unknown>) {
-  const res = await fetch(MCP_URL, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({jsonrpc: '2.0', id: Date.now(), method: 'tools/call', params: {name, arguments: args}}),
-  });
-  const json = await res.json();
-  const text = json?.result?.content?.[0]?.text;
-  if (!text) throw new Error('MCP call failed');
-  return JSON.parse(text);
-}
-
 export default function Graphs(): JSX.Element {
-  const [graphs, setGraphs] = useState<GraphAsset[] | null>(null);
+  const [graphs, setGraphs] = useState<GraphAssetMeta[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    mcpCall('graph_list', {})
-      .then((r) => setGraphs(r.graphs || []))
+    graphList()
+      .then(setGraphs)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
@@ -59,7 +37,9 @@ export default function Graphs(): JSX.Element {
               <div className="col col--6" key={g.id}>
                 <div className={clsx('card', styles.card)}>
                   <div className="card__header">
-                    <h3>{g.name}</h3>
+                    <h3>
+                      <Link to={`/graph-detail?id=${encodeURIComponent(g.id)}`}>{g.name}</Link>
+                    </h3>
                     <code>{g.id}</code>
                   </div>
                   <div className="card__body">
@@ -68,6 +48,11 @@ export default function Graphs(): JSX.Element {
                       版本 {g.version} · 来源 {g.sourceRepo}
                       {g.stats && ` · ${g.stats.elements} 元素 / ${g.stats.relationships} 关系 / ${g.stats.views} 视图`}
                     </p>
+                  </div>
+                  <div className="card__footer">
+                    <Link className="button button--primary button--sm" to={`/graph-detail?id=${encodeURIComponent(g.id)}`}>
+                      查看详情与可视化
+                    </Link>
                   </div>
                 </div>
               </div>
