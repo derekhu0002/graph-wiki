@@ -97,6 +97,75 @@
           "value": "17cc277: design/KG/SystemArchitecture.json, tests/acceptance/kb_rule_knowledge_to_kg.js"
         }
       ]
+    },
+    {
+      "description": "总知识图谱服务化架构域：graph-wiki 作为总知识图谱管理中心，通过部署在远程服务器的 ARGO MCP HTTP/SSE 网关向各项目提供知识图谱查询与贡献能力。",
+      "id": "kg-service-domain",
+      "name": "总知识图谱服务",
+      "type": "Grouping",
+      "subdiagram_views": [
+        {
+          "view_id": "kg-service-arch",
+          "view_name": "总知识图谱服务架构"
+        }
+      ],
+      "testcases": [
+        {
+          "name": "kg-service-arch-registered",
+          "description": "外部视角验收：总知识图谱服务架构域（Grouping）及其服务化部署元素必须在意图图中正确登记，子视图挂载在 Grouping 之下并纳入顶层 SystemArchitecture 视图。",
+          "type": "Acceptance Test",
+          "Input": "GIVEN canonical intent graph 位于 design/KG/SystemArchitecture.json\nWHEN 在图中查找「总知识图谱服务」Grouping 及其服务化部署子视图\nTHEN 该 Grouping 存在且被纳入顶层 SystemArchitecture 视图、其下挂载「总知识图谱服务架构」子视图、且该子视图包含总知识图谱远端服务/ARGO MCP 网关/总知识图谱/知识图谱服务器/Neo4j 投影等关键部署元素",
+          "acceptanceCriteria": "tests/acceptance/kg_service_architecture.js"
+        }
+      ]
+    },
+    {
+      "description": "通过总知识图谱远端服务接口获取或贡献总知识图谱的其他项目（Agent/应用），是总知识图谱的消费方与贡献方。",
+      "id": "kg-consumer-actor",
+      "name": "知识消费/贡献项目",
+      "type": "Business Actor"
+    },
+    {
+      "description": "对外提供的知识图谱服务：通过 MCP over HTTP/SSE 暴露 ARGO 工具集（语义查询、元素上下文、图谱变更、验收测试等），供各项目统一接入总知识图谱。",
+      "id": "kg-service",
+      "name": "总知识图谱远端服务",
+      "type": "Application Service"
+    },
+    {
+      "description": "部署在远程服务器上的 ARGO MCP 服务网关，将 ARGO MCP 工具集（读/写/验证/检索）以 HTTP/SSE 传输暴露为远端接口，作为总知识图谱服务的技术实现。",
+      "id": "kg-argo-gateway",
+      "name": "ARGO MCP HTTP/SSE 网关",
+      "type": "Application Component"
+    },
+    {
+      "description": "总知识图谱 canonical JSON（design/KG/SystemArchitecture.json），由 graph-wiki 项目 git 托管、以独立图身份演进，是知识内容的单一事实源。",
+      "id": "kg-master-graph",
+      "name": "总知识图谱",
+      "type": "Data Object"
+    },
+    {
+      "description": "远程 Linux 服务器（Ubuntu 22.04，120.24.114.13，Docker + Nginx），承载总知识图谱服务的运行时环境。",
+      "id": "kg-server-node",
+      "name": "知识图谱服务器",
+      "type": "Node"
+    },
+    {
+      "description": "远程 Neo4j 实例：提供总知识图谱的结构化投影存储、图查询（queryNeo4jGraph）与 embedding 语义检索（memory_search / getSystemArchitecture）。",
+      "id": "kg-neo4j",
+      "name": "Neo4j 投影与语义存储",
+      "type": "System Software"
+    },
+    {
+      "description": "远程服务器的 Nginx，负责 HTTP/SSE 反向代理、TLS 终止与端口转发，将 ARGO 网关服务暴露给各项目。",
+      "id": "kg-nginx",
+      "name": "Nginx 反向代理",
+      "type": "System Software"
+    },
+    {
+      "description": "远程服务器上的容器运行时，用于容器化部署 Neo4j 与 ARGO 网关服务。",
+      "id": "kg-docker",
+      "name": "Docker Engine",
+      "type": "System Software"
     }
   ],
   "relationships": [
@@ -109,6 +178,96 @@
       "target_id": "1240",
       "source_name": "Implementation and Migration Viewpoint",
       "target_name": "Application Cooperation Viewpoint"
+    },
+    {
+      "id": "kg-consume-rel",
+      "name": "知识服务",
+      "source_id": "kg-service",
+      "source_name": "总知识图谱远端服务",
+      "statement": "总知识图谱远端服务 --(Serving)--> 知识消费/贡献项目",
+      "target_id": "kg-consumer-actor",
+      "target_name": "知识消费/贡献项目",
+      "type": "Serving"
+    },
+    {
+      "id": "kg-realize-gateway-rel",
+      "name": "服务实现",
+      "source_id": "kg-argo-gateway",
+      "source_name": "ARGO MCP HTTP/SSE 网关",
+      "statement": "ARGO MCP HTTP/SSE 网关 --(Realization)--> 总知识图谱远端服务",
+      "target_id": "kg-service",
+      "target_name": "总知识图谱远端服务",
+      "type": "Realization"
+    },
+    {
+      "id": "kg-access-graph-rel",
+      "name": "读写总图谱",
+      "source_id": "kg-argo-gateway",
+      "source_name": "ARGO MCP HTTP/SSE 网关",
+      "statement": "ARGO MCP HTTP/SSE 网关 --(Access)--> 总知识图谱",
+      "target_id": "kg-master-graph",
+      "target_name": "总知识图谱",
+      "type": "Access"
+    },
+    {
+      "id": "kg-node-realize-gateway-rel",
+      "name": "网关承载",
+      "source_id": "kg-server-node",
+      "source_name": "知识图谱服务器",
+      "statement": "知识图谱服务器 --(Realization)--> ARGO MCP HTTP/SSE 网关",
+      "target_id": "kg-argo-gateway",
+      "target_name": "ARGO MCP HTTP/SSE 网关",
+      "type": "Realization"
+    },
+    {
+      "id": "kg-neo4j-serving-rel",
+      "name": "投影检索服务",
+      "source_id": "kg-neo4j",
+      "source_name": "Neo4j 投影与语义存储",
+      "statement": "Neo4j 投影与语义存储 --(Serving)--> ARGO MCP HTTP/SSE 网关",
+      "target_id": "kg-argo-gateway",
+      "target_name": "ARGO MCP HTTP/SSE 网关",
+      "type": "Serving"
+    },
+    {
+      "id": "kg-nginx-serving-rel",
+      "name": "反向代理服务",
+      "source_id": "kg-nginx",
+      "source_name": "Nginx 反向代理",
+      "statement": "Nginx 反向代理 --(Serving)--> ARGO MCP HTTP/SSE 网关",
+      "target_id": "kg-argo-gateway",
+      "target_name": "ARGO MCP HTTP/SSE 网关",
+      "type": "Serving"
+    },
+    {
+      "id": "kg-node-assign-neo4j-rel",
+      "name": "Neo4j 承载",
+      "source_id": "kg-server-node",
+      "source_name": "知识图谱服务器",
+      "statement": "知识图谱服务器 --(Assignment)--> Neo4j 投影与语义存储",
+      "target_id": "kg-neo4j",
+      "target_name": "Neo4j 投影与语义存储",
+      "type": "Assignment"
+    },
+    {
+      "id": "kg-node-assign-nginx-rel",
+      "name": "Nginx 承载",
+      "source_id": "kg-server-node",
+      "source_name": "知识图谱服务器",
+      "statement": "知识图谱服务器 --(Assignment)--> Nginx 反向代理",
+      "target_id": "kg-nginx",
+      "target_name": "Nginx 反向代理",
+      "type": "Assignment"
+    },
+    {
+      "id": "kg-node-assign-docker-rel",
+      "name": "Docker 承载",
+      "source_id": "kg-server-node",
+      "source_name": "知识图谱服务器",
+      "statement": "知识图谱服务器 --(Assignment)--> Docker Engine",
+      "target_id": "kg-docker",
+      "target_name": "Docker Engine",
+      "type": "Assignment"
     }
   ],
   "views": [
@@ -142,7 +301,8 @@
       "included_elements": [
         "1249",
         "1240",
-        "kb-admin-actor"
+        "kb-admin-actor",
+        "kg-service-domain"
       ],
       "included_relationships": [
         "1161"
@@ -167,6 +327,33 @@
       "view_name": "个人知识库规则",
       "included_elements": [
         "kb-rule-knowledge-to-kg"
+      ]
+    },
+    {
+      "description": "总知识图谱服务化部署架构视图：展示远程服务器上的 ARGO MCP 网关、Neo4j 投影与语义存储、Nginx 反向代理，以及各项目通过远端接口获取/贡献总知识图谱的协作关系。",
+      "parent_element_id": "kg-service-domain",
+      "view_id": "kg-service-arch",
+      "view_name": "总知识图谱服务架构",
+      "included_elements": [
+        "kg-consumer-actor",
+        "kg-service",
+        "kg-argo-gateway",
+        "kg-master-graph",
+        "kg-server-node",
+        "kg-neo4j",
+        "kg-nginx",
+        "kg-docker"
+      ],
+      "included_relationships": [
+        "kg-consume-rel",
+        "kg-realize-gateway-rel",
+        "kg-access-graph-rel",
+        "kg-node-realize-gateway-rel",
+        "kg-neo4j-serving-rel",
+        "kg-nginx-serving-rel",
+        "kg-node-assign-neo4j-rel",
+        "kg-node-assign-nginx-rel",
+        "kg-node-assign-docker-rel"
       ]
     }
   ]
