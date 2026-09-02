@@ -352,6 +352,18 @@
           "value": "b1fb13f: design/KG/SystemArchitecture.json"
         }
       ]
+    },
+    {
+      "id": "kb-admin-session-20260902-simplify",
+      "name": "会话记录 2026-09-02 简化重构",
+      "type": "Business Object",
+      "description": "2026-09-02 会话摘要：用户决定弃用 ARGO/ArchGraph 整套工具链（意图图+Neo4j+语义检索+MCP 网关+验收测试），资产共建共享改为轻量方案：Git 仓库+静态目录文件（catalog.json 索引 + agents/skills/rules/hooks/knowledge 分类目录），无服务依赖，资产即文件。已执行：删除 server/ 部署代码；重建 assets/（catalog.json+skills/argo.md+README）；移除远程 Neo4j 容器、ARGO 网关 systemd 服务、Nginx /mcp 代理；同步远程 assets 为新结构。关键决策：资产目录以 catalog.json 为唯一事实源，登记 id/type/name/version/path/sourceRepo/sourceCommit/description；获取走 git clone/submodule，贡献走 git 提交。commit 90283fc/dd4466e/94f1256。",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "94f1256: assets/catalog.json, assets/README.md, assets/skills/argo.md"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -604,7 +616,8 @@
         "kb-admin-session-20260824",
         "kb-admin-session-20260901",
         "kb-admin-session-20260902-deploy",
-        "kb-admin-session-20260902-assets"
+        "kb-admin-session-20260902-assets",
+        "kb-admin-session-20260902-simplify"
       ],
       "included_relationships": []
     },
