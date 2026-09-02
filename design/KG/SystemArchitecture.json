@@ -412,6 +412,18 @@
           "value": "9ae8050: README.md, community/PLAN.md, community/SUBGRAPH-SPEC.md, community/CONTRIBUTING.md, assets/catalog.json"
         }
       ]
+    },
+    {
+      "id": "kb-admin-session-20260902-website",
+      "name": "会话记录 2026-09-02 门户网站",
+      "type": "Business Object",
+      "description": "2026-09-02 会话摘要：为 ArchGraph 社区建立 Docusaurus 门户网站（并入 graph-wiki/website/）。内容：首页（框架介绍+6特性卡）、docs/intro（框架）、docs/community（总览/子图规范/贡献指南）、独立 /community 页、/graphs 子图库页（浏览器跨域 fetch argo.derekworkspacev5.com/mcp 实时拉取 graph_list，CORS 已放行）。技术：Docusaurus 3.10 classic TS，双语言 zh-Hans/en，品牌色 #4d6bfe，npm 用 npmmirror 镜像（默认源超时）。已部署远程服务器：/var/www/archgraph.org，Nginx 站点 archgraph.org 已配置（HTTP 200）。子图库现 3 个图谱：graph-collab-demo、abot-overseer-capability-001、0824-lmt-governance-001（KG-LMT 长期记忆治理，13元素17关系2视图，新贡献）。TODO：archgraph.org DNS 仍指向 GitHub Pages/Cloudflare，需切到服务器 120.24.114.13（A 记录或 Cloudflare 回源）。commit befae28。",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "befae28: website/"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -669,7 +681,8 @@
         "kb-admin-session-20260902-assetmcp",
         "kb-admin-session-20260902-graphasset",
         "kb-admin-session-20260902-graphonly",
-        "kb-admin-session-20260902-community"
+        "kb-admin-session-20260902-community",
+        "kb-admin-session-20260902-website"
       ],
       "included_relationships": []
     },
