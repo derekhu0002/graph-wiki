@@ -448,6 +448,18 @@
           "value": "69a99f0: website/docs/archimate/, website/docusaurus.config.ts, website/src/pages/index.tsx"
         }
       ]
+    },
+    {
+      "id": "kb-admin-session-20260902-graphdetail",
+      "name": "会话记录 2026-09-02 图谱详情页",
+      "type": "Business Object",
+      "description": "2026-09-02 会话摘要：子图库新增图谱详情页与可视化。新增 graph-detail.tsx（query?id=xxx 路由，graph_get 拉完整图）：每个视图一个 Section，React Flow(@xyflow/react v12) 画布圆形自动布局展示元素节点(带名称/类型/按 ArchiMate 层级着色 Business蓝/App绿/Tech橙/Motivation红)与关系边(带类型 label smoothstep)；下方元素表(#/名称/类型/ID/描述)与关系表(#/关系/类型/来源/目标/statement)。graph-detail 从 graphs 列表卡片链接进入。抽公共 lib/mcp.ts(graphList/graphGet)+components/GraphVisualizer.tsx。已部署公网 https://argo.derekworkspacev5.com/archgraph/graph-detail?id=xxx 验证 200，graph_get 数据链路齐备。经验：Docusaurus SPA 客户端渲染 curl 只能验证 HTML 壳；query 参数用 useLocation。commit 90b9073。",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "90b9073: website/src/pages/graph-detail.tsx, website/src/components/GraphVisualizer.tsx, website/src/lib/mcp.ts"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -708,7 +720,8 @@
         "kb-admin-session-20260902-community",
         "kb-admin-session-20260902-website",
         "kb-admin-session-20260902-portal-live",
-        "kb-admin-session-20260902-archimate-col"
+        "kb-admin-session-20260902-archimate-col",
+        "kb-admin-session-20260902-graphdetail"
       ],
       "included_relationships": []
     },
