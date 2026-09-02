@@ -21,6 +21,16 @@
       "sourceRepo": "graph-wiki",
       "sourceCommit": "e2e9ab3d8286d945dd2adc31f578c5d777c8ce0b",
       "description": "团队提交信息规范"
+    },
+    {
+      "id": "rule-python-style",
+      "type": "RULE",
+      "name": "Python 代码规范",
+      "version": "1.0.0",
+      "path": "rules/rule-python-style.md",
+      "sourceRepo": "graph-wiki",
+      "sourceCommit": "5deef09bd9e141862de11917f33224a4c1f48176",
+      "description": "团队 Python 开发规范"
     }
   ]
 }
