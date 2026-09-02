@@ -85,15 +85,104 @@ ARCHGRAPH 图谱（不是独立单文件）。
 
 ## 部署
 
+服务为纯 Node 实现（零外部依赖，仅用内置模块），部署非常轻量。
+
+### 仓库
+
+源码托管在 GitHub：`https://github.com/derekhu0002/graph-wiki.git`
+
+> 运行服务实际只需要仓库中的 `mcp/` 与 `assets/` 两个部分，其余目录（design/tests/.argo 等）
+> 与 MCP 服务无关。
+
+### 方式一：Git clone 最小运行
+
 ```bash
-# 远程部署（含 systemd 服务 + Nginx 反代）
-bash mcp/deploy-asset-mcp.sh root@120.24.114.13
+# 1. Clone（只拉最新历史）
+git clone --depth 1 https://github.com/derekhu0002/graph-wiki.git graph-mcp
+cd graph-mcp
+
+# 2. 配置 git 身份（服务自动提交资产时必需）
+git config user.name "graph-mcp"
+git config user.email "graph-mcp@localhost"
+
+# 3. 前台启动测试
+ASSET_REPO_ROOT=$(pwd) ASSET_MCP_PORT=18792 node mcp/asset-mcp-server.js
+# 看到 "listening on http://127.0.0.1:18792" 即成功
+
+# 4. 健康检查
+curl http://127.0.0.1:18792/health   # → {"status":"ok","service":"graph-mcp"}
 ```
 
-远程服务:
-- systemd: `asset-mcp`
-- 资产根: `/opt/graph-wiki/assets`（Git 仓库管理）
-- 提交: 每次 graph_submit/graph_update 自动 git commit
+### 方式二：生产部署（systemd）
+
+```bash
+# 1. Clone 到 /opt/graph-mcp
+sudo mkdir -p /opt/graph-mcp
+sudo git clone --depth 1 https://github.com/derekhu0002/graph-wiki.git /opt/graph-mcp
+cd /opt/graph-mcp
+sudo git config user.name "graph-mcp"
+sudo git config user.email "graph-mcp@localhost"
+
+# 2. 创建 systemd 服务
+sudo tee /etc/systemd/system/graph-mcp.service > /dev/null <<'EOF'
+[Unit]
+Description=Graph Asset MCP HTTP/SSE Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/graph-mcp
+Environment=ASSET_REPO_ROOT=/opt/graph-mcp
+Environment=ASSET_MCP_PORT=18792
+Environment=ASSET_MCP_HOST=127.0.0.1
+ExecStart=/usr/bin/node /opt/graph-mcp/mcp/asset-mcp-server.js
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# 3. 启动并设置开机自启
+sudo systemctl daemon-reload
+sudo systemctl enable --now graph-mcp
+sudo systemctl status graph-mcp
+```
+
+### 方式三：公网暴露（可选，Nginx 反代）
+
+若要让其他设备/Agent 通过域名访问，用 Nginx 反代（含 SSE 支持）：
+
+```nginx
+location /mcp {
+    proxy_pass http://127.0.0.1:18792/mcp;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_buffering off;
+    proxy_cache off;
+    proxy_read_timeout 3600s;
+    proxy_send_timeout 3600s;
+    proxy_set_header Connection '';
+}
+```
+
+### 多设备同步
+
+每台设备上的服务做 `graph_submit/graph_update` 时自动**本地 git commit**，
+但不会 `git push`。多设备共享资产需定期手动同步：
+
+```bash
+cd /opt/graph-mcp
+git pull   # 拉取其他设备/本机已推送的新提交
+git push   # 推送本设备的资产提交回 GitHub
+```
+
+> 注意：git commit 的源分支是各设备独立的本地 commit，多设备部署建议以 GitHub
+> 为主仓，各设备 pull/push 对齐，避免分叉。
 
 ## 环境变量
 
