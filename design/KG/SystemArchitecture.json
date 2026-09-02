@@ -424,6 +424,18 @@
           "value": "befae28: website/"
         }
       ]
+    },
+    {
+      "id": "kb-admin-session-20260902-portal-live",
+      "name": "会话记录 2026-09-02 门户上线",
+      "type": "Business Object",
+      "description": "2026-09-02 会话摘要：ArchGraph 社区门户网站上线。Docusaurus 站（graph-wiki/website/）部署到已备案域名 https://argo.derekworkspacev5.com/archgraph/（含首页/框架文档/社区/子图库/博客，子图库从 /mcp 同源拉取 graph_list 实时展示）。关键决策与经验教训：1) archgraph.org 原指向 GitHub Pages，切到阿里云服务器(120.24.114.13)后遇 ICP 备案拦截（403 Non-compliance ICP Filing，阿里云平台层强制，Cloudflare 无法绕过），已恢复指向 GitHub Pages 并计划走备案或子路径；2) 子路径方案 baseUrl=/archgraph/ 规避备案；3) Cloudflare 橙色云回源需 SSL 模式 flexible（源站仅 80）；4) npm 默认源慢需用 npmmirror。子图库现有 3 图（graph-collab-demo/abot-overseer-capability-001/0824-lmt-governance-001）。commit 154f456 已 push。TODO: archgraph.org 备案后切回独立域名；/archgraph/graphs 页同源 /mcp 已验证。",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "154f456: website/"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -682,7 +694,8 @@
         "kb-admin-session-20260902-graphasset",
         "kb-admin-session-20260902-graphonly",
         "kb-admin-session-20260902-community",
-        "kb-admin-session-20260902-website"
+        "kb-admin-session-20260902-website",
+        "kb-admin-session-20260902-portal-live"
       ],
       "included_relationships": []
     },
