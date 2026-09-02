@@ -460,6 +460,18 @@
           "value": "90b9073: website/src/pages/graph-detail.tsx, website/src/components/GraphVisualizer.tsx, website/src/lib/mcp.ts"
         }
       ]
+    },
+    {
+      "id": "kb-admin-session-20260903-graphfix",
+      "name": "会话记录 2026-09-03 可视化修复",
+      "type": "Business Object",
+      "description": "2026-09-03 会话摘要：修复图谱详情页可视化问题。1) 关系连线缺箭头：React Flow 边需显式 markerEnd={type:MarkerType.ArrowClosed}（v12 MarkerType.ArrowClosed=arrowclosed 编译为数字枚举）。2) 关系标签改为 名称/类型（r.name && r.name!==r.type ? 名称/类型 : 类型）。3) 节点拖拽不生效根因：React Flow v12 是受控组件，nodes 直接作 prop 无状态更新则拖不动；需 useNodesState(initial)+onNodesChange（返回[nodes,setNodes,onNodesChange]，用 const [nodes,,onNodesChange] 跳过 setNodes）。已验证构建+公网部署 200。commit 49dc33d。",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "49dc33d: website/src/components/GraphVisualizer.tsx"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -721,7 +733,8 @@
         "kb-admin-session-20260902-website",
         "kb-admin-session-20260902-portal-live",
         "kb-admin-session-20260902-archimate-col",
-        "kb-admin-session-20260902-graphdetail"
+        "kb-admin-session-20260902-graphdetail",
+        "kb-admin-session-20260903-graphfix"
       ],
       "included_relationships": []
     },
