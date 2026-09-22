@@ -1,6 +1,74 @@
 {
   "schemaVersion": "1.0",
   "lastUpdated": "2026-09-22",
-  "members": [],
-  "grants": []
+  "members": [
+    {
+      "id": "archgraph",
+      "name": "ArchGraph 框架项目",
+      "role": "ArchGraph 框架项目：提供联邦规则、ARGO MCP 工具链与 Graph MCP 接口契约",
+      "capabilities": [
+        "架构意图图框架",
+        "ARGO MCP 工具链",
+        "联邦规则与 MCP 接口契约",
+        "多 Agent 记忆与语义检索"
+      ],
+      "openContent": [
+        {
+          "id": "archgraph-federation-rules",
+          "name": "框架侧联邦规则与工具契约（FederationGuideline + CoreRule 12）",
+          "ref": "https://github.com/derekhu0002/archgraph/blob/main/argo/rules/archgraph.instructions.md"
+        },
+        {
+          "id": "archgraph-federation-design",
+          "name": "联邦式组织级图谱设计稿（中心机构 + 规则内化）",
+          "ref": "graph://archgraph/design/KG/SystemArchitecture.json#overseer-federation-center-design-001"
+        }
+      ],
+      "sourceRepo": "https://github.com/derekhu0002/archgraph",
+      "status": "active",
+      "registeredAt": "2026-09-22T15:45:38.798Z",
+      "updatedAt": "2026-09-22T15:48:49.014Z"
+    },
+    {
+      "id": "soc-demo",
+      "name": "SOC-DEMO 项目",
+      "role": "SOC / 车联网 VSOC 安全运营中心原型项目：Elastic Stack SOC 运营实验、车 VSOC Elastic 演示、Apache Doris 产品化 VSOC、OpenSearch Security Analytics SOC 原型",
+      "capabilities": [
+        "SOC 运营实验(ES+Kibana+Fleet/Agent/SIEM)",
+        "车联网 VSOC(车端模拟→归一化→检测→车队大盘)",
+        "Apache Doris 产品化 VSOC(事件 Schema/检测规则/Web 大盘)",
+        "OpenSearch Security Analytics SOC(SA 规则→Doris 规则同步)"
+      ],
+      "openContent": [
+        {
+          "id": "soc-demo-canonical-graph",
+          "name": "SOC-DEMO 意图图(引用)",
+          "ref": "graph://soc-demo/design/KG/SystemArchitecture.json"
+        },
+        {
+          "id": "soc-demo-architect-memory",
+          "name": "SOC-DEMO 架构师职责与记忆视图(引用)",
+          "ref": "graph://soc-demo/design/KG/SystemArchitecture.json#soc-demo-architect"
+        }
+      ],
+      "sourceRepo": "https://github.com/derekhu0002/SOC-DEMO",
+      "status": "active",
+      "registeredAt": "2026-09-22T15:51:18.585Z",
+      "updatedAt": "2026-09-22T15:51:18.585Z"
+    }
+  ],
+  "grants": [
+    {
+      "grantor": "archgraph",
+      "grantee": "soc-demo",
+      "contentId": "*",
+      "grantedAt": "2026-09-22T15:48:53.686Z"
+    },
+    {
+      "grantor": "soc-demo",
+      "grantee": "archgraph",
+      "contentId": "*",
+      "grantedAt": "2026-09-22T15:51:26.599Z"
+    }
+  ]
 }
