@@ -682,6 +682,26 @@
       "id": "kb-admin-session-20260922-federation-page",
       "name": "会话记录 2026-09-22 联邦成员页",
       "type": "Business Object"
+    },
+    {
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "b3f8dab: assets/registry/registry.json"
+        },
+        {
+          "name": "commit",
+          "value": "76d31d8: mcp/registry-sync.sh, .gitattributes, mcp/README.md"
+        },
+        {
+          "name": "commit",
+          "value": "3941c51: design/KG/SystemArchitecture.json"
+        }
+      ],
+      "description": "2026-09-23 会话摘要（跨项目需求，ArchGraph 框架项目总管委派）：把服务器侧联邦注册中心改动回补 GitHub 主仓并建立持续同步。已执行：1) 查明服务器 /opt/graph-wiki 为 deploy 脚本 git init 的独立仓库（无 remote、master 分支、asset-mcp@localhost、无 GitHub 凭据），8 条 registry commit 仅本地未 push；2) 回补——scp 服务器 live registry.json（archgraph+soc-demo 2 成员、2 授权）写入主仓 commit b3f8dab；3) push 本机联邦成员页等 9 提交 + 回补 → main 76d31d8，无分歧（pull --rebase 确认 up to date）；4) 同步机制——新增 mcp/registry-sync.sh（push/pull 双向、幂等）+ .gitattributes（*.json/*.sh 强制 LF 防跨设备换行抖动）+ mcp/README.md 多设备同步与 cron/触发式说明。关键决策：服务器无 GitHub 凭据，持续 push 落在「持有凭据机器」跑脚本 + cron，可选升级为服务器只写 deploy key 后 gitCommit 追加 push。已登记：federation-registry-data←b3f8dab、federation-registry-artifact←76d31d8。经验教训：服务器 git 是独立 init 非 clone，与 GitHub 历史无关，事实源对齐靠文件内容覆盖而非历史合并。TODO：服务器 graph_submit/graph_update 产生的 assets/graphs+catalog 同样未回主仓，属另一同步缺口待后续决策。",
+      "id": "kb-admin-session-20260923-registry-sync",
+      "name": "会话记录 2026-09-23 联邦注册中心同步",
+      "type": "Business Object"
     }
   ],
   "relationships": [
@@ -1052,7 +1072,8 @@
       "description": "个人知识库管理员 Business Actor 的长期记忆子视图挂载点（SUBVIEW hierarchy）。历史工作信息、关键决策、经验教训等写入此层级。",
       "included_elements": [
         "kb-admin-session-20260922-federation",
-        "kb-admin-session-20260922-federation-page"
+        "kb-admin-session-20260922-federation-page",
+        "kb-admin-session-20260923-registry-sync"
       ],
       "included_relationships": []
     },
