@@ -12,6 +12,11 @@ const cards = [
     to: '/graphs',
   },
   {
+    title: '联邦成员',
+    body: '联邦注册中心已登记的成员清单（元数据 + 开放内容引用）。',
+    to: '/federation',
+  },
+  {
     title: '子图规范',
     body: '子图命名、类型、质量门槛（schema 校验）。',
     to: '/docs/community/subgraph-spec',

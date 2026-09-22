@@ -55,6 +55,7 @@ const config: Config = {
         {to: '/docs/archimate', label: 'ArchiMate 建模', position: 'left'},
         {to: '/community', label: '社区', position: 'left'},
         {to: '/graphs', label: '子图库', position: 'left'},
+        {to: '/federation', label: '联邦成员', position: 'left'},
         {to: '/blog', label: '博客', position: 'left'},
         {
           href: 'https://github.com/derekhu0002/archgraph',

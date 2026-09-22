@@ -45,6 +45,21 @@ export type GraphAssetMeta = {
   stats?: {elements?: number; relationships?: number; views?: number};
 };
 
+export type FederationOpenContentRef = {
+  id: string;
+  name: string;
+  ref: string;
+};
+
+export type FederationMember = {
+  id: string;
+  name: string;
+  role: string;
+  capabilities: string[];
+  openContent: FederationOpenContentRef[];
+  sourceRepo: string;
+};
+
 const MCP_URL = '/mcp';
 
 export async function mcpCall(name: string, args: Record<string, unknown>): Promise<any> {
@@ -69,4 +84,9 @@ export async function graphList(): Promise<GraphAssetMeta[]> {
 export async function graphGet(id: string): Promise<{asset: GraphAssetMeta; graph: ArchGraph}> {
   const r = await mcpCall('graph_get', {id});
   return {asset: r.asset, graph: r.content};
+}
+
+export async function registryDiscover(): Promise<FederationMember[]> {
+  const r = await mcpCall('registry_discover', {});
+  return r.members || [];
 }

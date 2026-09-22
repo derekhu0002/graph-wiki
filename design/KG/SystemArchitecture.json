@@ -629,6 +629,21 @@
           "value": "bc52bdf: design/KG/SystemArchitecture.json"
         }
       ]
+    },
+    {
+      "description": "社区站（Docusaurus）人类可见的联邦成员页（路由 /federation）。经 Graph MCP registry_discover 实时拉取已登记成员清单，逐成员展示 id/name/role/capabilities/openContent；openContent 以引用（ref 链接）呈现，不抓取、不内联成员内容。",
+      "id": "federation-members-page",
+      "name": "联邦成员页",
+      "testcases": [
+        {
+          "Input": "GIVEN registry 已有成员（archgraph，带 role/capabilities/openContent 引用）\nWHEN 打开联邦成员页 /federation（其数据源 registry_discover 被调用，页面源码按其契约渲染）\nTHEN 列出全部成员及 role/capabilities/openContent 引用链接",
+          "acceptanceCriteria": "tests/acceptance/federation_members_page.js",
+          "description": "外部视角验收：联邦成员页必须可执行通过——registry_discover 返回成员（含 role/capabilities/openContent 引用），页面以 ref 链接呈现开放内容（不内联内容），客户端经 registry_discover 拉取。",
+          "name": "federation-members-page-runnable",
+          "type": "Acceptance Test"
+        }
+      ],
+      "type": "Application Component"
     }
   ],
   "relationships": [
@@ -941,6 +956,16 @@
       "source_name": "ARGO 图隔离发现",
       "target_name": "联邦注册中心服务",
       "statement": "ARGO 图隔离发现 --(Association)--> 联邦注册中心服务"
+    },
+    {
+      "id": "fed-members-page-uses-registry",
+      "name": "拉取成员清单",
+      "source_id": "federation-members-page",
+      "source_name": "联邦成员页",
+      "statement": "联邦成员页 --(Association)--> 联邦注册中心服务",
+      "target_id": "federation-registry",
+      "target_name": "联邦注册中心服务",
+      "type": "Association"
     }
   ],
   "views": [
@@ -1092,7 +1117,8 @@
         "federation-read-func",
         "federation-rule-deny",
         "federation-rule-sovereignty",
-        "federation-registry-artifact"
+        "federation-registry-artifact",
+        "federation-members-page"
       ],
       "included_relationships": [
         "fed-reg-realize-artifact",
@@ -1104,7 +1130,8 @@
         "fed-reg-realize-authorize",
         "fed-reg-realize-read",
         "fed-rule-deny-read",
-        "fed-rule-sovereignty-content"
+        "fed-rule-sovereignty-content",
+        "fed-members-page-uses-registry"
       ]
     },
     {
