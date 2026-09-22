@@ -119,6 +119,10 @@
         {
           "view_id": "federation-registry-view",
           "view_name": "联邦注册中心"
+        },
+        {
+          "view_id": "federation-tooling-view",
+          "view_name": "联邦跨项目协作机制"
         }
       ],
       "testcases": [
@@ -589,6 +593,24 @@
           "value": "dcb85bb: mcp/registry.js, mcp/asset-mcp-server.js, mcp/README.md, mcp/deploy-asset-mcp.sh, assets/registry/registry.json, tests/acceptance/federation_registry.js, design/KG/SystemArchitecture.json"
         }
       ]
+    },
+    {
+      "id": "xproj-msg-mechanism",
+      "name": "跨项目消息传递机制",
+      "type": "Rule",
+      "description": "跨项目投递的可复用机制：OpenCode 桌面版内置 HTTP server（127.0.0.1:<port>，端口每次运行不同）+ Basic 认证（取 env OPENCODE_SERVER_USERNAME / OPENCODE_SERVER_PASSWORD，勿打印值）；POST /session?directory=<项目目录> 建绑定该目录的会话 → POST /session/{id}/message（body {parts:[{type:'text',text:'...'}]}）发送并等待回复。CLI 等价物 opencode run --dir <项目> 'msg'，但本机仅桌面 Electron 版、未装 CLI。"
+    },
+    {
+      "id": "xproj-encoding-norm",
+      "name": "跨项目 UTF-8 编码规范",
+      "type": "Rule",
+      "description": "编码坑（可复用经验）：PowerShell 5.1 对无 charset 的 JSON 默认按 Latin-1 解码 → 发出的中文变 ?；须以 UTF-8 字节发送并显式 Content-Type: application/json; charset=utf-8，响应按 UTF-8 解码。"
+    },
+    {
+      "id": "xproj-isolation-finding",
+      "name": "ARGO 图隔离发现",
+      "type": "Assessment",
+      "description": "隔离发现：各项目 ARGO 图相互隔离（身份/记忆不共享），跨项目消息可达但缺共享身份——正是本联邦中心（Registry）要解决的痛点。"
     }
   ],
   "relationships": [
@@ -891,6 +913,16 @@
       "source_name": "内容主权规则",
       "target_name": "成员开放内容引用",
       "statement": "内容主权规则 --(Association)--> 成员开放内容引用"
+    },
+    {
+      "id": "fed-isolation-motivates-registry",
+      "name": "关联中心建设",
+      "type": "Association",
+      "source_id": "xproj-isolation-finding",
+      "target_id": "federation-registry",
+      "source_name": "ARGO 图隔离发现",
+      "target_name": "联邦注册中心服务",
+      "statement": "ARGO 图隔离发现 --(Association)--> 联邦注册中心服务"
     }
   ],
   "views": [
@@ -1055,6 +1087,21 @@
         "fed-reg-realize-read",
         "fed-rule-deny-read",
         "fed-rule-sovereignty-content"
+      ]
+    },
+    {
+      "view_id": "federation-tooling-view",
+      "view_name": "联邦跨项目协作机制",
+      "parent_element_id": "kg-service-domain",
+      "description": "联邦中心的跨项目通信与编码可复用经验：项目总管 Agent 与 graph-wiki 之间的消息传递机制、UTF-8 编码规范、以及 ARGO 图隔离的发现。供后续跨项目协作复用。",
+      "included_elements": [
+        "xproj-msg-mechanism",
+        "xproj-encoding-norm",
+        "xproj-isolation-finding",
+        "federation-registry"
+      ],
+      "included_relationships": [
+        "fed-isolation-motivates-registry"
       ]
     }
   ]
