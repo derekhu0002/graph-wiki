@@ -52,6 +52,10 @@
         {
           "view_id": "kb-admin-rules",
           "view_name": "个人知识库规则"
+        },
+        {
+          "view_id": "kb-admin-memory-archive",
+          "view_name": "个人知识库管理员-长期记忆归档"
         }
       ],
       "attributes": [
@@ -654,6 +658,18 @@
           "value": "delivered"
         }
       ]
+    },
+    {
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "d18252d: website/src/pages/federation.tsx, website/src/pages/federation.module.css, website/src/lib/mcp.ts, website/docusaurus.config.ts, website/src/pages/community.tsx, tests/acceptance/federation_members_page.js, design/KG/SystemArchitecture.json"
+        }
+      ],
+      "description": "2026-09-22 会话摘要：跨项目需求（ArchGraph 框架项目总管委派）——为社区站新增人类可见「联邦成员」页（此前联邦中心 Registry P0 已上线，但社区站缺成员清单页）。已实现：website/src/pages/federation.tsx（路由 /federation，同源 /mcp registry_discover 实时拉取成员，逐成员展示 id/name/role/capabilities/openContent，openContent 以 ref 外链 target=_blank rel=noopener 呈现、绝不内联内容）+ website/src/lib/mcp.ts 新增 registryDiscover/类型 + navbar/community 入口 + federation.module.css；验收测试 tests/acceptance/federation_members_page.js（GIVEN-WHEN-THEN：数据源契约+页面以 ref 链接呈现）通过，federation_registry.js 回归通过；意图图 federation-registry-view 新增 federation-members-page 元素（Application Component）+ fed-members-page-uses-registry 关系。已部署公网 https://argo.derekworkspacev5.com/archgraph/federation/（200，实时展示 archgraph + soc-demo 两成员）。commit d18252d/0658760。关键决策：页面走同源 /mcp 实时拉取（非构建时静态读取），注册/注销即时反映。经验教训：nginx argo.derekworkspacev5.com 的 /archgraph/ 映射 alias 到 /var/www/archgraph-org/（连字符），与 archgraph.org 站 root /var/www/archgraph.org（点号）是两个不同目录，首误部署到 .org 后经查 nginx 配置修正；本地 assets/registry/registry.json 为空而中心线上 registry_discover 已返回两成员（服务器注册后仅本地 git commit 未 push），故页面必须实时拉取线上端点。TODO：服务器 /opt/graph-wiki 的 registry.json 与 GitHub 主仓同步（pull/push）。",
+      "id": "kb-admin-session-20260922-federation-page",
+      "name": "会话记录 2026-09-22 联邦成员页",
+      "type": "Business Object"
     }
   ],
   "relationships": [
@@ -1023,21 +1039,8 @@
       "parent_element_name": "个人知识库管理员",
       "description": "个人知识库管理员 Business Actor 的长期记忆子视图挂载点（SUBVIEW hierarchy）。历史工作信息、关键决策、经验教训等写入此层级。",
       "included_elements": [
-        "kb-admin-session-20260824",
-        "kb-admin-session-20260901",
-        "kb-admin-session-20260902-deploy",
-        "kb-admin-session-20260902-assets",
-        "kb-admin-session-20260902-simplify",
-        "kb-admin-session-20260902-assetmcp",
-        "kb-admin-session-20260902-graphasset",
-        "kb-admin-session-20260902-graphonly",
-        "kb-admin-session-20260902-community",
-        "kb-admin-session-20260902-website",
-        "kb-admin-session-20260902-portal-live",
-        "kb-admin-session-20260902-archimate-col",
-        "kb-admin-session-20260902-graphdetail",
-        "kb-admin-session-20260903-graphfix",
-        "kb-admin-session-20260922-federation"
+        "kb-admin-session-20260922-federation",
+        "kb-admin-session-20260922-federation-page"
       ],
       "included_relationships": []
     },
@@ -1158,6 +1161,28 @@
       "included_relationships": [
         "fed-isolation-motivates-registry"
       ]
+    },
+    {
+      "description": "个人知识库管理员 Business Actor 的历史会话记录归档层（已完成的旧会话移入此层，active 长期记忆只保留近期会话）。",
+      "included_elements": [
+        "kb-admin-session-20260824",
+        "kb-admin-session-20260901",
+        "kb-admin-session-20260902-deploy",
+        "kb-admin-session-20260902-assets",
+        "kb-admin-session-20260902-simplify",
+        "kb-admin-session-20260902-assetmcp",
+        "kb-admin-session-20260902-graphasset",
+        "kb-admin-session-20260902-graphonly",
+        "kb-admin-session-20260902-community",
+        "kb-admin-session-20260902-website",
+        "kb-admin-session-20260902-portal-live",
+        "kb-admin-session-20260902-archimate-col",
+        "kb-admin-session-20260902-graphdetail",
+        "kb-admin-session-20260903-graphfix"
+      ],
+      "parent_element_id": "kb-admin-actor",
+      "view_id": "kb-admin-memory-archive",
+      "view_name": "个人知识库管理员-长期记忆归档"
     }
   ]
 }
