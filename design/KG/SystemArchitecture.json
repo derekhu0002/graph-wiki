@@ -598,19 +598,37 @@
       "id": "xproj-msg-mechanism",
       "name": "跨项目消息传递机制",
       "type": "Rule",
-      "description": "跨项目投递的可复用机制：OpenCode 桌面版内置 HTTP server（127.0.0.1:<port>，端口每次运行不同）+ Basic 认证（取 env OPENCODE_SERVER_USERNAME / OPENCODE_SERVER_PASSWORD，勿打印值）；POST /session?directory=<项目目录> 建绑定该目录的会话 → POST /session/{id}/message（body {parts:[{type:'text',text:'...'}]}）发送并等待回复。CLI 等价物 opencode run --dir <项目> 'msg'，但本机仅桌面 Electron 版、未装 CLI。"
+      "description": "跨项目投递的可复用机制：OpenCode 桌面版内置 HTTP server（127.0.0.1:<port>，端口每次运行不同）+ Basic 认证（取 env OPENCODE_SERVER_USERNAME / OPENCODE_SERVER_PASSWORD，勿打印值）；POST /session?directory=<项目目录> 建绑定该目录的会话 → POST /session/{id}/message（body {parts:[{type:'text',text:'...'}]}）发送并等待回复。CLI 等价物 opencode run --dir <项目> 'msg'，但本机仅桌面 Electron 版、未装 CLI。",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "bc52bdf: design/KG/SystemArchitecture.json"
+        }
+      ]
     },
     {
       "id": "xproj-encoding-norm",
       "name": "跨项目 UTF-8 编码规范",
       "type": "Rule",
-      "description": "编码坑（可复用经验）：PowerShell 5.1 对无 charset 的 JSON 默认按 Latin-1 解码 → 发出的中文变 ?；须以 UTF-8 字节发送并显式 Content-Type: application/json; charset=utf-8，响应按 UTF-8 解码。"
+      "description": "编码坑（可复用经验）：PowerShell 5.1 对无 charset 的 JSON 默认按 Latin-1 解码 → 发出的中文变 ?；须以 UTF-8 字节发送并显式 Content-Type: application/json; charset=utf-8，响应按 UTF-8 解码。",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "bc52bdf: design/KG/SystemArchitecture.json"
+        }
+      ]
     },
     {
       "id": "xproj-isolation-finding",
       "name": "ARGO 图隔离发现",
       "type": "Assessment",
-      "description": "隔离发现：各项目 ARGO 图相互隔离（身份/记忆不共享），跨项目消息可达但缺共享身份——正是本联邦中心（Registry）要解决的痛点。"
+      "description": "隔离发现：各项目 ARGO 图相互隔离（身份/记忆不共享），跨项目消息可达但缺共享身份——正是本联邦中心（Registry）要解决的痛点。",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "bc52bdf: design/KG/SystemArchitecture.json"
+        }
+      ]
     }
   ],
   "relationships": [
