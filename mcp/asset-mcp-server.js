@@ -31,6 +31,7 @@ const http = require('node:http');
 const path = require('node:path');
 const fs = require('node:fs');
 const { execFileSync } = require('node:child_process');
+const registry = require('./registry.js');
 
 const PORT = Number(process.env.ASSET_MCP_PORT || 18792);
 const HOST = process.env.ASSET_MCP_HOST || '127.0.0.1';
@@ -56,6 +57,7 @@ const ASSET_ROOT = path.resolve(process.env.ASSET_ROOT || path.join(REPO_ROOT, '
 const GIT_DIR = path.resolve(process.env.ASSET_GIT_DIR || REPO_ROOT);
 const CATALOG_PATH = path.join(ASSET_ROOT, 'catalog.json');
 const GRAPHS_DIR = path.join(ASSET_ROOT, 'graphs');
+const REGISTRY_PATH = path.join(ASSET_ROOT, 'registry', 'registry.json');
 
 // ---------- catalog 读写 ----------
 
@@ -347,6 +349,48 @@ function toolGraphUpdate(args) {
   return { status: 'ok', graphId: id, commit: commitResult };
 }
 
+// ---------- 联邦注册中心 Registry（P0 只读） ----------
+
+function toolRegistryRegister(args) {
+  const reg = registry.load(REGISTRY_PATH);
+  const member = registry.registerMember(reg, args);
+  registry.save(REGISTRY_PATH, reg);
+  const commitResult = gitCommit(`feat(registry): register member ${member.id}`, [REGISTRY_PATH]);
+  return { status: 'ok', member: registry.discover(reg).find((m) => m.id === member.id), commit: commitResult };
+}
+
+function toolRegistryDeregister(args) {
+  const id = args && args.id;
+  if (!id) throw new Error('缺少 id');
+  const reg = registry.load(REGISTRY_PATH);
+  const result = registry.deregisterMember(reg, id);
+  registry.save(REGISTRY_PATH, reg);
+  const commitResult = gitCommit(`feat(registry): deregister member ${id}`, [REGISTRY_PATH]);
+  return { status: 'ok', ...result, commit: commitResult };
+}
+
+function toolRegistryDiscover() {
+  const reg = registry.load(REGISTRY_PATH);
+  const members = registry.discover(reg);
+  return { status: 'ok', count: members.length, members };
+}
+
+function toolRegistryAuthorize(args) {
+  const reg = registry.load(REGISTRY_PATH);
+  const grant = registry.authorize(reg, args);
+  registry.save(REGISTRY_PATH, reg);
+  const commitResult = gitCommit(
+    `feat(registry): grant ${grant.grantor} -> ${grant.grantee} (${grant.contentId})`,
+    [REGISTRY_PATH]
+  );
+  return { status: 'ok', grant, commit: commitResult };
+}
+
+function toolRegistryRead(args) {
+  const reg = registry.load(REGISTRY_PATH);
+  return registry.readAuthorized(reg, args);
+}
+
 // ---------- MCP 处理 ----------
 
 const TOOLS = [
@@ -354,6 +398,11 @@ const TOOLS = [
   { name: 'graph_get', description: '获取一张图谱资产（元数据 + 完整 ARCHGRAPH 图谱）', inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
   { name: 'graph_submit', description: '提交新图谱资产（内部自动 ARCHGRAPH schema 校验，不通过则拒收不入库）', inputSchema: { type: 'object', required: ['id', 'graph'], properties: { id: { type: 'string' }, graph: { type: 'object' }, name: { type: 'string' }, version: { type: 'string' }, description: { type: 'string' }, sourceRepo: { type: 'string' } } } },
   { name: 'graph_update', description: '更新图谱资产（内部自动 ARCHGRAPH schema 校验，不通过则拒收不入库）', inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' }, graph: { type: 'object' }, version: { type: 'string' }, description: { type: 'string' }, name: { type: 'string' } } } },
+  { name: 'registry_register', description: '联邦成员自注册到中心（身份/职责/能力/开放内容清单）。中心只存元数据与授权，不存内容副本', inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' }, name: { type: 'string' }, role: { type: 'string' }, capabilities: { type: 'array' }, openContent: { type: 'array' }, sourceRepo: { type: 'string' } } } },
+  { name: 'registry_deregister', description: '联邦成员自注销，注销后 discover 不再可见', inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
+  { name: 'registry_discover', description: '发现已注册联邦成员的基础信息（它是谁、做什么、有什么能力）', inputSchema: { type: 'object', properties: {} } },
+  { name: 'registry_authorize', description: '成员显式授权某请求方读取其对外开放内容；未授权默认拒绝', inputSchema: { type: 'object', required: ['grantor', 'grantee'], properties: { grantor: { type: 'string' }, grantee: { type: 'string' }, contentId: { type: 'string' } } } },
+  { name: 'registry_read', description: '授权后读取成员开放内容（返回引用，非副本）；未授权默认拒绝', inputSchema: { type: 'object', required: ['requester', 'member'], properties: { requester: { type: 'string' }, member: { type: 'string' }, contentId: { type: 'string' } } } },
 ];
 
 const TOOL_HANDLERS = {
@@ -361,6 +410,11 @@ const TOOL_HANDLERS = {
   graph_get: toolGraphGet,
   graph_submit: toolGraphSubmit,
   graph_update: toolGraphUpdate,
+  registry_register: toolRegistryRegister,
+  registry_deregister: toolRegistryDeregister,
+  registry_discover: toolRegistryDiscover,
+  registry_authorize: toolRegistryAuthorize,
+  registry_read: toolRegistryRead,
 };
 
 function sendJson(res, status, payload) {

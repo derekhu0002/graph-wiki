@@ -111,6 +111,10 @@
         {
           "view_id": "org-asset-catalog-view",
           "view_name": "AI 组织资产目录"
+        },
+        {
+          "view_id": "federation-registry-view",
+          "view_name": "联邦注册中心"
         }
       ],
       "testcases": [
@@ -472,6 +476,81 @@
           "value": "49dc33d: website/src/components/GraphVisualizer.tsx"
         }
       ]
+    },
+    {
+      "id": "federation-registry",
+      "name": "联邦注册中心服务",
+      "type": "Application Service",
+      "description": "联邦中心的 P0 只读服务：成员自注册/自注销、发现（discover）、授权、授权后读取。中心只保存元数据与授权，不保存成员内容副本（内容主权归各成员，跨国走引用）。通过 Graph MCP 工具 registry_register / registry_deregister / registry_discover / registry_authorize / registry_read 对外提供服务。",
+      "testcases": [
+        {
+          "name": "federation-registry-p0-read",
+          "description": "外部视角验收：联邦注册中心 P0 只读能力必须可执行通过——成员注册后 discover 可见、未授权读取默认拒绝、授权后读取获得开放内容引用、注销后 discover 不可见。",
+          "type": "Acceptance Test",
+          "Input": "GIVEN 联邦注册中心 Registry 已就绪（registry.js 模块 + 意图图已登记联邦中心视图）\nWHEN 依次执行 成员注册 → 发现 → 未授权读取 → 授权 → 授权后读取 → 注销 → 再发现\nTHEN 注册后 discover 可见基础信息；未授权读取默认拒绝；授权后读取获得开放内容引用；注销后 discover 不再可见；意图图登记联邦中心视图及关键元素",
+          "acceptanceCriteria": "tests/acceptance/federation_registry.js"
+        }
+      ]
+    },
+    {
+      "id": "federation-registry-data",
+      "name": "联邦注册中心元数据",
+      "type": "Data Object",
+      "description": "中心的持久化数据：members（身份/作用职责/能力/对外开放内容清单引用）+ grants（授权记录）。不含任何成员内容副本。"
+    },
+    {
+      "id": "federation-member",
+      "name": "联邦成员项目",
+      "type": "Business Actor",
+      "description": "注册到联邦中心的自治项目（「国家」）。携带身份、作用/职责、能力、对外开放内容清单；可自注册、自注销、授权他人读取其开放内容。"
+    },
+    {
+      "id": "federation-open-content-ref",
+      "name": "成员开放内容引用",
+      "type": "Data Object",
+      "description": "成员对外开放内容的清单条目（id/name/ref），ref 指向成员自身意图图/仓库位置。中心不保存内容副本，内容主权归成员，跨国走引用。"
+    },
+    {
+      "id": "federation-register-func",
+      "name": "成员注册/注销",
+      "type": "Application Function",
+      "description": "成员经 Graph MCP 把自己注册到中心（身份/职责/能力/开放内容清单），也可注销。"
+    },
+    {
+      "id": "federation-discover-func",
+      "name": "成员发现",
+      "type": "Application Function",
+      "description": "任一成员可获取已注册成员的基础信息（它是谁、做什么、有什么能力）。"
+    },
+    {
+      "id": "federation-authorize-func",
+      "name": "成员授权",
+      "type": "Application Function",
+      "description": "成员显式授权某请求方读取其对外开放内容；未授权默认拒绝。"
+    },
+    {
+      "id": "federation-read-func",
+      "name": "授权后读取",
+      "type": "Application Function",
+      "description": "获得授权的请求方读取成员开放内容（返回引用，非副本）。"
+    },
+    {
+      "id": "federation-rule-deny",
+      "name": "默认拒绝规则",
+      "type": "Rule",
+      "description": "未获成员显式授权的请求方请求其内容时，中心默认拒绝。"
+    },
+    {
+      "id": "federation-rule-sovereignty",
+      "name": "内容主权规则",
+      "type": "Rule",
+      "description": "中心只保存元数据与授权，不保存成员内容副本；内容主权归各成员，跨国走引用。"
+    },
+    {
+      "id": "federation-registry-artifact",
+      "name": "Registry MCP 服务代码",
+      "type": "Artifact",
+      "description": "联邦注册中心 P0 的服务代码：mcp/registry.js（元数据/授权模块）+ mcp/asset-mcp-server.js 新增 registry_* 工具。"
     }
   ],
   "relationships": [
@@ -674,6 +753,106 @@
       "target_id": "org-asset-catalog",
       "target_name": "AI 组织资产目录",
       "type": "Association"
+    },
+    {
+      "id": "fed-reg-realize-artifact",
+      "name": "实现联邦中心",
+      "type": "Realization",
+      "source_id": "federation-registry-artifact",
+      "target_id": "federation-registry",
+      "source_name": "Registry MCP 服务代码",
+      "target_name": "联邦注册中心服务",
+      "statement": "Registry MCP 服务代码 --(Realization)--> 联邦注册中心服务"
+    },
+    {
+      "id": "fed-reg-access-data",
+      "name": "读写元数据",
+      "type": "Access",
+      "source_id": "federation-registry",
+      "target_id": "federation-registry-data",
+      "source_name": "联邦注册中心服务",
+      "target_name": "联邦注册中心元数据",
+      "statement": "联邦注册中心服务 --(Access)--> 联邦注册中心元数据"
+    },
+    {
+      "id": "fed-reg-serve-member",
+      "name": "服务成员",
+      "type": "Serving",
+      "source_id": "federation-registry",
+      "target_id": "federation-member",
+      "source_name": "联邦注册中心服务",
+      "target_name": "联邦成员项目",
+      "statement": "联邦注册中心服务 --(Serving)--> 联邦成员项目"
+    },
+    {
+      "id": "fed-data-assoc-content",
+      "name": "登记内容清单",
+      "type": "Association",
+      "source_id": "federation-registry-data",
+      "target_id": "federation-open-content-ref",
+      "source_name": "联邦注册中心元数据",
+      "target_name": "成员开放内容引用",
+      "statement": "联邦注册中心元数据 --(Association)--> 成员开放内容引用"
+    },
+    {
+      "id": "fed-reg-realize-register",
+      "name": "实现注册能力",
+      "type": "Realization",
+      "source_id": "federation-register-func",
+      "target_id": "federation-registry",
+      "source_name": "成员注册/注销",
+      "target_name": "联邦注册中心服务",
+      "statement": "成员注册/注销 --(Realization)--> 联邦注册中心服务"
+    },
+    {
+      "id": "fed-reg-realize-discover",
+      "name": "实现发现能力",
+      "type": "Realization",
+      "source_id": "federation-discover-func",
+      "target_id": "federation-registry",
+      "source_name": "成员发现",
+      "target_name": "联邦注册中心服务",
+      "statement": "成员发现 --(Realization)--> 联邦注册中心服务"
+    },
+    {
+      "id": "fed-reg-realize-authorize",
+      "name": "实现授权能力",
+      "type": "Realization",
+      "source_id": "federation-authorize-func",
+      "target_id": "federation-registry",
+      "source_name": "成员授权",
+      "target_name": "联邦注册中心服务",
+      "statement": "成员授权 --(Realization)--> 联邦注册中心服务"
+    },
+    {
+      "id": "fed-reg-realize-read",
+      "name": "实现读取能力",
+      "type": "Realization",
+      "source_id": "federation-read-func",
+      "target_id": "federation-registry",
+      "source_name": "授权后读取",
+      "target_name": "联邦注册中心服务",
+      "statement": "授权后读取 --(Realization)--> 联邦注册中心服务"
+    },
+    {
+      "id": "fed-rule-deny-read",
+      "name": "约束读取",
+      "type": "Association",
+      "source_id": "federation-rule-deny",
+      "target_id": "federation-read-func",
+      "source_name": "默认拒绝规则",
+      "target_name": "授权后读取",
+      "statement": "默认拒绝规则 --(Association)--> 授权后读取"
+    },
+    {
+      "id": "fed-rule-sovereignty-content",
+      "name": "约束内容主权",
+      "type": "Association",
+      "source_id": "federation-rule-sovereignty",
+      "target_id": "federation-open-content-ref",
+      "source_name": "内容主权规则",
+      "target_name": "成员开放内容引用",
+      "statement": "内容主权规则 --(Association)--> 成员开放内容引用"
     }
   ],
   "views": [
@@ -806,6 +985,37 @@
         "org-asset-catalog-knowledge-rel",
         "org-asset-consumer-access-rel",
         "org-asset-graph-assoc-rel"
+      ]
+    },
+    {
+      "view_id": "federation-registry-view",
+      "view_name": "联邦注册中心",
+      "parent_element_id": "kg-service-domain",
+      "description": "ArchGraph 联邦式组织级图谱的中心（Registry）。每个项目是自治「国家」，各自维护意图图；组织是「联邦」。中心只存成员元数据 + 授权，不存成员内容副本；开放内容走引用（跨国走引用）。P0 只读：注册/注销/发现/授权/授权后读取，暴露为 Graph MCP 工具。",
+      "included_elements": [
+        "federation-registry",
+        "federation-registry-data",
+        "federation-member",
+        "federation-open-content-ref",
+        "federation-register-func",
+        "federation-discover-func",
+        "federation-authorize-func",
+        "federation-read-func",
+        "federation-rule-deny",
+        "federation-rule-sovereignty",
+        "federation-registry-artifact"
+      ],
+      "included_relationships": [
+        "fed-reg-realize-artifact",
+        "fed-reg-access-data",
+        "fed-reg-serve-member",
+        "fed-data-assoc-content",
+        "fed-reg-realize-register",
+        "fed-reg-realize-discover",
+        "fed-reg-realize-authorize",
+        "fed-reg-realize-read",
+        "fed-rule-deny-read",
+        "fed-rule-sovereignty-content"
       ]
     }
   ]

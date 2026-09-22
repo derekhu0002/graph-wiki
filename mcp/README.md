@@ -20,10 +20,33 @@ ARCHGRAPH 图谱（不是独立单文件）。
 | `graph_get` | 获取一张图谱资产（元数据 + 完整 ARCHGRAPH 图谱） |
 | `graph_submit` | 提交新图谱资产（内部自动 schema 校验，不通过则拒收不入库） |
 | `graph_update` | 更新图谱资产（内部自动 schema 校验，不通过则拒收不入库） |
+| `registry_register` | 联邦成员自注册到中心（身份/职责/能力/开放内容清单） |
+| `registry_deregister` | 联邦成员自注销，注销后 discover 不再可见 |
+| `registry_discover` | 发现已注册成员的基础信息（它是谁、做什么、有什么能力） |
+| `registry_authorize` | 成员显式授权某请求方读取其开放内容 |
+| `registry_read` | 授权后读取成员开放内容（引用，非副本）；未授权默认拒绝 |
 
 > 所有写入接口内部自动执行 ARCHGRAPH schema 校验（结构完整性、ArchiMate 类型
 > 合法性、id 唯一、关系端点引用存在、view 成员存在、顶层视图唯一）。
 > 校验不通过则返回错误并停止入库。变更入口唯一化，不支持外部直接写文件。
+
+## 联邦注册中心（Registry，P0 只读）
+
+ArchGraph「联邦式组织级图谱」的中心：每个项目是自治「国家」，各自维护意图图；
+组织是「联邦」。中心只保存**成员元数据**与**授权**，绝不保存成员内容副本——
+内容主权归各成员，开放内容走引用（`ref` 指向成员自身图谱/仓库位置）。
+
+- 元数据文件：`assets/registry/registry.json`（`members[]` + `grants[]`）
+- 逻辑模块：`mcp/registry.js`（纯 Node 零依赖，被服务与验收测试共同复用）
+- 数据语义：`openContent[]` 的每项是 `{ id, name, ref }`，`ref` 是引用而非副本
+
+| 工具 | 语义 |
+|---|---|
+| `registry_register` | 自注册（含 id/name/role/capabilities/openContent/sourceRepo） |
+| `registry_deregister` | 自注销（同时撤销其授予与被授的授权） |
+| `registry_discover` | 读已注册成员基础信息（无鉴权，元数据公开） |
+| `registry_authorize` | grantor 授权 grantee（contentId 缺省 `*` 全部开放内容） |
+| `registry_read` | requester 读 member 开放内容：命中授权返回引用清单，否则 `{status:"denied"}`（默认拒绝） |
 
 ## 接入方式
 

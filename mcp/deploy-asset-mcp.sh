@@ -31,6 +31,7 @@ echo "==> [2/5] 同步 assets/ 和 mcp/"
 ssh -o BatchMode=yes "$SSH_HOST" "mkdir -p $REMOTE_DIR/mcp"
 rsync -az --exclude '.git' "$REPO_ROOT/assets/" "$SSH_HOST:$REMOTE_DIR/assets/"
 rsync -az "$REPO_ROOT/mcp/asset-mcp-server.js" "$SSH_HOST:$REMOTE_DIR/mcp/"
+rsync -az "$REPO_ROOT/mcp/registry.js" "$SSH_HOST:$REMOTE_DIR/mcp/"
 
 # 3. 配置 systemd
 echo "==> [3/5] 配置 systemd 服务 asset-mcp"
