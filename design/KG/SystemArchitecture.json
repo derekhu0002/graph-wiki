@@ -577,6 +577,18 @@
       "name": "Registry MCP 服务代码",
       "type": "Artifact",
       "description": "联邦注册中心 P0 的服务代码：mcp/registry.js（元数据/授权模块）+ mcp/asset-mcp-server.js 新增 registry_* 工具。"
+    },
+    {
+      "id": "kb-admin-session-20260922-federation",
+      "name": "会话记录 2026-09-22 联邦中心P0",
+      "type": "Business Object",
+      "description": "2026-09-22 会话摘要：跨项目需求——ArchGraph 框架（项目总管 Agent）委派 graph-wiki 启动「联邦式组织级图谱」的联邦中心（Registry）P0 只读开发。定位：每项目=自治「国家」（各自意图图），组织=「联邦」，中心落在 graph-wiki（云端托管服务），各项目经 Graph MCP 与中心通信，可自注册/自注销。P0 只读范围：成员自注册/自注销、发现（discover）、授权后读取（未授权默认拒绝）、中心只存元数据+授权不存内容副本（内容主权归成员，跨国走引用）。已实现：新增 mcp/registry.js（纯 Node 零依赖元数据/授权模块）+ asset-mcp-server.js 新增 5 工具 registry_register/deregister/discover/authorize/read；种子 assets/registry/registry.json；意图图新增 federation-registry-view 视图挂 kg-service-domain 下，含 11 元素（federation-registry 服务/元数据/成员/开放内容引用/注册注销/发现/授权/授权后读取/默认拒绝规则/内容主权规则/代码 artifact）+ 10 关系；验收测试 tests/acceptance/federation_registry.js（4 条 GIVEN-WHEN-THEN 行为 + 结构验收）全绿，架构测试 6 例 5 过（kg-mcp-gateway 因远程网关 18789 未起 ECONNREFUSED 属环境无关失败）。commit dcb85bb/11220fc。关键决策：'只读'仅约束内容维度（中心 read-through 不存副本），注册/注销/授权是让读路径有意义的最小元数据写原语，按边界段完整实现 5 项。TODO：框架侧 archgraph 对接规则与工具契约；公网远程部署 registry.js + registry 工具。",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "dcb85bb: mcp/registry.js, mcp/asset-mcp-server.js, mcp/README.md, mcp/deploy-asset-mcp.sh, assets/registry/registry.json, tests/acceptance/federation_registry.js, design/KG/SystemArchitecture.json"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -939,7 +951,8 @@
         "kb-admin-session-20260902-portal-live",
         "kb-admin-session-20260902-archimate-col",
         "kb-admin-session-20260902-graphdetail",
-        "kb-admin-session-20260903-graphfix"
+        "kb-admin-session-20260903-graphfix",
+        "kb-admin-session-20260922-federation"
       ],
       "included_relationships": []
     },
