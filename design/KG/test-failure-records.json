@@ -1,1 +1,15 @@
-[]
+[
+  {
+    "testcasename": "kg-mcp-gateway-runnable",
+    "testdescription": "外部视角验收：总知识图谱 ARGO MCP HTTP/SSE 网关必须可通过 HTTP 健康检查、MCP 握手、工具列表与语义查询真实调用。",
+    "acceptanceCriteria": "tests/acceptance/kg_mcp_gateway.js",
+    "relatedIntentElementId": "kg-gateway-artifact",
+    "status": "failed",
+    "resolvedScriptPath": "tests/acceptance/kg_mcp_gateway.js",
+    "executionCommand": "\"C:\\Program Files\\nodejs\\node.exe\" tests/acceptance/kg_mcp_gateway.js",
+    "exitCode": 1,
+    "failureError": "FAIL: connect ECONNREFUSED 127.0.0.1:18789",
+    "stdout": "",
+    "stderr": "FAIL: connect ECONNREFUSED 127.0.0.1:18789"
+  }
+]

@@ -95,6 +95,10 @@
         {
           "name": "commit",
           "value": "17cc277: design/KG/SystemArchitecture.json, tests/acceptance/kb_rule_knowledge_to_kg.js"
+        },
+        {
+          "name": "deliveryStatus",
+          "value": "delivered"
         }
       ]
     },
@@ -130,6 +134,10 @@
         {
           "name": "commit",
           "value": "2aa9a57: design/KG/SystemArchitecture.json, tests/acceptance/kg_service_architecture.js"
+        },
+        {
+          "name": "deliveryStatus",
+          "value": "delivered"
         }
       ]
     },
@@ -215,6 +223,10 @@
         {
           "name": "commit",
           "value": "9e0f432: server/README.md, server/nginx-kg-mcp.conf"
+        },
+        {
+          "name": "deliveryStatus",
+          "value": "not_delivered"
         }
       ]
     },
@@ -280,6 +292,10 @@
         {
           "name": "commit",
           "value": "45f2592: design/KG/SystemArchitecture.json, assets/asset-catalog.js, assets/README.md, tests/acceptance/org_asset_catalog.js"
+        },
+        {
+          "name": "deliveryStatus",
+          "value": "delivered"
         }
       ]
     },
@@ -489,6 +505,16 @@
           "type": "Acceptance Test",
           "Input": "GIVEN 联邦注册中心 Registry 已就绪（registry.js 模块 + 意图图已登记联邦中心视图）\nWHEN 依次执行 成员注册 → 发现 → 未授权读取 → 授权 → 授权后读取 → 注销 → 再发现\nTHEN 注册后 discover 可见基础信息；未授权读取默认拒绝；授权后读取获得开放内容引用；注销后 discover 不再可见；意图图登记联邦中心视图及关键元素",
           "acceptanceCriteria": "tests/acceptance/federation_registry.js"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "dcb85bb: design/KG/SystemArchitecture.json, mcp/registry.js, mcp/asset-mcp-server.js, mcp/README.md, mcp/deploy-asset-mcp.sh, assets/registry/registry.json, tests/acceptance/federation_registry.js"
+        },
+        {
+          "name": "deliveryStatus",
+          "value": "delivered"
         }
       ]
     },
