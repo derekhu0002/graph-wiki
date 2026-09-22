@@ -643,7 +643,17 @@
           "type": "Acceptance Test"
         }
       ],
-      "type": "Application Component"
+      "type": "Application Component",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "d18252d: website/src/pages/federation.tsx, website/src/pages/federation.module.css, website/src/lib/mcp.ts, website/docusaurus.config.ts, website/src/pages/community.tsx, tests/acceptance/federation_members_page.js, design/KG/SystemArchitecture.json"
+        },
+        {
+          "name": "deliveryStatus",
+          "value": "delivered"
+        }
+      ]
     }
   ],
   "relationships": [
