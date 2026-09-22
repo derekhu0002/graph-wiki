@@ -196,7 +196,7 @@ location /mcp {
 ### 多设备同步
 
 每台设备上的服务做 `graph_submit/graph_update` 时自动**本地 git commit**，
-但不会 `git push`。多设备共享资产需定期手动同步：
+但不会 `git push`。以 GitHub 主仓为唯一事实源，多设备通过 pull/push 对齐，避免分叉：
 
 ```bash
 cd /opt/graph-mcp
@@ -206,6 +206,25 @@ git push   # 推送本设备的资产提交回 GitHub
 
 > 注意：git commit 的源分支是各设备独立的本地 commit，多设备部署建议以 GitHub
 > 为主仓，各设备 pull/push 对齐，避免分叉。
+
+### 联邦注册中心同步（registry.json）
+
+`registry_register / registry_deregister / registry_authorize` 写入
+`assets/registry/registry.json` 并在服务器本地 git 自动 commit，但**不 push**（服务器
+无 GitHub 凭据）。用 `mcp/registry-sync.sh` 在「持有 GitHub push 凭据」的机器上对齐：
+
+```bash
+bash mcp/registry-sync.sh push   # 服务器 -> GitHub（回补/持续同步，幂等，无变化自动跳过）
+bash mcp/registry-sync.sh pull   # GitHub -> 服务器（多设备 pull 对齐）
+```
+
+- **持续同步**：在凭据机 crontab 加定时任务（幂等）：
+  `*/5 * * * * cd /path/to/graph-wiki && bash mcp/registry-sync.sh push >> /var/log/registry-sync.log 2>&1`
+- **触发式 push（可选升级）**：给服务器配置 GitHub 只写 deploy key，再把
+  `asset-mcp-server.js` 的 `gitCommit` 追加一步 `git push origin main`，注册/授权/注销
+  即写完即推；脚本仍作为无凭据场景的兜底。
+- 环境变量可覆盖 `SSH_HOST`（默认 `root@120.24.114.13`）、`REMOTE_DIR`（默认
+  `/opt/graph-wiki`）、`REPO_DIR`（默认脚本所在仓库根）。
 
 ## 环境变量
 
