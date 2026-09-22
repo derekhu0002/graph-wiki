@@ -530,7 +530,13 @@
       "id": "federation-registry-data",
       "name": "联邦注册中心元数据",
       "type": "Data Object",
-      "description": "中心的持久化数据：members（身份/作用职责/能力/对外开放内容清单引用）+ grants（授权记录）。不含任何成员内容副本。"
+      "description": "中心的持久化数据：members（身份/作用职责/能力/对外开放内容清单引用）+ grants（授权记录）。不含任何成员内容副本。",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "b3f8dab: assets/registry/registry.json"
+        }
+      ]
     },
     {
       "id": "federation-member",
@@ -584,7 +590,13 @@
       "id": "federation-registry-artifact",
       "name": "Registry MCP 服务代码",
       "type": "Artifact",
-      "description": "联邦注册中心 P0 的服务代码：mcp/registry.js（元数据/授权模块）+ mcp/asset-mcp-server.js 新增 registry_* 工具。"
+      "description": "联邦注册中心 P0 的服务代码：mcp/registry.js（元数据/授权模块）+ mcp/asset-mcp-server.js 新增 registry_* 工具。",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "76d31d8: mcp/registry-sync.sh, .gitattributes, mcp/README.md"
+        }
+      ]
     },
     {
       "id": "kb-admin-session-20260922-federation",
