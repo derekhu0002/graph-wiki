@@ -763,6 +763,14 @@
         {
           "name": "initReuse",
           "value": "镜像初始化改为复用 initializeWorkspace/ensureArgoHarnessEnvironment（Neo4j 投影 + .qea 全量投影 + semanticLifecycle embedding），不再用自写 JSON 索引/哈希向量"
+        },
+        {
+          "name": "commit",
+          "value": "997d599: mcp/mirror-engine-server.js"
+        },
+        {
+          "name": "commit",
+          "value": "2e2ced7: mcp/sync-mirrors.js"
         }
       ]
     },
@@ -801,6 +809,14 @@
         {
           "name": "commit",
           "value": "4f7f7e: tests/e2e/external_graph_read_cloud.js, mcp/deploy-asset-mcp.sh"
+        },
+        {
+          "name": "commit",
+          "value": "1ead05b: mcp/asset-mcp-server.js, mcp/mirror-engine-client.js"
+        },
+        {
+          "name": "commit",
+          "value": "44a05ea: tests/acceptance/external_graph_read.js"
         }
       ]
     },
@@ -851,6 +867,22 @@
         {
           "name": "deployed",
           "value": "argo.derekworkspacev5.com:/opt/graph-wiki/mcp (asset-mcp-server.js, registry.js, mirror.js, external-read.js, graph-schema.js)"
+        },
+        {
+          "name": "commit",
+          "value": "997d599: mcp/mirror-engine-server.js"
+        },
+        {
+          "name": "commit",
+          "value": "1ead05b: mcp/asset-mcp-server.js, mcp/mirror-engine-client.js"
+        },
+        {
+          "name": "commit",
+          "value": "2e2ced7: mcp/mirror-engine-server.js, mcp/sync-mirrors.js"
+        },
+        {
+          "name": "commit",
+          "value": "44a05ea: tests/acceptance/external_graph_read.js"
         }
       ]
     },
@@ -924,12 +956,28 @@
         {
           "name": "addressedTo",
           "value": "ArchGraph 框架项目（Graph 项目）"
+        },
+        {
+          "name": "commit",
+          "value": "07e2a30: community/EXTERNAL-GRAPH-QUERY-ADAPTATION.md, design/KG/SystemArchitecture.json"
         }
       ],
       "description": "致 ArchGraph 框架项目（Graph 项目）的需求通知：请按《Graph 项目适配需求说明书》完成 ARGO MCP 适配——FR-G1 注册并本地持久化本仓 projectId（.argo/federation.json）；FR-G2 所有查询/检索工具新增可选 projectId（缺省=本仓、提供=外仓，调用中心 POST /graph/read，tool/args 与本地工具同名同参）；FR-G3 结果与拒绝原因透传不降级；FR-G4 本仓零回归。中心接口已交付并云端 E2E 通过（archgraph 298 元素 / soc-demo 386 元素，各独立 database）。正文见 community/EXTERNAL-GRAPH-QUERY-ADAPTATION.md。",
       "id": "graph-project-external-query-notice",
       "name": "Graph 项目需求通知：跨项目图谱查询适配",
       "type": "Business Object"
+    },
+    {
+      "id": "kb-admin-session-20261001-mirror-engine",
+      "name": "会话记录 2026-10-01 镜像引擎复用落地",
+      "type": "Business Object",
+      "description": "2026-10-01 续：跨项目图谱查询落地为「复用 ARGO 引擎」的镜像托管。环境：镜像宿主改用 47.107.161.168（出网可用：npm/docker/阿里 maas；与 Graph Store 120 同私网 172.18.2.191）。装 node v22 + archgraph-argo@0.26.2→/root/.argo + Neo4j Enterprise 5.26（docker argo-neo4j；Community 不能 CREATE DATABASE）。关键设计：每成员一个 workspace(/root/mirrors/<id>)→ARGO 按 workspace 派生独立 database(<id>)；读取用 callTool({workspaceRoot}) per-call → 并发安全。踩坑：.env CRLF(改 LF)、.env 权限(SECRET_FILE_ACL_UNSAFE→chmod 600)、Community 无多库。交付：mcp/mirror-engine-server.js(47 引擎服务，复用 buildHarnessReport + callTool，只读白名单/幂等)、mcp/mirror-engine-client.js(120 代理)、mcp/sync-mirrors.js + systemd timer(每30min，git commit 幂等)、注册即自动建副本 + 注销删库。已建真实副本 archgraph(298元素)/soc-demo(386元素)，云端 E2E 经 120 授权路径全通过。适配说明书 community/EXTERNAL-GRAPH-QUERY-ADAPTATION.md 已刷新(接口改 {requester,projectId,tool,args})，并新增「Graph 项目需求通知」元素。commit 997d599/1ead05b/2e2ced7/44a05ea/07e2a30/5ffe587。",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "5ffe587: design/KG/SystemArchitecture.json"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -1452,7 +1500,8 @@
         "kb-admin-session-20260922-federation",
         "kb-admin-session-20260922-federation-page",
         "kb-admin-session-20260923-registry-sync",
-        "kb-admin-session-20261001-cross-project-query"
+        "kb-admin-session-20261001-cross-project-query",
+        "kb-admin-session-20261001-mirror-engine"
       ],
       "included_relationships": []
     },
