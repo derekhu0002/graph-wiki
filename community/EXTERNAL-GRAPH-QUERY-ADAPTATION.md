@@ -1,147 +1,150 @@
 # 跨项目图谱查询：Graph 项目（ArchGraph 框架）适配需求说明书
 
-> 状态：已交付（中心侧 commit `ad695c7`）
+> 状态：**已刷新**（镜像宿主 47.107.161.168 + ARGO 引擎复用，commit 见文末）
 > 面向：ArchGraph 框架项目（下称「Graph 项目」）
 > 目的：说明 Graph 项目的 ARGO MCP 需要做的适配，使任一项目的 Agent 在查询时可携带一个外部项目 ID，读取外仓知识图谱；不携带时保持本仓行为不变。
 
 ## 1. 背景与目标
 
-Graph Store（graph-wiki 中心）已交付「跨项目图谱查询」：中心托管成员经 **push/merge 审核**后开放的图谱**可用性副本**，并按项目 ID 提供**授权后只读**的查询接口。成员仓仍是事实源，中心不改写成员仓。
+Graph Store（graph-wiki 中心）已交付「跨项目图谱查询」：中心托管成员经 **push/merge 审核**后开放的图谱，**复用 ARGO 引擎**完成 Neo4j 投影 + Qwen 向量化，并按项目 ID 提供**授权后只读**的查询接口（默认拒绝）。成员仓仍是事实源，中心不改写成员仓。
 
-Graph 项目作为 Agent 侧入口，需要让所有**数据查询/检索接口**支持一个可选 `projectId`：缺省=本仓，提供=外仓。二者之间**唯一的交汇**是：Graph 项目的查询在命中外仓时调用中心 REST 接口，由中心完成授权校验与副本查询；两个 MCP 之间**没有直接代码耦合**。
+Graph 项目作为 Agent 侧入口，需要让所有**数据查询/检索接口**支持一个可选 `projectId`：缺省=本仓，提供=外仓。二者之间**唯一的交汇**是：Graph 项目的查询在命中外仓时调用中心 REST 接口，由中心完成授权校验并转发给镜像引擎；两个 MCP 之间**没有直接代码耦合**。
 
 ## 2. 术语
 
-- **中心 / Graph Store**：graph-wiki 提供的远程服务（MCP + REST）。
+- **Graph Store（120）**：graph-wiki 的公开服务，持联邦注册中心（成员/授权）与对外接口 `/mcp`、`/graph/read`；负责**授权判定**。
+- **镜像宿主 / ARGO 镜像引擎（47.107.161.168）**：持有 Neo4j Enterprise + ARGO 引擎，负责**投影/向量化/查询**；每成员一个独立 **Neo4j database**（= `projectId`），与本地项目「一项目一库」一致。
 - **projectId**：联邦成员全局唯一身份，注册时由中心确认唯一。
 - **requester**：发起读取的项目自身 `projectId`。
 - **本仓 / 外仓**：本项目的图谱 / 被查询的那个外部项目的图谱。
 
-## 3. 已就绪的中心接口（graph-wiki 侧，已交付）
+## 3. 架构与拓扑
 
-### 3.1 REST（推荐 Graph 项目直接调用）
+```
+[Graph 项目本地 ARGO MCP] --带 projectId--> POST https://argo.derekworkspacev5.com/graph/read
+        └─ Graph Store(120)：registry 授权判定（默认拒绝）
+             └─ 私网 172.18.2.191:18801 ─> ARGO 镜像引擎(47)
+                    ├─ /mirror/sync  : git 拉取成员仓 → ARGO buildHarnessReport（Neo4j 投影 + .qea + Qwen embedding），按 git commit 幂等
+                    ├─ /graph/read   : callTool(tool, {…, workspaceRoot})  ← 复用 ARGO 读取语义
+                    └─ /mirror/remove: 删库 + 清工作区
+```
+
+- **并发安全**：读取/投影都按**每次调用**显式传 `workspaceRoot`（→ 派生独立 database），不修改进程级 env；A 查 A、B 查 B 互不影响。
+- **副本建设**：注册即自动建副本；另有定时（每 30 分钟）+ 触发重同步，**按 git commit 幂等**（版本未变跳过，变了重投影+重嵌入）。
+
+## 4. 已就绪的中心接口（Graph Store 侧，已交付）
+
+### 4.1 REST（推荐 Graph 项目直接调用）
 
 ```
 POST https://argo.derekworkspacev5.com/graph/read
 Content-Type: application/json
 ```
 
-请求体：
+请求体（工具名与 ARGO 读工具 **1:1 同名**，`args` 即该工具的原生参数；`workspaceRoot`/`architecturePath` 由引擎注入，不用传）：
 
 ```json
 {
   "requester": "<self projectId>",
   "projectId": "<target projectId>",
-  "op": "overview | elements | element | neighbors | views | search",
-  "id": "可选，element/neighbors 用",
-  "type": "可选，elements 用（ArchiMate 类型过滤）",
-  "text": "可选，search 用",
-  "limit": "可选，search 默认 10",
-  "depth": "可选，neighbors 默认 1",
+  "tool": "getSystemArchitecture | getIntentElementContext | getArchitectureViewContext | queryNeo4jGraph | memory_search",
+  "args": { "...": "该 ARGO 工具的原生参数" },
   "contentId": "可选，授权粒度，缺省 *"
 }
+```
+
+示例：
+
+```json
+{ "requester": "soc-demo", "projectId": "archgraph", "tool": "queryNeo4jGraph",
+  "args": { "cypher": "MATCH (e:Element {graphKey:$graphKey}) RETURN count(e) AS n" } }
 ```
 
 成功（HTTP 200）：
 
 ```json
-{
-  "status": "ok",
-  "requester": "...",
-  "projectId": "...",
-  "namespaceKey": "proj:<projectId>",
-  "version": "<成员仓 git commit>",
-  "syncedAt": "<ISO 时间>",
-  "result": { "...": "按 op 返回" }
-}
+{ "status": "ok", "requester": "soc-demo", "projectId": "archgraph",
+  "namespaceKey": "proj:archgraph", "tool": "queryNeo4jGraph",
+  "result": { "status": "passed", "database": "archgraph", "graphKey": "design/KG/SystemArchitecture.json", "records": [ { "n": 298 } ] } }
 ```
 
-拒绝（HTTP 403）与错误（HTTP 400）：
+拒绝（403）/错误（400）：
 
 ```json
-{ "status": "denied", "reason": "not_authorized | member_not_found | mirror_not_synced", "requester": "...", "projectId": "..." }
-{ "status": "bad_request", "reason": "missing_requester_or_projectId | unknown_op:... | ..." }
+{ "status": "denied", "reason": "not_authorized | member_not_found | mirror_not_synced", "requester": "…", "projectId": "…" }
+{ "status": "bad_request", "reason": "tool_not_allowed:<tool> | …" }
 ```
 
-`op` 语义：
+### 4.2 MCP 工具（与 REST 同源）
 
-| op | 入参 | 返回 |
-|---|---|---|
-| `overview` | — | `stats`（elements/byType/views 计数） |
-| `elements` | `type?` | `count` + `elements[]`（id/name/type/description） |
-| `element` | `id` | `element` + `relationships[]`（邻接） |
-| `neighbors` | `id`, `depth?` | `nodes[]` + `edges[]` |
-| `views` | — | `views[]`（view_id/view_name/parent_element_id/members） |
-| `search` | `text`, `limit?` | `results[]`（相似度排序，带 score） |
+`graph_read_external { requester, projectId, tool, args, contentId? }`。
 
-### 3.2 MCP 工具（与 REST 同源）
-
-`graph_read_external { requester, projectId, op, id?, type?, text?, limit?, depth?, contentId? }` —— 同一业务入口，供 MCP 客户端使用。
-
-### 3.3 管理与授权（Graph MCP，供所有者 / 运维）
+### 4.3 管理（Graph MCP）
 
 | 工具 | 用途 |
 |---|---|
-| `registry_register { id, name, role, capabilities, openContent, sourceRepo, branch }` | 注册；中心确认 `id` 唯一；同 id 来自不同 `sourceRepo` 会被拒绝 |
-| `registry_authorize { grantor, grantee, contentId }` | 所有方授权请求方；`contentId` 缺省 `*` |
-| `mirror_sync { projectId }` | 中心按成员已审核分支同步副本（投影 + 向量化） |
-| `registry_deregister { id }` | 注销并移除中心副本、回收授权 |
+| `registry_register { id, name, role, capabilities, openContent, sourceRepo, branch }` | 注册；**自动触发一次镜像建设**；中心确认 `id` 唯一 |
+| `registry_authorize { grantor, grantee, contentId }` | 所有方授权请求方（缺省 `*`）|
+| `mirror_sync { projectId, sourceRepo?, branch? }` | 手动/重同步副本（按 git commit 幂等）|
+| `mirror_list` | 列出已托管副本 |
+| `registry_deregister { id }` | 注销并删除镜像（删库+清工作区）、回收授权 |
 
-## 4. Graph 项目需要适配的内容（需求）
+## 5. Graph 项目需要适配的内容（需求）
 
 ### FR-G1 获取并持久化本仓 projectId（前置）
 
-- 首次接入：调用 `registry_register` 完成注册，把中心确认的 `id` 作为本仓 `projectId`。
+- 首次接入：调用 `registry_register` 完成注册（会自动建副本），把中心确认的 `id` 作为本仓 `projectId`。
 - **本地持久化**到工作区，例如 `.argo/federation.json`：
   ```json
-  { "projectId": "<id>", "sourceRepo": "<repo>", "centerUrl": "https://argo.derekworkspacev5.com", "branch": "main", "registeredAt": "<ISO>" }
+  { "projectId": "<id>", "sourceRepo": "<repo>", "centerUrl": "https://argo.derekworkspacev5.com", "branch": "main" }
   ```
-- ARGO MCP 启动/外仓查询时读取该文件得到 **self projectId**，用于填 `requester`；**文件缺失时必须报错并提示先注册，不得猜测或留空**。
+- ARGO MCP 外仓查询时读取该文件得到 **self projectId** 填 `requester`；**缺失时须报错提示先注册，不得猜测**。
 
 ### FR-G2 查询/检索工具新增可选参数 `projectId`
 
-- 所有数据查询与检索工具（如 `getSystemArchitecture` / `getIntentElementContext` / `getArchitectureViewContext` / `queryNeo4jGraph` / `memory_search`）新增可选参数 `projectId`。
+- 所有数据查询与检索工具（如 `getSystemArchitecture` / `getIntentElementContext` / `getArchitectureViewContext` / `queryNeo4jGraph` / `memory_search`）新增可选 `projectId`。
 - 语义：
-  - **缺省** → 本仓（现有行为、返回结构、性能**逐字节不变**）。
-  - **提供** → 视为外仓：转发到中心 `POST /graph/read`，`requester` 填本仓 `projectId`，`projectId` 填该参数；`op` 由工具自身语义映射（见 §5 映射建议）。
-- 建议在 MCP 服务内集中一个 **Graph Query Router** 层实现，避免逐个工具散改逻辑。
+  - **缺省** → 本仓（现有行为、返回结构、性能**不变**）。
+  - **提供** → 视为外仓：调用中心 `POST /graph/read`，`requester` 填本仓 `projectId`，`projectId` 填该参数，**`tool` 即当前工具名、`args` 即当前参数**（同名同参，映射几乎机械）。
+- 建议在 MCP 服务内集中一个 **Graph Query Router** 层实现。
 
 ### FR-G3 结果与错误透传
 
-- 成功：把中心 `result` 映射回工具原有返回结构（对调用方尽量透明），并附带 `version` / `syncedAt`。
-- 失败：`denied` 时返回明确原因（`not_authorized` / `member_not_found` / `mirror_not_synced`）；**不得静默降级为本仓结果**。
+- 成功：把中心 `result`（即 ARGO 原生结果）透传；并附带 `namespaceKey`。
+- 失败：`denied` 返回明确 `reason`（`not_authorized`/`member_not_found`/`mirror_not_synced`）；**不得静默降级为本仓结果**。
 
 ### FR-G4 本仓零回归
 
 - 不传 `projectId` 时，工具行为、返回结构、性能与现状一致。
 
-## 5. op 映射建议（工具 → 中心 op）
+## 6. 适配程度（可开放的 ARGO 读工具）
 
-| ARGO MCP 工具 | 中心 op | 传参 |
-|---|---|---|
-| `getSystemArchitecture` | `search` 或 `overview` | `text`=intent / 无 |
-| `getIntentElementContext` | `neighbors` 或 `element` | `id`, `depth` |
-| `getArchitectureViewContext` | `views` / `elements` | — |
-| `queryNeo4jGraph`（结构查询） | `elements` / `element` / `neighbors` | `type` / `id` |
-| `memory_search`（语义检索） | `search` | `text`, `limit` |
+| tool | 对应 ARGO 读接口 |
+|---|---|
+| `getSystemArchitecture` | 语义检索（purpose/intent/scope）|
+| `getIntentElementContext` | ArchiMate 语义依赖遍历 |
+| `getArchitectureViewContext` | 视图成员解析（+ 可选几何）|
+| `queryNeo4jGraph` | 只读 Cypher（`$graphKey` 作用域）|
+| `memory_search` | embedding 语义检索 |
 
-> 说明：中心副本的向量化当前为**纯 Node 本地哈希向量**（`vectors.json`），可替换为真实 embedding，`search` 的返回形状不变。
+> 写工具在服务端**一律拒绝**（`tool_not_allowed`）。这就是「适配程度」的旋钮：加一个工具 = 加一条白名单。
 
-## 6. 边界与限制
+## 7. 边界与限制
 
-- **demo 阶段无强身份认证**：`requester` 为自称，安全性依赖网络与授权记录，勿对外承诺强安全。
+- **demo 阶段无强身份认证**：`requester` 为自称，安全依赖网络与授权记录，勿对外承诺强安全。
 - **只读**：不得经该接口写外仓。
-- **新鲜度**：副本按中心同步策略更新，跨项目结果以返回的 `version` 为准。
-- 跨项目查询与 `registry_read`（返回引用）**互不复用、各自独立**。
+- **新鲜度**：副本按 git commit 同步（注册即建 + 每 30 分钟 + 触发），结果以引擎返回的 `database`/版本为准。
+- 私有成员仓需在镜像宿主配置只读 Git 凭据。
 
-## 7. 验收（GIVEN-WHEN-THEN）
+## 8. 验收（GIVEN-WHEN-THEN）
 
 1. **本仓不变**：GIVEN 不传 `projectId`，WHEN 查询任一工具，THEN 与本仓现状一致。
-2. **外仓授权读**：GIVEN 已注册并持久化 `projectId`、中心已托管目标副本且已授权，WHEN 带 `projectId` 查询，THEN 返回目标项目结果与 `version`。
-3. **默认拒绝**：GIVEN 未获授权，WHEN 带 `projectId` 查询，THEN 明确返回 `denied / not_authorized`，不降级。
-4. **身份缺失**：GIVEN 本地无联邦身份，WHEN 发起外仓查询，THEN 报错提示先注册（不猜测 `requester`）。
+2. **外仓授权读**：GIVEN 已注册本仓（含本地身份）、目标已建副本且已授权，WHEN 带 `projectId` 查询，THEN 返回目标项目结果（含 `database`=目标）。
+3. **默认拒绝**：GIVEN 未授权，WHEN 带 `projectId` 查询，THEN 明确 `denied / not_authorized`，不降级。
+4. **身份缺失**：GIVEN 本地无联邦身份，WHEN 发起外仓查询，THEN 报错提示先注册。
 
-## 8. 依赖与交付
+## 9. 交付与验证（graph-wiki 侧）
 
-- 中心接口已交付：commit `ad695c7`（graph-wiki）。
-- Graph 项目需交付：本地身份文件读写 + 查询工具 `projectId` 路由 + 可执行验收（≥ 上表 4 条）。
+- 中心接口已交付并**云端 E2E 通过**（`argo.derekworkspacev5.com`）：授权读 archgraph = 298 元素（`database=archgraph`）、未授权 403、未知成员 403、`memory_search` 语义命中、`mirror_list` 含 archgraph+soc-demo。
+- 已建真实副本：**archgraph（298 元素）**、**soc-demo（386 元素）**，各占独立 Neo4j database。
+- 关键提交：`ad695c7`（初版）、`1ead05b`（120 代理）、`2e2ced7`（幂等+定时同步）、`44a05ea`（验收测试）、本条刷新提交。
