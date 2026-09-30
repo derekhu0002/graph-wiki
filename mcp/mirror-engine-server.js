@@ -79,6 +79,17 @@ function safeId(projectId) {
 function workdir(projectId) {
   return path.join(MIRRORS_ROOT, safeId(projectId));
 }
+function metaPath(projectId) {
+  return path.join(MIRRORS_ROOT, '.meta', `${safeId(projectId)}.json`);
+}
+function readMeta(projectId) {
+  try { return JSON.parse(fs.readFileSync(metaPath(projectId), 'utf8')); } catch { return null; }
+}
+function writeMeta(projectId, meta) {
+  const p = metaPath(projectId);
+  fs.mkdirSync(path.dirname(p), { recursive: true });
+  fs.writeFileSync(p, JSON.stringify(meta, null, 2) + '\n', 'utf8');
+}
 function git(args, cwd) {
   return execFileSync('git', args, { cwd, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' }).trim();
 }
@@ -91,8 +102,12 @@ function fetchRepo(projectId, sourceRepo, branch) {
     fs.mkdirSync(dir, { recursive: true });
     git(['clone', '--depth', '1', '--branch', branchName, sourceRepo, '.'], dir);
   } else {
-    git(['fetch', '--depth', '1', 'origin', branchName], dir);
-    git(['reset', '--hard', `origin/${branchName}`], dir);
+    // Transient network failure must not break an already-built mirror: keep the
+    // existing checkout and let the caller's commit check decide re-projection.
+    try {
+      git(['fetch', '--depth', '1', 'origin', branchName], dir);
+      git(['reset', '--hard', `origin/${branchName}`], dir);
+    } catch { /* keep current checkout */ }
   }
   return dir;
 }
@@ -102,17 +117,27 @@ async function sync(input) {
   const dir = fetchRepo(projectId, input.sourceRepo, input.branch);
   const graphAbs = path.join(dir, DEFAULT_GRAPH_PATH);
   if (!fs.existsSync(graphAbs)) return { status: 'failed', reason: 'graph_not_found', projectId, graphAbs };
-  const { harness } = engine();
-  const report = await harness.buildHarnessReport({ workspaceRoot: dir, includeBootstrap: true, checkOnly: false });
   let commit = null;
   try { commit = git(['rev-parse', 'HEAD'], dir); } catch { /* not a git dir */ }
+
+  // Idempotent by git version: skip re-projection when the commit is unchanged.
+  const meta = readMeta(projectId);
+  if (meta && commit && meta.commit === commit && meta.ok) {
+    return { status: 'ok', synced: false, reason: 'up-to-date', projectId, workspaceRoot: dir, namespaceKey: `proj:${projectId}`, commit };
+  }
+
+  const { harness } = engine();
+  const report = await harness.buildHarnessReport({ workspaceRoot: dir, includeBootstrap: true, checkOnly: false });
   // Essential for a mirror: Neo4j projection (+ semantic lifecycle). A missing
   // workspace .qea surfaces the harness overall status as failed, but a member
   // repo ships its own .qea; treat only the projection as the required gate.
   const neo4jOk = !!(report.neo4j && report.neo4j.status === 'ok');
   const semanticOk = !!(report.semanticLifecycle && report.semanticLifecycle.status === 'ok');
+  writeMeta(projectId, { commit, ok: neo4jOk, syncedAt: new Date().toISOString() });
   return {
     status: neo4jOk ? 'ok' : 'failed',
+    synced: true,
+    reason: meta ? 'updated' : 'created',
     projectId,
     workspaceRoot: dir,
     namespaceKey: `proj:${projectId}`,
@@ -157,7 +182,7 @@ async function remove(input) {
 function list() {
   if (!fs.existsSync(MIRRORS_ROOT)) return [];
   return fs.readdirSync(MIRRORS_ROOT, { withFileTypes: true })
-    .filter((d) => d.isDirectory())
+    .filter((d) => d.isDirectory() && !d.name.startsWith('.'))
     .map((d) => {
       const graphAbs = path.join(MIRRORS_ROOT, d.name, DEFAULT_GRAPH_PATH);
       return { projectId: d.name, synced: fs.existsSync(graphAbs) };
