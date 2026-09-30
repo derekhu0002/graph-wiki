@@ -747,6 +747,22 @@
         {
           "name": "commit",
           "value": "4f7f7e: tests/e2e/external_graph_read_cloud.js, mcp/deploy-asset-mcp.sh"
+        },
+        {
+          "name": "mirrorHost",
+          "value": "47.107.161.168 (Aliyun ECS, same VPC as graph store; private 172.18.2.191; has outbound)"
+        },
+        {
+          "name": "engineRuntime",
+          "value": "复用 ARGO 引擎：archgraph-argo@0.26.2 部署于 /root/.argo + node v22.11.0 + neo4j:5.26-community (docker argo-neo4j, db neo4j, 127.0.0.1:7687)。syncSystemArchitectureToNeo4j 实同步验证通过 (matches:true)。VSOC(doris/superset) 已停以释放资源。"
+        },
+        {
+          "name": "embedding",
+          "value": "复用 ARGO 语义生命周期：ARGO_EMBEDDING_* 阿里 Qwen qwen3.7-text-embedding + QWEN_KEY；embeddings 实测 200 (dim 1024)"
+        },
+        {
+          "name": "initReuse",
+          "value": "镜像初始化改为复用 initializeWorkspace/ensureArgoHarnessEnvironment（Neo4j 投影 + .qea 全量投影 + semanticLifecycle embedding），不再用自写 JSON 索引/哈希向量"
         }
       ]
     },
