@@ -739,6 +739,14 @@
         {
           "name": "deliveryStatus",
           "value": "delivered"
+        },
+        {
+          "name": "e2eCloud",
+          "value": "passed @ argo.derekworkspacev5.com 2026-10-01: deployed + full cross-project read path verified against production"
+        },
+        {
+          "name": "commit",
+          "value": "4f7f7e: tests/e2e/external_graph_read_cloud.js, mcp/deploy-asset-mcp.sh"
         }
       ]
     },
@@ -769,6 +777,14 @@
         {
           "name": "commit",
           "value": "ad695c7: mcp/asset-mcp-server.js, mcp/external-read.js, tests/acceptance/external_graph_read.js"
+        },
+        {
+          "name": "e2eCloud",
+          "value": "passed @ argo.derekworkspacev5.com 2026-10-01: register/sync/deny/authorize/read/vectorized-search/isolate/cleanup (16/16); script tests/e2e/external_graph_read_cloud.js"
+        },
+        {
+          "name": "commit",
+          "value": "4f7f7e: tests/e2e/external_graph_read_cloud.js, mcp/deploy-asset-mcp.sh"
         }
       ]
     },
@@ -811,6 +827,14 @@
         {
           "name": "commit",
           "value": "ad695c7: mcp/mirror.js, mcp/external-read.js, mcp/graph-schema.js, mcp/asset-mcp-server.js, mcp/registry.js, tests/acceptance/external_graph_read.js"
+        },
+        {
+          "name": "commit",
+          "value": "4f7f7e: tests/e2e/external_graph_read_cloud.js, mcp/deploy-asset-mcp.sh"
+        },
+        {
+          "name": "deployed",
+          "value": "argo.derekworkspacev5.com:/opt/graph-wiki/mcp (asset-mcp-server.js, registry.js, mirror.js, external-read.js, graph-schema.js)"
         }
       ]
     },
