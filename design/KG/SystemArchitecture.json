@@ -813,6 +813,18 @@
           "value": "ad695c7: mcp/mirror.js, mcp/external-read.js, mcp/graph-schema.js, mcp/asset-mcp-server.js, mcp/registry.js, tests/acceptance/external_graph_read.js"
         }
       ]
+    },
+    {
+      "attributes": [
+        {
+          "name": "repoPath",
+          "value": "community/EXTERNAL-GRAPH-QUERY-ADAPTATION.md"
+        }
+      ],
+      "description": "面向 ArchGraph 框架项目（Graph 项目）的适配需求说明书：Graph 项目需 (FR-G1) 注册并本地持久化本仓 projectId（如 .argo/federation.json）、(FR-G2) 为所有数据查询/检索工具新增可选 projectId（缺省=本仓、提供=外仓，转发中心 POST /graph/read），(FR-G3) 结果与拒绝原因透传、不静默降级，(FR-G4) 保证本仓零回归。含中心接口契约、op 映射建议、边界限制与 GIVEN-WHEN-THEN 验收。正文见仓库文件。",
+      "id": "external-graph-query-adaptation-spec",
+      "name": "Graph 项目适配需求说明书",
+      "type": "Business Object"
     }
   ],
   "relationships": [
@@ -1235,6 +1247,16 @@
       "target_id": "mirror-store",
       "target_name": "副本命名空间存储",
       "type": "Association"
+    },
+    {
+      "id": "spec-adapts-external-read",
+      "name": "适配契约",
+      "source_id": "external-graph-query-adaptation-spec",
+      "source_name": "Graph 项目适配需求说明书",
+      "statement": "Graph 项目适配需求说明书 --(Association)--> 跨项目图查询接口",
+      "target_id": "external-graph-read-api",
+      "target_name": "跨项目图查询接口",
+      "type": "Association"
     }
   ],
   "views": [
@@ -1441,7 +1463,8 @@
         "project-identity",
         "federation-rule-mirror",
         "federation-rule-namespace-isolation",
-        "mirror-mcp-artifact"
+        "mirror-mcp-artifact",
+        "external-graph-query-adaptation-spec"
       ],
       "included_relationships": [
         "mirror-artifact-realize",
@@ -1453,7 +1476,8 @@
         "router-calls-api",
         "router-reads-identity",
         "rule-mirror-assoc",
-        "rule-isolation-assoc"
+        "rule-isolation-assoc",
+        "spec-adapts-external-read"
       ],
       "parent_element_id": "kg-service-domain",
       "view_id": "cross-project-graph-query-view",
