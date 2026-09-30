@@ -32,8 +32,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const { execFileSync } = require('node:child_process');
 const registry = require('./registry.js');
-const mirror = require('./mirror.js');
-const externalRead = require('./external-read.js');
+const engineClient = require('./mirror-engine-client.js');
 const { validateGraph } = require('./graph-schema.js');
 
 const PORT = Number(process.env.ASSET_MCP_PORT || 18792);
@@ -61,7 +60,6 @@ const GIT_DIR = path.resolve(process.env.ASSET_GIT_DIR || REPO_ROOT);
 const CATALOG_PATH = path.join(ASSET_ROOT, 'catalog.json');
 const GRAPHS_DIR = path.join(ASSET_ROOT, 'graphs');
 const REGISTRY_PATH = path.join(ASSET_ROOT, 'registry', 'registry.json');
-const MIRROR_ROOT = path.join(ASSET_ROOT, 'mirrors');
 
 // ---------- catalog 读写 ----------
 
@@ -264,23 +262,30 @@ function toolGraphUpdate(args) {
 
 // ---------- 联邦注册中心 Registry（P0 只读） ----------
 
-function toolRegistryRegister(args) {
+async function toolRegistryRegister(args) {
   const reg = registry.load(REGISTRY_PATH);
   const member = registry.registerMember(reg, args);
   registry.save(REGISTRY_PATH, reg);
   const commitResult = gitCommit(`feat(registry): register member ${member.id}`, [REGISTRY_PATH]);
-  return { status: 'ok', member: registry.discover(reg).find((m) => m.id === member.id), commit: commitResult };
+  // 副本建设：注册即触发一次镜像同步（best-effort，不阻断注册）。
+  let mirrorResult;
+  if (member.sourceRepo) {
+    mirrorResult = (await engineClient.syncMirror({ projectId: member.id, sourceRepo: member.sourceRepo, branch: member.branch })).json;
+  } else {
+    mirrorResult = { status: 'skipped', reason: 'no_sourceRepo' };
+  }
+  return { status: 'ok', member: registry.discover(reg).find((m) => m.id === member.id), mirror: mirrorResult, commit: commitResult };
 }
 
-function toolRegistryDeregister(args) {
+async function toolRegistryDeregister(args) {
   const id = args && args.id;
   if (!id) throw new Error('缺少 id');
   const reg = registry.load(REGISTRY_PATH);
   const result = registry.deregisterMember(reg, id);
   registry.save(REGISTRY_PATH, reg);
-  const mirrorResult = mirror.remove(MIRROR_ROOT, id);
+  const removeResult = (await engineClient.removeMirror({ projectId: id })).json;
   const commitResult = gitCommit(`feat(registry): deregister member ${id}`, [REGISTRY_PATH]);
-  return { status: 'ok', ...result, mirror: mirrorResult, commit: commitResult };
+  return { status: 'ok', ...result, mirror: removeResult, commit: commitResult };
 }
 
 function toolRegistryDiscover() {
@@ -307,43 +312,44 @@ function toolRegistryRead(args) {
 
 // ---------- 跨项目图谱查询（外部图读取）+ 副本托管 ----------
 
-function toolGraphReadExternal(args) {
+async function toolGraphReadExternal(args) {
   const a = args || {};
   if (!a.requester) throw new Error('缺少 requester（请求方项目 id）');
   if (!a.projectId) throw new Error('缺少 projectId（被查项目 id）');
-  return externalRead.readExternal({
-    registryPath: REGISTRY_PATH,
-    mirrorRoot: MIRROR_ROOT,
-    requester: a.requester,
-    projectId: a.projectId,
-    contentId: a.contentId,
-    op: a.op,
-    id: a.id,
-    type: a.type,
-    text: a.text,
-    limit: a.limit,
-    depth: a.depth,
-  });
+  if (!a.tool) throw new Error('缺少 tool（ARGO 读工具名）');
+  const reg = registry.load(REGISTRY_PATH);
+  const member = (reg.members || []).find((m) => m.id === a.projectId && m.status === 'active');
+  if (!member) return { status: 'denied', reason: 'member_not_found', requester: a.requester, projectId: a.projectId };
+  if (!registry.isAuthorized(reg, a.requester, a.projectId, a.contentId)) {
+    return { status: 'denied', reason: 'not_authorized', requester: a.requester, projectId: a.projectId };
+  }
+  const r = await engineClient.readExternal({ projectId: a.projectId, tool: a.tool, args: a.args || {} });
+  if (!r.json || r.json.status === 'unavailable') {
+    return { status: 'denied', reason: 'engine_unreachable', requester: a.requester, projectId: a.projectId };
+  }
+  if (r.json.status !== 'ok') {
+    return { status: r.json.status, reason: r.json.reason, requester: a.requester, projectId: a.projectId };
+  }
+  return { status: 'ok', requester: a.requester, projectId: a.projectId, namespaceKey: `proj:${a.projectId}`, tool: a.tool, result: r.json.result };
 }
 
-function toolMirrorSync(args) {
+async function toolMirrorSync(args) {
   const a = args || {};
   if (!a.projectId) throw new Error('缺少 projectId');
   const reg = registry.load(REGISTRY_PATH);
   const member = (reg.members || []).find((m) => m.id === a.projectId && m.status === 'active');
   if (!member) throw new Error(`成员未注册或已注销: ${a.projectId}`);
-  const result = mirror.sync(MIRROR_ROOT, a.projectId, {
+  const r = await engineClient.syncMirror({
+    projectId: a.projectId,
     sourceRepo: a.sourceRepo || member.sourceRepo,
-    branch: a.branch || member.branch || mirror.DEFAULT_BRANCH,
-    graphPath: a.graphPath,
-    commit: a.commit,
+    branch: a.branch || member.branch,
   });
-  return { status: 'ok', ...result };
+  return r.json || { status: 'unavailable' };
 }
 
-function toolMirrorList() {
-  const mirrors = mirror.list(MIRROR_ROOT);
-  return { status: 'ok', count: mirrors.length, mirrors };
+async function toolMirrorList() {
+  const r = await engineClient.listMirrors();
+  return r.json || { status: 'unavailable', count: 0, mirrors: [] };
 }
 
 // ---------- MCP 处理 ----------
@@ -358,9 +364,9 @@ const TOOLS = [
   { name: 'registry_discover', description: '发现已注册联邦成员的基础信息（它是谁、做什么、有什么能力）', inputSchema: { type: 'object', properties: {} } },
   { name: 'registry_authorize', description: '成员显式授权某请求方读取其对外开放内容；未授权默认拒绝', inputSchema: { type: 'object', required: ['grantor', 'grantee'], properties: { grantor: { type: 'string' }, grantee: { type: 'string' }, contentId: { type: 'string' } } } },
   { name: 'registry_read', description: '授权后读取成员开放内容（返回引用，非副本）；未授权默认拒绝', inputSchema: { type: 'object', required: ['requester', 'member'], properties: { requester: { type: 'string' }, member: { type: 'string' }, contentId: { type: 'string' } } } },
-  { name: 'graph_read_external', description: '跨项目图谱查询：授权后在中心托管的成员副本命名空间内查询（不复用 registry_read）；未授权默认拒绝', inputSchema: { type: 'object', required: ['requester', 'projectId'], properties: { requester: { type: 'string' }, projectId: { type: 'string' }, contentId: { type: 'string' }, op: { type: 'string' }, id: { type: 'string' }, type: { type: 'string' }, text: { type: 'string' }, limit: { type: 'number' }, depth: { type: 'number' } } } },
-  { name: 'mirror_sync', description: '按成员已审核分支同步其仓到中心副本（投影+向量化），按 git 版本幂等', inputSchema: { type: 'object', required: ['projectId'], properties: { projectId: { type: 'string' }, sourceRepo: { type: 'string' }, branch: { type: 'string' }, graphPath: { type: 'string' }, commit: { type: 'string' } } } },
-  { name: 'mirror_list', description: '列出中心已托管的成员副本', inputSchema: { type: 'object', properties: {} } },
+  { name: 'graph_read_external', description: '跨项目图谱查询：授权后经镜像引擎（复用 ARGO）按 projectId 查询托管副本；tool 为 ARGO 读工具名（getSystemArchitecture/getIntentElementContext/getArchitectureViewContext/queryNeo4jGraph/memory_search）；未授权默认拒绝', inputSchema: { type: 'object', required: ['requester', 'projectId', 'tool'], properties: { requester: { type: 'string' }, projectId: { type: 'string' }, tool: { type: 'string' }, args: { type: 'object' }, contentId: { type: 'string' } } } },
+  { name: 'mirror_sync', description: '按成员已审核分支同步其仓到镜像宿主（复用 ARGO：Neo4j 投影 + .qea + embedding），按 git 版本幂等', inputSchema: { type: 'object', required: ['projectId'], properties: { projectId: { type: 'string' }, sourceRepo: { type: 'string' }, branch: { type: 'string' } } } },
+  { name: 'mirror_list', description: '列出镜像宿主已托管的成员副本', inputSchema: { type: 'object', properties: {} } },
 ];
 
 const TOOL_HANDLERS = {
@@ -436,7 +442,7 @@ async function handleMcpRequest(req, res) {
       const args = (params && params.arguments) || {};
       const handler = TOOL_HANDLERS[name];
       if (!handler) throw new Error(`未知工具: ${name}`);
-      const result = handler(args);
+      const result = await handler(args);
       response = {
         jsonrpc: '2.0',
         id,
@@ -474,7 +480,7 @@ async function handleRestGraphRead(req, res) {
     return sendJson(res, 400, { status: 'bad_request', error: error.message });
   }
   try {
-    const result = toolGraphReadExternal(body);
+    const result = await toolGraphReadExternal(body);
     const httpStatus = result && result.status === 'denied' ? 403
       : result && result.status === 'bad_request' ? 400
       : 200;
