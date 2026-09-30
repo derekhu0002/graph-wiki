@@ -525,12 +525,12 @@
           "value": "dcb85bb: design/KG/SystemArchitecture.json, mcp/registry.js, mcp/asset-mcp-server.js, mcp/README.md, mcp/deploy-asset-mcp.sh, assets/registry/registry.json, tests/acceptance/federation_registry.js"
         },
         {
-          "name": "deliveryStatus",
-          "value": "delivered"
-        },
-        {
           "name": "commit",
           "value": "ad695c7: mcp/registry.js, mcp/asset-mcp-server.js, design/KG/SystemArchitecture.json"
+        },
+        {
+          "name": "deliveryStatus",
+          "value": "delivered"
         }
       ]
     },
@@ -733,12 +733,12 @@
       "type": "Application Service",
       "attributes": [
         {
-          "name": "deliveryStatus",
-          "value": "delivered"
-        },
-        {
           "name": "commit",
           "value": "ad695c7: mcp/mirror.js, mcp/external-read.js, mcp/graph-schema.js, mcp/asset-mcp-server.js, mcp/registry.js, tests/acceptance/external_graph_read.js, design/KG/SystemArchitecture.json"
+        },
+        {
+          "name": "deliveryStatus",
+          "value": "delivered"
         }
       ]
     },
@@ -845,6 +845,27 @@
       "id": "kb-admin-session-20261001-cross-project-query",
       "name": "会话记录 2026-10-01 跨项目图谱查询",
       "type": "Business Object"
+    },
+    {
+      "description": "graph-wiki 验收治理规则：知识图谱中所有可端到端验证的验收知识（acceptance knowledge）都必须进行端到端（E2E）验证；且该 E2E 验证必须在正式的云端服务器（argo.derekworkspacev5.com 生产环境）上执行——仅在本地/临时环境通过不算数。仅当确实无法端到端验证时才退化为单元/结构验收，并须显式说明降级理由。",
+      "id": "kb-rule-e2e-cloud-acceptance",
+      "name": "端到端云端验收规则",
+      "testcases": [
+        {
+          "Input": "GIVEN canonical intent graph 位于 design/KG/SystemArchitecture.json\nWHEN 在图中查找「端到端云端验收规则」Rule 元素\nTHEN 该规则存在且为 Rule 类型、被纳入 kb-admin-rules 视图（挂载 kb-admin-actor 之下）、且 acceptanceCriteria 指向 tests/acceptance/kb_rule_e2e_cloud.js",
+          "acceptanceCriteria": "tests/acceptance/kb_rule_e2e_cloud.js",
+          "description": "外部视角验收：端到端云端验收规则必须已在意图图中正确登记（类型/归属），并被纳入挂载在个人知识库管理员之下的规则子视图，且带可执行用例。",
+          "name": "kb-rule-e2e-cloud-registered",
+          "type": "Acceptance Test"
+        }
+      ],
+      "type": "Rule",
+      "attributes": [
+        {
+          "name": "deliveryStatus",
+          "value": "delivered"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -1277,6 +1298,26 @@
       "target_id": "external-graph-read-api",
       "target_name": "跨项目图查询接口",
       "type": "Association"
+    },
+    {
+      "id": "rule-e2e-cloud-constrains-api",
+      "name": "约束端到端验收",
+      "source_id": "kb-rule-e2e-cloud-acceptance",
+      "source_name": "端到端云端验收规则",
+      "statement": "端到端云端验收规则 --(Association)--> 跨项目图查询接口",
+      "target_id": "external-graph-read-api",
+      "target_name": "跨项目图查询接口",
+      "type": "Association"
+    },
+    {
+      "id": "rule-e2e-cloud-constrains-mirror",
+      "name": "约束端到端验收",
+      "source_id": "kb-rule-e2e-cloud-acceptance",
+      "source_name": "端到端云端验收规则",
+      "statement": "端到端云端验收规则 --(Association)--> 联邦副本托管服务",
+      "target_id": "mirror-host-service",
+      "target_name": "联邦副本托管服务",
+      "type": "Association"
     }
   ],
   "views": [
@@ -1338,7 +1379,8 @@
       "view_id": "kb-admin-rules",
       "view_name": "个人知识库规则",
       "included_elements": [
-        "kb-rule-knowledge-to-kg"
+        "kb-rule-knowledge-to-kg",
+        "kb-rule-e2e-cloud-acceptance"
       ],
       "included_relationships": []
     },
@@ -1485,7 +1527,8 @@
         "federation-rule-mirror",
         "federation-rule-namespace-isolation",
         "mirror-mcp-artifact",
-        "external-graph-query-adaptation-spec"
+        "external-graph-query-adaptation-spec",
+        "kb-rule-e2e-cloud-acceptance"
       ],
       "included_relationships": [
         "mirror-artifact-realize",
@@ -1498,7 +1541,9 @@
         "router-reads-identity",
         "rule-mirror-assoc",
         "rule-isolation-assoc",
-        "spec-adapts-external-read"
+        "spec-adapts-external-read",
+        "rule-e2e-cloud-constrains-api",
+        "rule-e2e-cloud-constrains-mirror"
       ],
       "parent_element_id": "kg-service-domain",
       "view_id": "cross-project-graph-query-view",
