@@ -833,6 +833,18 @@
       "id": "external-graph-query-adaptation-spec",
       "name": "Graph 项目适配需求说明书",
       "type": "Business Object"
+    },
+    {
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "ad695c7: mcp/mirror.js, mcp/external-read.js, mcp/graph-schema.js, mcp/asset-mcp-server.js, mcp/registry.js, tests/acceptance/external_graph_read.js, design/KG/SystemArchitecture.json"
+        }
+      ],
+      "description": "2026-10-01 会话摘要：在联邦注册中心基础上交付「跨项目图谱查询」——Graph Store 作为高权限、始终在线的中心，托管成员经 push/merge 审核后开放的图谱副本（可用性副本），按 projectId 在独立命名空间 proj:<projectId> 投影+向量化，授权后提供只读查询。关键决策：1) 规则改写——federation-rule-sovereignty 由『中心不保存副本、跨国走引用』改为『中心可托管经审核发布的可用性副本，成员仓仍是事实源』；2) 不复用 registry_read，单独新开接口（MCP graph_read_external + REST POST /graph/read）；3) requester 身份来自本地持久化（FR0：中心确认 id 唯一 + 本地 .argo/federation.json），当前弱鉴权记 demo 债；4) 命名空间隔离（存储/投影/向量三隔离，禁跨图 join）。实现：mcp/mirror.js + mcp/external-read.js + mcp/graph-schema.js + asset-mcp-server 新增 graph_read_external/mirror_sync/mirror_list 与 REST /graph/read；registry.js 增加 id 所有权；注销联动移除副本。意图图新增 cross-project-graph-query-view。验收 tests/acceptance/external_graph_read.js（7 组 GIVEN-WHEN-THEN 含 HTTP）全绿；架构测试 8 例 7 过（kg-mcp-gateway 环境无关失败）。交付《Graph 项目适配需求说明书》community/EXTERNAL-GRAPH-QUERY-ADAPTATION.md（FR-G1..G4）。commit ad695c7/7514b4e/4db1c4b/c41144a。经验：require 即启动 HTTP server 的模块改为模块级测试 + 子进程 HTTP 集成。TODO：graph 项目落地 projectId 路由与本地身份；mirror_sync 触发式与真实 embedding；强鉴权。",
+      "id": "kb-admin-session-20261001-cross-project-query",
+      "name": "会话记录 2026-10-01 跨项目图谱查询",
+      "type": "Business Object"
     }
   ],
   "relationships": [
@@ -1314,7 +1326,8 @@
       "included_elements": [
         "kb-admin-session-20260922-federation",
         "kb-admin-session-20260922-federation-page",
-        "kb-admin-session-20260923-registry-sync"
+        "kb-admin-session-20260923-registry-sync",
+        "kb-admin-session-20261001-cross-project-query"
       ],
       "included_relationships": []
     },
