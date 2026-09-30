@@ -864,6 +864,10 @@
         {
           "name": "deliveryStatus",
           "value": "delivered"
+        },
+        {
+          "name": "commit",
+          "value": "7e4190c: tests/acceptance/kb_rule_e2e_cloud.js, design/KG/SystemArchitecture.json"
         }
       ]
     }
