@@ -819,6 +819,14 @@
         {
           "name": "repoPath",
           "value": "community/EXTERNAL-GRAPH-QUERY-ADAPTATION.md"
+        },
+        {
+          "name": "commit",
+          "value": "4db1c4b: community/EXTERNAL-GRAPH-QUERY-ADAPTATION.md, design/KG/SystemArchitecture.json"
+        },
+        {
+          "name": "deliveryStatus",
+          "value": "delivered"
         }
       ],
       "description": "面向 ArchGraph 框架项目（Graph 项目）的适配需求说明书：Graph 项目需 (FR-G1) 注册并本地持久化本仓 projectId（如 .argo/federation.json）、(FR-G2) 为所有数据查询/检索工具新增可选 projectId（缺省=本仓、提供=外仓，转发中心 POST /graph/read），(FR-G3) 结果与拒绝原因透传、不静默降级，(FR-G4) 保证本仓零回归。含中心接口契约、op 映射建议、边界限制与 GIVEN-WHEN-THEN 验收。正文见仓库文件。",
