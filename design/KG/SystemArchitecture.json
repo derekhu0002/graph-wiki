@@ -527,6 +527,10 @@
         {
           "name": "deliveryStatus",
           "value": "delivered"
+        },
+        {
+          "name": "commit",
+          "value": "ad695c7: mcp/registry.js, mcp/asset-mcp-server.js, design/KG/SystemArchitecture.json"
         }
       ]
     },
@@ -588,7 +592,13 @@
       "id": "federation-rule-sovereignty",
       "name": "内容主权规则",
       "type": "Rule",
-      "description": "成员仓是知识的事实源（source of truth）；中心可托管经审核发布的成员图谱副本（availability replica），副本随成员版本同步、不改写成员仓；活体授权仍按引用判定（默认拒绝），托管副本仅用于可用性读取。"
+      "description": "成员仓是知识的事实源（source of truth）；中心可托管经审核发布的成员图谱副本（availability replica），副本随成员版本同步、不改写成员仓；活体授权仍按引用判定（默认拒绝），托管副本仅用于可用性读取。",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "ad695c7: design/KG/SystemArchitecture.json"
+        }
+      ]
     },
     {
       "id": "federation-registry-artifact",
@@ -725,6 +735,10 @@
         {
           "name": "deliveryStatus",
           "value": "delivered"
+        },
+        {
+          "name": "commit",
+          "value": "ad695c7: mcp/mirror.js, mcp/external-read.js, mcp/graph-schema.js, mcp/asset-mcp-server.js, mcp/registry.js, tests/acceptance/external_graph_read.js, design/KG/SystemArchitecture.json"
         }
       ]
     },
@@ -750,7 +764,13 @@
       "description": "独立于 registry_read 的新接口：MCP 工具 graph_read_external（与 REST POST /graph/read 同源）。入参 { requester, projectId, op, ... }；授权后按 projectId 在对应命名空间执行查询并返回结果与副本版本；未授权默认拒绝。",
       "id": "external-graph-read-api",
       "name": "跨项目图查询接口",
-      "type": "Application Interface"
+      "type": "Application Interface",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "ad695c7: mcp/asset-mcp-server.js, mcp/external-read.js, tests/acceptance/external_graph_read.js"
+        }
+      ]
     },
     {
       "description": "复用联邦注册中心 grants 做读取前校验：查 grants(grantor=projectId, grantee=requester)，命中才放行，未命中返回 denied/not_authorized；成员不存在或已注销返回 member_not_found。",
@@ -786,7 +806,13 @@
       "description": "跨项目图谱查询的服务代码：mcp/mirror.js（副本托管/投影/向量化/查询）+ mcp/external-read.js（授权校验 + 副本查询编排）+ mcp/graph-schema.js（共享校验）+ asset-mcp-server.js 新增 graph_read_external/mirror_sync/mirror_list 工具与 REST POST /graph/read。",
       "id": "mirror-mcp-artifact",
       "name": "副本托管与外部读取代码",
-      "type": "Artifact"
+      "type": "Artifact",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "ad695c7: mcp/mirror.js, mcp/external-read.js, mcp/graph-schema.js, mcp/asset-mcp-server.js, mcp/registry.js, tests/acceptance/external_graph_read.js"
+        }
+      ]
     }
   ],
   "relationships": [
