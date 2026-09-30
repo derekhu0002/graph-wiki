@@ -867,9 +867,13 @@
         {
           "name": "deliveryStatus",
           "value": "delivered"
+        },
+        {
+          "name": "commit",
+          "value": "07e2a30: community/EXTERNAL-GRAPH-QUERY-ADAPTATION.md"
         }
       ],
-      "description": "面向 ArchGraph 框架项目（Graph 项目）的适配需求说明书：Graph 项目需 (FR-G1) 注册并本地持久化本仓 projectId（如 .argo/federation.json）、(FR-G2) 为所有数据查询/检索工具新增可选 projectId（缺省=本仓、提供=外仓，转发中心 POST /graph/read），(FR-G3) 结果与拒绝原因透传、不静默降级，(FR-G4) 保证本仓零回归。含中心接口契约、op 映射建议、边界限制与 GIVEN-WHEN-THEN 验收。正文见仓库文件。",
+      "description": "面向 ArchGraph 框架项目（Graph 项目）的适配需求说明书（已刷新）：Graph 项目需 (FR-G1) 注册并本地持久化本仓 projectId（.argo/federation.json）、(FR-G2) 为所有数据查询/检索工具新增可选 projectId（缺省=本仓、提供=外仓，调用中心 POST /graph/read，tool/args 与本地工具同名同参）、(FR-G3) 结果与拒绝原因透传不降级、(FR-G4) 本仓零回归。接口已改为 {requester, projectId, tool, args, contentId?}（tool ∈ ARGO 读工具白名单）；拓扑为 Graph Store(120) 授权 + 镜像引擎(47, ARGO 引擎 + Neo4j Enterprise 一成员一库 + Qwen embedding)。正文见仓库文件。",
       "id": "external-graph-query-adaptation-spec",
       "name": "Graph 项目适配需求说明书",
       "type": "Business Object"
@@ -910,6 +914,22 @@
           "value": "7e4190c: tests/acceptance/kb_rule_e2e_cloud.js, design/KG/SystemArchitecture.json"
         }
       ]
+    },
+    {
+      "attributes": [
+        {
+          "name": "repoPath",
+          "value": "community/EXTERNAL-GRAPH-QUERY-ADAPTATION.md"
+        },
+        {
+          "name": "addressedTo",
+          "value": "ArchGraph 框架项目（Graph 项目）"
+        }
+      ],
+      "description": "致 ArchGraph 框架项目（Graph 项目）的需求通知：请按《Graph 项目适配需求说明书》完成 ARGO MCP 适配——FR-G1 注册并本地持久化本仓 projectId（.argo/federation.json）；FR-G2 所有查询/检索工具新增可选 projectId（缺省=本仓、提供=外仓，调用中心 POST /graph/read，tool/args 与本地工具同名同参）；FR-G3 结果与拒绝原因透传不降级；FR-G4 本仓零回归。中心接口已交付并云端 E2E 通过（archgraph 298 元素 / soc-demo 386 元素，各独立 database）。正文见 community/EXTERNAL-GRAPH-QUERY-ADAPTATION.md。",
+      "id": "graph-project-external-query-notice",
+      "name": "Graph 项目需求通知：跨项目图谱查询适配",
+      "type": "Business Object"
     }
   ],
   "relationships": [
@@ -1362,6 +1382,26 @@
       "target_id": "mirror-host-service",
       "target_name": "联邦副本托管服务",
       "type": "Association"
+    },
+    {
+      "id": "notice-adapts-api",
+      "name": "适配通知",
+      "source_id": "graph-project-external-query-notice",
+      "source_name": "Graph 项目需求通知：跨项目图谱查询适配",
+      "statement": "Graph 项目需求通知：跨项目图谱查询适配 --(Association)--> 跨项目图查询接口",
+      "target_id": "external-graph-read-api",
+      "target_name": "跨项目图查询接口",
+      "type": "Association"
+    },
+    {
+      "id": "notice-based-on-spec",
+      "name": "依据说明书",
+      "source_id": "graph-project-external-query-notice",
+      "source_name": "Graph 项目需求通知：跨项目图谱查询适配",
+      "statement": "Graph 项目需求通知：跨项目图谱查询适配 --(Association)--> Graph 项目适配需求说明书",
+      "target_id": "external-graph-query-adaptation-spec",
+      "target_name": "Graph 项目适配需求说明书",
+      "type": "Association"
     }
   ],
   "views": [
@@ -1572,7 +1612,8 @@
         "federation-rule-namespace-isolation",
         "mirror-mcp-artifact",
         "external-graph-query-adaptation-spec",
-        "kb-rule-e2e-cloud-acceptance"
+        "kb-rule-e2e-cloud-acceptance",
+        "graph-project-external-query-notice"
       ],
       "included_relationships": [
         "mirror-artifact-realize",
@@ -1587,7 +1628,9 @@
         "rule-isolation-assoc",
         "spec-adapts-external-read",
         "rule-e2e-cloud-constrains-api",
-        "rule-e2e-cloud-constrains-mirror"
+        "rule-e2e-cloud-constrains-mirror",
+        "notice-adapts-api",
+        "notice-based-on-spec"
       ],
       "parent_element_id": "kg-service-domain",
       "view_id": "cross-project-graph-query-view",
