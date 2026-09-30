@@ -32,6 +32,9 @@ const path = require('node:path');
 const fs = require('node:fs');
 const { execFileSync } = require('node:child_process');
 const registry = require('./registry.js');
+const mirror = require('./mirror.js');
+const externalRead = require('./external-read.js');
+const { validateGraph } = require('./graph-schema.js');
 
 const PORT = Number(process.env.ASSET_MCP_PORT || 18792);
 const HOST = process.env.ASSET_MCP_HOST || '127.0.0.1';
@@ -58,6 +61,7 @@ const GIT_DIR = path.resolve(process.env.ASSET_GIT_DIR || REPO_ROOT);
 const CATALOG_PATH = path.join(ASSET_ROOT, 'catalog.json');
 const GRAPHS_DIR = path.join(ASSET_ROOT, 'graphs');
 const REGISTRY_PATH = path.join(ASSET_ROOT, 'registry', 'registry.json');
+const MIRROR_ROOT = path.join(ASSET_ROOT, 'mirrors');
 
 // ---------- catalog 读写 ----------
 
@@ -99,98 +103,7 @@ function gitCommit(message, files) {
 }
 
 // ---------- ARCHGRAPH 图谱 Schema 校验 ----------
-
-const ARCH_ELEMENT_TYPES = [
-  'Resource', 'Capability', 'Value Stream', 'Course of Action', 'Business Actor',
-  'Business Role', 'Business Collaboration', 'Business Interface', 'Business Process',
-  'Business Function', 'Business Interaction', 'Business Event', 'Business Service',
-  'Business Object', 'Contract', 'Representation', 'Product', 'Application Component',
-  'Application Collaboration', 'Application Interface', 'Application Process',
-  'Application Function', 'Application Interaction', 'Application Event',
-  'Application Service', 'Data Object', 'Node', 'Device', 'System Software',
-  'Technology Collaboration', 'Technology Interface', 'Path', 'Communication Network',
-  'Technology Process', 'Technology Function', 'Technology Interaction',
-  'Technology Event', 'Technology Service', 'Artifact', 'Equipment', 'Facility',
-  'Distribution Network', 'Material', 'Stakeholder', 'Driver', 'Assessment', 'Goal',
-  'Outcome', 'Principle', 'Requirement', 'Constraint', 'Meaning', 'Value',
-  'Work Package', 'Deliverable', 'Implementation Event', 'Plateau', 'Gap',
-  'Grouping', 'Skill', 'Rule', 'Location', 'And Junction', 'Or Junction',
-];
-
-const ARCH_RELATIONSHIP_TYPES = [
-  'Access', 'Aggregation', 'Assignment', 'Association', 'Composition', 'Flow',
-  'Influence', 'Realization', 'Serving', 'Specialization', 'Triggering',
-];
-
-function validateGraph(graph) {
-  const errors = [];
-  if (!graph || typeof graph !== 'object') {
-    return { valid: false, errors: ['graph must be an object'] };
-  }
-  for (const field of ['name', 'description']) {
-    if (typeof graph[field] !== 'string' || graph[field].trim() === '') {
-      errors.push(`graph.${field} is required (non-empty string)`);
-    }
-  }
-  for (const field of ['elements', 'relationships', 'views']) {
-    if (!Array.isArray(graph[field])) {
-      errors.push(`graph.${field} must be an array`);
-    }
-  }
-  if (errors.length > 0) return { valid: false, errors };
-
-  const elementIds = new Set();
-  const seenIds = new Set();
-  for (const e of graph.elements) {
-    if (!e || typeof e !== 'object') { errors.push('element must be an object'); continue; }
-    for (const f of ['id', 'name', 'type']) {
-      if (typeof e[f] !== 'string' || e[f].trim() === '') errors.push(`element missing ${f}: ${e.name || '?'}`);
-    }
-    if (e.id && seenIds.has(e.id)) errors.push(`duplicate element id: ${e.id}`);
-    if (e.id) seenIds.add(e.id);
-    if (e.id) elementIds.add(e.id);
-    if (e.type && !ARCH_ELEMENT_TYPES.includes(e.type)) {
-      errors.push(`element "${e.name || e.id}" has invalid ArchiMate type "${e.type}"`);
-    }
-  }
-
-  for (const r of graph.relationships) {
-    if (!r || typeof r !== 'object') { errors.push('relationship must be an object'); continue; }
-    for (const f of ['id', 'type', 'source_id', 'target_id', 'source_name', 'target_name', 'statement']) {
-      if (typeof r[f] !== 'string' || r[f].trim() === '') errors.push(`relationship "${r.id || '?'}" missing ${f}`);
-    }
-    if (r.type && !ARCH_RELATIONSHIP_TYPES.includes(r.type)) {
-      errors.push(`relationship "${r.id}" has invalid type "${r.type}"`);
-    }
-    if (r.source_id && !elementIds.has(r.source_id)) {
-      errors.push(`relationship "${r.id}" source_id "${r.source_id}" does not reference an existing element`);
-    }
-    if (r.target_id && !elementIds.has(r.target_id)) {
-      errors.push(`relationship "${r.id}" target_id "${r.target_id}" does not reference an existing element`);
-    }
-  }
-
-  const viewIds = new Set();
-  for (const v of graph.views) {
-    if (!v || typeof v !== 'object') { errors.push('view must be an object'); continue; }
-    if (typeof v.view_id !== 'string' || v.view_id.trim() === '') errors.push('view missing view_id');
-    if (typeof v.view_name !== 'string' || v.view_name.trim() === '') errors.push(`view "${v.view_id || '?'}" missing view_name`);
-    if (v.view_id) viewIds.add(v.view_id);
-    for (const ref of (v.included_elements || [])) {
-      if (!elementIds.has(ref)) errors.push(`view "${v.view_id}" references unknown element "${ref}"`);
-    }
-    if (v.parent_element_id && !elementIds.has(v.parent_element_id)) {
-      errors.push(`view "${v.view_id}" parent_element_id "${v.parent_element_id}" does not reference an existing element`);
-    }
-  }
-
-  const topViews = (graph.views || []).filter((v) => !v.parent_element_id);
-  if (topViews.length > 1) {
-    errors.push(`graph has ${topViews.length} top-level views; at most 1 allowed`);
-  }
-
-  return { valid: errors.length === 0, errors };
-}
+// 共享校验逻辑位于 graph-schema.js（服务与验收测试、联邦副本托管共用同一套规则）。
 
 // ---------- 图谱资产读写 ----------
 
@@ -365,8 +278,9 @@ function toolRegistryDeregister(args) {
   const reg = registry.load(REGISTRY_PATH);
   const result = registry.deregisterMember(reg, id);
   registry.save(REGISTRY_PATH, reg);
+  const mirrorResult = mirror.remove(MIRROR_ROOT, id);
   const commitResult = gitCommit(`feat(registry): deregister member ${id}`, [REGISTRY_PATH]);
-  return { status: 'ok', ...result, commit: commitResult };
+  return { status: 'ok', ...result, mirror: mirrorResult, commit: commitResult };
 }
 
 function toolRegistryDiscover() {
@@ -391,6 +305,47 @@ function toolRegistryRead(args) {
   return registry.readAuthorized(reg, args);
 }
 
+// ---------- 跨项目图谱查询（外部图读取）+ 副本托管 ----------
+
+function toolGraphReadExternal(args) {
+  const a = args || {};
+  if (!a.requester) throw new Error('缺少 requester（请求方项目 id）');
+  if (!a.projectId) throw new Error('缺少 projectId（被查项目 id）');
+  return externalRead.readExternal({
+    registryPath: REGISTRY_PATH,
+    mirrorRoot: MIRROR_ROOT,
+    requester: a.requester,
+    projectId: a.projectId,
+    contentId: a.contentId,
+    op: a.op,
+    id: a.id,
+    type: a.type,
+    text: a.text,
+    limit: a.limit,
+    depth: a.depth,
+  });
+}
+
+function toolMirrorSync(args) {
+  const a = args || {};
+  if (!a.projectId) throw new Error('缺少 projectId');
+  const reg = registry.load(REGISTRY_PATH);
+  const member = (reg.members || []).find((m) => m.id === a.projectId && m.status === 'active');
+  if (!member) throw new Error(`成员未注册或已注销: ${a.projectId}`);
+  const result = mirror.sync(MIRROR_ROOT, a.projectId, {
+    sourceRepo: a.sourceRepo || member.sourceRepo,
+    branch: a.branch || member.branch || mirror.DEFAULT_BRANCH,
+    graphPath: a.graphPath,
+    commit: a.commit,
+  });
+  return { status: 'ok', ...result };
+}
+
+function toolMirrorList() {
+  const mirrors = mirror.list(MIRROR_ROOT);
+  return { status: 'ok', count: mirrors.length, mirrors };
+}
+
 // ---------- MCP 处理 ----------
 
 const TOOLS = [
@@ -403,6 +358,9 @@ const TOOLS = [
   { name: 'registry_discover', description: '发现已注册联邦成员的基础信息（它是谁、做什么、有什么能力）', inputSchema: { type: 'object', properties: {} } },
   { name: 'registry_authorize', description: '成员显式授权某请求方读取其对外开放内容；未授权默认拒绝', inputSchema: { type: 'object', required: ['grantor', 'grantee'], properties: { grantor: { type: 'string' }, grantee: { type: 'string' }, contentId: { type: 'string' } } } },
   { name: 'registry_read', description: '授权后读取成员开放内容（返回引用，非副本）；未授权默认拒绝', inputSchema: { type: 'object', required: ['requester', 'member'], properties: { requester: { type: 'string' }, member: { type: 'string' }, contentId: { type: 'string' } } } },
+  { name: 'graph_read_external', description: '跨项目图谱查询：授权后在中心托管的成员副本命名空间内查询（不复用 registry_read）；未授权默认拒绝', inputSchema: { type: 'object', required: ['requester', 'projectId'], properties: { requester: { type: 'string' }, projectId: { type: 'string' }, contentId: { type: 'string' }, op: { type: 'string' }, id: { type: 'string' }, type: { type: 'string' }, text: { type: 'string' }, limit: { type: 'number' }, depth: { type: 'number' } } } },
+  { name: 'mirror_sync', description: '按成员已审核分支同步其仓到中心副本（投影+向量化），按 git 版本幂等', inputSchema: { type: 'object', required: ['projectId'], properties: { projectId: { type: 'string' }, sourceRepo: { type: 'string' }, branch: { type: 'string' }, graphPath: { type: 'string' }, commit: { type: 'string' } } } },
+  { name: 'mirror_list', description: '列出中心已托管的成员副本', inputSchema: { type: 'object', properties: {} } },
 ];
 
 const TOOL_HANDLERS = {
@@ -415,6 +373,9 @@ const TOOL_HANDLERS = {
   registry_discover: toolRegistryDiscover,
   registry_authorize: toolRegistryAuthorize,
   registry_read: toolRegistryRead,
+  graph_read_external: toolGraphReadExternal,
+  mirror_sync: toolMirrorSync,
+  mirror_list: toolMirrorList,
 };
 
 function sendJson(res, status, payload) {
@@ -504,6 +465,25 @@ async function handleMcpRequest(req, res) {
   return sendJson(res, 200, response);
 }
 
+// 普通 REST 只读端点：供 ARGO MCP 直接 HTTP 调用，不掺 MCP-in-MCP。
+async function handleRestGraphRead(req, res) {
+  let body;
+  try {
+    body = await readBody(req);
+  } catch (error) {
+    return sendJson(res, 400, { status: 'bad_request', error: error.message });
+  }
+  try {
+    const result = toolGraphReadExternal(body);
+    const httpStatus = result && result.status === 'denied' ? 403
+      : result && result.status === 'bad_request' ? 400
+      : 200;
+    return sendJson(res, httpStatus, result);
+  } catch (error) {
+    return sendJson(res, 400, { status: 'bad_request', error: error.message });
+  }
+}
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
 
@@ -513,13 +493,16 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && url.pathname === '/') {
     return sendJson(res, 200, {
       service: '图谱资产 MCP HTTP/SSE 服务',
-      endpoints: { mcp: 'POST /mcp', health: 'GET /health' },
+      endpoints: { mcp: 'POST /mcp', graphRead: 'POST /graph/read', health: 'GET /health' },
       assetRoot: ASSET_ROOT,
       tools: TOOLS.map((t) => t.name),
     });
   }
   if (req.method === 'POST' && url.pathname === '/mcp') {
     return handleMcpRequest(req, res);
+  }
+  if (req.method === 'POST' && url.pathname === '/graph/read') {
+    return handleRestGraphRead(req, res);
   }
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {

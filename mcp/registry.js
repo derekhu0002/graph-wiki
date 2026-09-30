@@ -63,18 +63,29 @@ function registerMember(registry, input) {
   input = input || {};
   const id = String(input.id || '').trim();
   if (!id) throw new Error('registry_register 缺少成员 id');
+  const sourceRepo = String(input.sourceRepo || '').trim();
+
+  // 身份所有权：中心确认 id 全局唯一。同一 id 若来自不同来源仓，拒绝（防止 id 被抢占/覆盖）。
+  const idx = registry.members.findIndex((m) => m.id === id);
+  if (idx >= 0) {
+    const existingRepo = String(registry.members[idx].sourceRepo || '').trim();
+    if (existingRepo && sourceRepo && existingRepo !== sourceRepo) {
+      throw new Error(`成员 id 冲突: ${id} 已被来源仓 ${existingRepo} 注册，拒绝被 ${sourceRepo} 覆盖`);
+    }
+  }
+
   const member = {
     id,
     name: String(input.name || id),
     role: String(input.role || ''),
     capabilities: Array.isArray(input.capabilities) ? input.capabilities.map(String) : [],
     openContent: normalizeOpenContent(input.openContent),
-    sourceRepo: String(input.sourceRepo || ''),
+    sourceRepo,
+    branch: String(input.branch || 'main'),
     status: 'active',
     registeredAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
-  const idx = registry.members.findIndex((m) => m.id === id);
   if (idx >= 0) {
     member.registeredAt = registry.members[idx].registeredAt || member.registeredAt;
     registry.members[idx] = member;

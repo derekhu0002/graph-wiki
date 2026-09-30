@@ -127,6 +127,10 @@
         {
           "view_id": "federation-tooling-view",
           "view_name": "联邦跨项目协作机制"
+        },
+        {
+          "view_id": "cross-project-graph-query-view",
+          "view_name": "跨项目图谱查询"
         }
       ],
       "testcases": [
@@ -505,7 +509,7 @@
       "id": "federation-registry",
       "name": "联邦注册中心服务",
       "type": "Application Service",
-      "description": "联邦中心的 P0 只读服务：成员自注册/自注销、发现（discover）、授权、授权后读取。中心只保存元数据与授权，不保存成员内容副本（内容主权归各成员，跨国走引用）。通过 Graph MCP 工具 registry_register / registry_deregister / registry_discover / registry_authorize / registry_read 对外提供服务。",
+      "description": "联邦中心服务：成员自注册/自注销（中心确认 id 全局唯一）、发现（discover）、授权（默认拒绝）、按引用读取（registry_read）；并作为跨项目图查询的中心：授权后经 graph_read_external / REST POST /graph/read 返回中心托管的成员副本查询结果。中心保存成员元数据、授权，以及经审核发布的成员图谱可用性副本。通过 Graph MCP 的 registry_* + graph_read_external / mirror_* 工具对外提供服务。",
       "testcases": [
         {
           "name": "federation-registry-p0-read",
@@ -584,7 +588,7 @@
       "id": "federation-rule-sovereignty",
       "name": "内容主权规则",
       "type": "Rule",
-      "description": "中心只保存元数据与授权，不保存成员内容副本；内容主权归各成员，跨国走引用。"
+      "description": "成员仓是知识的事实源（source of truth）；中心可托管经审核发布的成员图谱副本（availability replica），副本随成员版本同步、不改写成员仓；活体授权仍按引用判定（默认拒绝），托管副本仅用于可用性读取。"
     },
     {
       "id": "federation-registry-artifact",
@@ -702,6 +706,87 @@
       "id": "kb-admin-session-20260923-registry-sync",
       "name": "会话记录 2026-09-23 联邦注册中心同步",
       "type": "Business Object"
+    },
+    {
+      "description": "Graph Store 侧的中心服务：下载/接收成员经审核开放的意图图谱，完成命名空间隔离的投影与向量化，并按 git 版本同步成员仓副本。中心权限高且始终在线，成员项目无需在线。",
+      "id": "mirror-host-service",
+      "name": "联邦副本托管服务",
+      "testcases": [
+        {
+          "Input": "GIVEN 中心已登记成员 A/B，A 副本已托管并授权 B\nWHEN 依次执行 未授权读取 → 授权 → 授权后读取 → 隔离校验 → 版本再同步 → 注销\nTHEN 未授权默认拒绝；授权后按 projectId 返回 A 副本查询结果与版本；查 A 不泄漏 B 元素；新版本重新投影；注销后 member_not_found 且副本移除；REST /graph/read 同源",
+          "acceptanceCriteria": "tests/acceptance/external_graph_read.js",
+          "description": "外部视角验收：跨项目图谱查询必须可执行通过——未授权默认拒绝、授权后按 projectId 读托管副本、命名空间隔离、版本再投影、注销清理、REST /graph/read 与意图图结构登记。",
+          "name": "cross-project-graph-read",
+          "type": "Acceptance Test"
+        }
+      ],
+      "type": "Application Service",
+      "attributes": [
+        {
+          "name": "deliveryStatus",
+          "value": "delivered"
+        }
+      ]
+    },
+    {
+      "description": "每张托管副本使用独立命名空间 proj:<projectId>：独立存储目录 assets/mirrors/<projectId>/（graph.json + meta.json + 投影 index.json + 向量 vectors.json），项目间互不可见。",
+      "id": "mirror-store",
+      "name": "副本命名空间存储",
+      "type": "Data Object"
+    },
+    {
+      "description": "按成员已审核分支触发式/定期同步其仓；以 git commit 为版本，版本未变则幂等跳过，版本变化则重新投影 + 重新向量化。成员注销时移除副本。",
+      "id": "mirror-sync-func",
+      "name": "副本同步与再投影",
+      "type": "Application Function"
+    },
+    {
+      "description": "对成员图谱构建结构化投影（byId/byType/adjacency/views）与向量化索引（本地哈希向量，可替换为真实 embedding），支撑结构查询与语义检索。",
+      "id": "mirror-projection-func",
+      "name": "投影与向量化",
+      "type": "Application Function"
+    },
+    {
+      "description": "独立于 registry_read 的新接口：MCP 工具 graph_read_external（与 REST POST /graph/read 同源）。入参 { requester, projectId, op, ... }；授权后按 projectId 在对应命名空间执行查询并返回结果与副本版本；未授权默认拒绝。",
+      "id": "external-graph-read-api",
+      "name": "跨项目图查询接口",
+      "type": "Application Interface"
+    },
+    {
+      "description": "复用联邦注册中心 grants 做读取前校验：查 grants(grantor=projectId, grantee=requester)，命中才放行，未命中返回 denied/not_authorized；成员不存在或已注销返回 member_not_found。",
+      "id": "external-read-grant-check",
+      "name": "外部读授权校验",
+      "type": "Application Function"
+    },
+    {
+      "description": "ARGO MCP 侧路由契约：数据查询/检索接口携带可选 projectId；缺省=本仓（现有行为不变），传了=外仓，转发到 Graph Store 跨项目图查询接口。与 Graph MCP 无直接代码耦合。",
+      "id": "project-id-router",
+      "name": "项目ID路由",
+      "type": "Application Function"
+    },
+    {
+      "description": "成员项目本地持久化的联邦身份（如 .argo/federation.json：projectId/sourceRepo/centerUrl），由中心确认 id 全局唯一后写回，供 ARGO MCP 填充 requester 与判定本仓默认。",
+      "id": "project-identity",
+      "name": "本地项目身份",
+      "type": "Data Object"
+    },
+    {
+      "description": "中心可托管成员经 push/merge 审核后开放的图谱副本（可用性副本）；副本随成员版本同步，成员仓仍是事实源，中心不改写成员仓；未经审核开放的图谱不得托管。",
+      "id": "federation-rule-mirror",
+      "name": "副本托管规则",
+      "type": "Rule"
+    },
+    {
+      "description": "每张托管副本使用独立命名空间 proj:<projectId>（独立存储 + 独立投影/向量索引）；任何查询只落在单一命名空间，禁止跨图 join，项目间互不可见，外仓不得污染本仓。",
+      "id": "federation-rule-namespace-isolation",
+      "name": "命名空间隔离规则",
+      "type": "Rule"
+    },
+    {
+      "description": "跨项目图谱查询的服务代码：mcp/mirror.js（副本托管/投影/向量化/查询）+ mcp/external-read.js（授权校验 + 副本查询编排）+ mcp/graph-schema.js（共享校验）+ asset-mcp-server.js 新增 graph_read_external/mirror_sync/mirror_list 工具与 REST POST /graph/read。",
+      "id": "mirror-mcp-artifact",
+      "name": "副本托管与外部读取代码",
+      "type": "Artifact"
     }
   ],
   "relationships": [
@@ -1024,6 +1109,106 @@
       "target_id": "federation-registry",
       "target_name": "联邦注册中心服务",
       "type": "Association"
+    },
+    {
+      "id": "mirror-artifact-realize",
+      "name": "实现副本托管",
+      "source_id": "mirror-mcp-artifact",
+      "source_name": "副本托管与外部读取代码",
+      "statement": "副本托管与外部读取代码 --(Realization)--> 联邦副本托管服务",
+      "target_id": "mirror-host-service",
+      "target_name": "联邦副本托管服务",
+      "type": "Realization"
+    },
+    {
+      "id": "mirror-sync-realize",
+      "name": "实现同步",
+      "source_id": "mirror-sync-func",
+      "source_name": "副本同步与再投影",
+      "statement": "副本同步与再投影 --(Realization)--> 联邦副本托管服务",
+      "target_id": "mirror-host-service",
+      "target_name": "联邦副本托管服务",
+      "type": "Realization"
+    },
+    {
+      "id": "mirror-projection-realize",
+      "name": "实现投影",
+      "source_id": "mirror-projection-func",
+      "source_name": "投影与向量化",
+      "statement": "投影与向量化 --(Realization)--> 联邦副本托管服务",
+      "target_id": "mirror-host-service",
+      "target_name": "联邦副本托管服务",
+      "type": "Realization"
+    },
+    {
+      "id": "mirror-grant-realize",
+      "name": "实现授权校验",
+      "source_id": "external-read-grant-check",
+      "source_name": "外部读授权校验",
+      "statement": "外部读授权校验 --(Realization)--> 联邦副本托管服务",
+      "target_id": "mirror-host-service",
+      "target_name": "联邦副本托管服务",
+      "type": "Realization"
+    },
+    {
+      "id": "mirror-access-store",
+      "name": "读写副本存储",
+      "source_id": "mirror-host-service",
+      "source_name": "联邦副本托管服务",
+      "statement": "联邦副本托管服务 --(Access)--> 副本命名空间存储",
+      "target_id": "mirror-store",
+      "target_name": "副本命名空间存储",
+      "type": "Access"
+    },
+    {
+      "id": "mirror-expose-api",
+      "name": "暴露接口",
+      "source_id": "mirror-host-service",
+      "source_name": "联邦副本托管服务",
+      "statement": "联邦副本托管服务 --(Association)--> 跨项目图查询接口",
+      "target_id": "external-graph-read-api",
+      "target_name": "跨项目图查询接口",
+      "type": "Association"
+    },
+    {
+      "id": "router-calls-api",
+      "name": "调用契约",
+      "source_id": "project-id-router",
+      "source_name": "项目ID路由",
+      "statement": "项目ID路由 --(Association)--> 跨项目图查询接口",
+      "target_id": "external-graph-read-api",
+      "target_name": "跨项目图查询接口",
+      "type": "Association"
+    },
+    {
+      "id": "router-reads-identity",
+      "name": "读取本地身份",
+      "source_id": "project-id-router",
+      "source_name": "项目ID路由",
+      "statement": "项目ID路由 --(Access)--> 本地项目身份",
+      "target_id": "project-identity",
+      "target_name": "本地项目身份",
+      "type": "Access"
+    },
+    {
+      "id": "rule-mirror-assoc",
+      "name": "约束托管",
+      "source_id": "federation-rule-mirror",
+      "source_name": "副本托管规则",
+      "statement": "副本托管规则 --(Association)--> 联邦副本托管服务",
+      "target_id": "mirror-host-service",
+      "target_name": "联邦副本托管服务",
+      "type": "Association"
+    },
+    {
+      "id": "rule-isolation-assoc",
+      "name": "约束隔离",
+      "source_id": "federation-rule-namespace-isolation",
+      "source_name": "命名空间隔离规则",
+      "statement": "命名空间隔离规则 --(Association)--> 副本命名空间存储",
+      "target_id": "mirror-store",
+      "target_name": "副本命名空间存储",
+      "type": "Association"
     }
   ],
   "views": [
@@ -1216,6 +1401,37 @@
       "parent_element_id": "kb-admin-actor",
       "view_id": "kb-admin-memory-archive",
       "view_name": "个人知识库管理员-长期记忆归档"
+    },
+    {
+      "description": "Graph Store 作为高权限、始终在线的中心，托管经成员 push/merge 审核后开放的意图图谱副本（可用性副本），按项目 ID 在独立命名空间 proj:<projectId> 内投影 + 向量化，并按 git 版本幂等同步。跨项目查询接口（MCP graph_read_external / REST POST /graph/read）授权后返回托管副本的查询结果；成员仓仍是事实源，中心不改写成员仓。",
+      "included_elements": [
+        "mirror-host-service",
+        "mirror-store",
+        "mirror-sync-func",
+        "mirror-projection-func",
+        "external-graph-read-api",
+        "external-read-grant-check",
+        "project-id-router",
+        "project-identity",
+        "federation-rule-mirror",
+        "federation-rule-namespace-isolation",
+        "mirror-mcp-artifact"
+      ],
+      "included_relationships": [
+        "mirror-artifact-realize",
+        "mirror-sync-realize",
+        "mirror-projection-realize",
+        "mirror-grant-realize",
+        "mirror-access-store",
+        "mirror-expose-api",
+        "router-calls-api",
+        "router-reads-identity",
+        "rule-mirror-assoc",
+        "rule-isolation-assoc"
+      ],
+      "parent_element_id": "kg-service-domain",
+      "view_id": "cross-project-graph-query-view",
+      "view_name": "跨项目图谱查询"
     }
   ]
 }

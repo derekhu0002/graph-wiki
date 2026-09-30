@@ -52,7 +52,17 @@ registry_authorize { grantor, grantee, contentId }     # 成员显式授权
 registry_read { requester, member }                    # 授权后按引用读取（默认拒绝）
 ```
 
-中心只保存**成员元数据与授权**，不保存内容副本；各成员图谱保持主权。
+### 跨项目图谱查询（副本托管）
+
+```
+mirror_sync { projectId }                              # 同步成员已审核仓 → 投影+向量化
+graph_read_external { requester, projectId, op }       # 授权后查询托管副本（默认拒绝）
+# 或 REST: POST https://argo.derekworkspacev5.com/graph/read
+```
+
+中心托管成员经 **push/merge 审核**后开放的图谱**可用性副本**；成员仓仍是事实源，
+副本按 git 版本同步。每张副本使用独立命名空间 `proj:<projectId>`，查询不跨图。
+活体授权读取（`registry_read`）仍按引用、不传副本。
 人读入口：[联邦成员页](https://argo.derekworkspacev5.com/archgraph/federation)。
 
 ## 文档
