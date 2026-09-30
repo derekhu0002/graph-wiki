@@ -32,6 +32,9 @@ ssh -o BatchMode=yes "$SSH_HOST" "mkdir -p $REMOTE_DIR/mcp"
 rsync -az --exclude '.git' "$REPO_ROOT/assets/" "$SSH_HOST:$REMOTE_DIR/assets/"
 rsync -az "$REPO_ROOT/mcp/asset-mcp-server.js" "$SSH_HOST:$REMOTE_DIR/mcp/"
 rsync -az "$REPO_ROOT/mcp/registry.js" "$SSH_HOST:$REMOTE_DIR/mcp/"
+rsync -az "$REPO_ROOT/mcp/mirror.js" "$SSH_HOST:$REMOTE_DIR/mcp/"
+rsync -az "$REPO_ROOT/mcp/external-read.js" "$SSH_HOST:$REMOTE_DIR/mcp/"
+rsync -az "$REPO_ROOT/mcp/graph-schema.js" "$SSH_HOST:$REMOTE_DIR/mcp/"
 
 # 3. 配置 systemd
 echo "==> [3/5] 配置 systemd 服务 asset-mcp"
@@ -61,9 +64,34 @@ sleep 2
 systemctl status asset-mcp --no-pager | head -8
 "
 
-# 4. Nginx 反代（合并进现有站点）
-echo "==> [4/5] 配置 Nginx 反代 /mcp"
-ssh -o BatchMode=yes "$SSH_HOST" "grep -q 'asset-mcp' /etc/nginx/sites-available/argo.derekworkspacev5.com 2>/dev/null && echo '已存在' || true"
+# 4. Nginx 反代（合并进现有站点）：/mcp 与 /graph/read
+echo "==> [4/5] 配置 Nginx 反代 /mcp + /graph/read"
+ssh -o BatchMode=yes "$SSH_HOST" 'bash -s' <<'REMOTE'
+set -e
+F=/etc/nginx/sites-available/argo.derekworkspacev5.com
+if [ ! -f "$F" ]; then echo "nginx site not found: $F"; exit 1; fi
+if grep -q 'location /graph/read' "$F"; then
+  echo 'nginx /graph/read 已存在'
+else
+  cp "$F" "$F.bak.$(date +%s)"
+  SNIP="$(mktemp)"
+  cat > "$SNIP" <<'SNIPEOF'
+    # --- /graph/read 跨项目图查询 REST 接口 ---
+    location /graph/read {
+        proxy_pass http://127.0.0.1:18792/graph/read;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+SNIPEOF
+  awk 'NR==FNR{b=b $0 "\n"; next} /^    location \/ \{/{printf "%s", b} {print}' "$SNIP" "$F" > "$F.new" && mv "$F.new" "$F"
+  rm -f "$SNIP"
+  echo 'nginx /graph/read 已写入'
+fi
+nginx -t && systemctl reload nginx && echo 'nginx 已重载'
+REMOTE
 
 # 5. 验证
 echo "==> [5/5] 验证服务"
