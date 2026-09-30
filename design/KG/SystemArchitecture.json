@@ -779,7 +779,7 @@
       "type": "Application Function"
     },
     {
-      "description": "对成员图谱构建结构化投影（byId/byType/adjacency/views）与向量化索引（本地哈希向量，可替换为真实 embedding），支撑结构查询与语义检索。",
+      "description": "对成员图谱做投影与向量化：复用 ARGO 引擎（buildHarnessReport）将成员图投影进 Neo4j（每成员独立 database=projectId）并运行 semanticLifecycle（阿里 Qwen embedding），不再使用自写 JSON 索引/哈希向量。按 git commit 幂等（版本未变跳过）。",
       "id": "mirror-projection-func",
       "name": "投影与向量化",
       "type": "Application Function"
@@ -835,7 +835,7 @@
       "type": "Rule"
     },
     {
-      "description": "跨项目图谱查询的服务代码：mcp/mirror.js（副本托管/投影/向量化/查询）+ mcp/external-read.js（授权校验 + 副本查询编排）+ mcp/graph-schema.js（共享校验）+ asset-mcp-server.js 新增 graph_read_external/mirror_sync/mirror_list 工具与 REST POST /graph/read。",
+      "description": "跨项目图谱查询的服务代码：mcp/mirror-engine-server.js（运行在镜像宿主 47 的 ARGO 镜像引擎服务：git 拉取 + 复用 ARGO buildHarnessReport 投影/`.qea`/Qwen embedding + callTool 读取 + 按 git commit 幂等同步）、mcp/mirror-engine-client.js（120 代理客户端，私网 MIRROR_ENGINE_URL）、mcp/sync-mirrors.js（定时/触发重同步驱动）；asset-mcp-server.js 新增 graph_read_external/mirror_sync/mirror_list 与 REST POST /graph/read（授权在 120 判定）；systemd 单元 argo-mirror-engine(47) 与 sync-mirrors.timer(120)。",
       "id": "mirror-mcp-artifact",
       "name": "副本托管与外部读取代码",
       "type": "Artifact",
