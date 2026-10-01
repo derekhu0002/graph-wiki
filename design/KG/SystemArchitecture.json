@@ -1066,7 +1066,17 @@
           "type": "Acceptance Test"
         }
       ],
-      "type": "Rule"
+      "type": "Rule",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "be7c124: tests/acceptance/kb_rule_deploy_runbook.js, README.md, deploy/README.md, design/KG/SystemArchitecture.json"
+        },
+        {
+          "name": "deliveryStatus",
+          "value": "delivered"
+        }
+      ]
     }
   ],
   "relationships": [
