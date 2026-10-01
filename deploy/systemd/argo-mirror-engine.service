@@ -6,6 +6,7 @@ Requires=docker.service
 [Service]
 Type=simple
 User=root
+EnvironmentFile=__DATA__/argo.env
 Environment=ARGO_ROOT=__HOME__/.argo
 Environment=MIRRORS_ROOT=__DATA__/mirrors
 Environment=MIRROR_ENGINE_HOST=__MIRROR_HOST__

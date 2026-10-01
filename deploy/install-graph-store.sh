@@ -102,9 +102,9 @@ if [ "$INSTALL_ENGINE" = "true" ]; then
   [ -n "$NEO4J_PASSWORD" ] || { echo "ERROR: 请设置 NEO4J_PASSWORD"; exit 1; }
   [ -n "${QWEN_KEY:-}" ] || { echo "ERROR: 请设置 QWEN_KEY"; exit 1; }
 
-  # ARGO 引擎只接受其"审定"的全局 env 文件（~/.argo/.env）。我们**合并式**写入（不覆盖已有键），
-  # 并另存一份我方的源文件副本到 ${DATA_DIR}/argo.env（便于记录/恢复）。我们的**服务**配置则单独在 graph-store.env。
-  ENV_FILE_ARG="$ARGO_ROOT/.env"
+  # Graph Store 的引擎配置写到**我们自己的文件** ${DATA_DIR}/argo.env，由 systemd EnvironmentFile 注入进程环境给 ARGO 引擎；
+  # **不写 ARGO 自己的 ~/.argo/.env**（ARGO 的配置归 ARGO，Graph Store 的配置归 Graph Store，互不混淆）。
+  ENV_FILE_ARG="$DATA_DIR/argo.env"
   [ -f "$ENV_FILE_ARG" ] && cp "$ENV_FILE_ARG" "${ENV_FILE_ARG}.bak.$(date +%s)"
   set_kv() {
     local k="$1" v="$2"
@@ -139,9 +139,6 @@ if [ "$INSTALL_ENGINE" = "true" ]; then
     set_kv ARGO_SEMANTIC_RERANK "0"
   fi
   chmod 600 "$ENV_FILE_ARG"
-  # 我方留存一份源文件副本（记录/恢复用；ARGO 引擎仍读 ~/.argo/.env）。
-  cp "$ENV_FILE_ARG" "$DATA_DIR/argo.env"
-  chmod 600 "$DATA_DIR/argo.env"
 
   log "[2] 启动 Neo4j ($NEO4J_IMAGE)"
   mkdir -p /opt/argo-neo4j/data /opt/argo-neo4j/logs
