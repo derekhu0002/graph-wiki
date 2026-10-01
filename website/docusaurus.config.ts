@@ -51,7 +51,17 @@ const config: Config = {
         src: 'img/logo.svg',
       },
       items: [
-        {to: '/docs/intro', label: '说明', position: 'left'},
+        {
+          type: 'dropdown',
+          label: '新项目接入',
+          position: 'left',
+          items: [
+            {to: '/docs/onboarding', label: '概览'},
+            {to: '/docs/onboarding/create', label: '创建新项目'},
+            {to: '/docs/onboarding/join-federation', label: '加入联邦'},
+            {to: '/docs/onboarding/collaborate', label: '共享与协作'},
+          ],
+        },
         {to: '/ontologies', label: '本体货架', position: 'left'},
         {to: '/community', label: '社区', position: 'left'},
         {to: '/federation', label: '联邦成员', position: 'left'},
@@ -86,6 +96,7 @@ const config: Config = {
         {
           title: '更多',
           items: [
+            {label: '说明', to: '/docs/intro'},
             {label: '博客', to: '/blog'},
             {label: '子图库', to: '/graphs'},
             {label: 'GitHub', href: 'https://github.com/derekhu0002'},

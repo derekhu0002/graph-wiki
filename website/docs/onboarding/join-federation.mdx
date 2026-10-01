@@ -1,0 +1,40 @@
+---
+title: 加入联邦
+sidebar_position: 3
+description: 在联邦中心登记成员、取得 projectId、由中心构建知识副本
+---
+
+# 加入联邦
+
+登记进**联邦中心**后，你的项目就成为一个可被组织内其它项目按授权访问的成员。
+
+## 1. 注册成员（得到 projectId）
+
+通过 **Graph MCP**（远程：`https://argo.derekworkspacev5.com/mcp`）调用：
+
+```jsonc
+// registry_register
+{ "id": "<你的项目 id>", "name": "<名称>", "role": "<作用职责>",
+  "capabilities": ["..."], "openContent": [ /* {id,name,ref} */ ],
+  "sourceRepo": "https://github.com/<owner>/<repo>", "branch": "main" }
+```
+
+- 中心确认 `id` **全局唯一**（同一 id 被不同来源仓注册会被拒绝）。
+- 注册会**自动在后台构建你项目的知识副本**（克隆仓库 → Neo4j 投影 + embedding）。
+- 结束后请**轮询 `mirror_list`** 判断副本是否就绪（长任务）。
+
+## 2. 本地持久化身份
+
+把中心返回的 `projectId` 记到本地（如 `.argo/federation.json`：`{ projectId, sourceRepo, centerUrl, branch }`），供后续调用 `requester` 与判断"本仓/外仓"。
+
+## 3. 授权与自读
+
+- **自读**：`requester == projectId`（读自己的副本）**隐式放行**，无需自授权。
+- **授权他人**：`registry_authorize { grantor, grantee, contentId }`（`contentId` 缺省 `*` 表示全部开放内容）。
+
+## 4. 校验
+
+- `registry_discover` 能看到你与其他成员；`mirror_list` 显示你的副本 `ok:true`。
+- 联邦页可视化成员与授权关系：[/federation](/federation)。
+
+> 相关接口与调用契约详见《Graph 项目适配说明书》（跨项目图谱查询）。
