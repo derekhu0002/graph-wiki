@@ -24,8 +24,8 @@ function HomepageHeader({t}: {t: (e: string, z: string) => string}) {
         </p>
         <p className={styles.heroLead}>
           {t(
-            'ArchGraph is a framework plus long-term memory on a single ArchiMate 3.2 intent graph, reached through one MCP. A project is the basic block — agents always have the graph to rely on. The Graph Store then federates project graphs into an organization-level knowledge graph.',
-            'ArchGraph 是“框架 + 长期记忆”，建立在唯一一张 ArchiMate 3.2 意图架构图之上，经由一个 MCP 访问。以项目为基本 block——让 Agent 始终“有图可依”。Graph Store 再把各项目图联邦为组织级知识图谱。',
+            'ArchGraph is a framework plus long-term memory built on one intent architecture graph, reached through one MCP. The graph\'s ontology is pluggable — ArchiMate 3.2 is the base today, and more ontologies can be added. A project is the basic block; the Graph Store federates project graphs into an organization-level knowledge graph.',
+            'ArchGraph 是“框架 + 长期记忆”，建立在唯一一张意图架构图之上，经由一个 MCP 访问。图的「本体可插拔」——ArchiMate 3.2 只是当前的基础本体，还可扩展更多本体。以项目为基本 block；Graph Store 再把各项目图联邦为组织级知识图谱。',
           )}
         </p>
         <div className={styles.buttons}>
@@ -109,8 +109,8 @@ export default function Home(): ReactNode {
           kicker={t('Project level · single project / agent', '项目级 · 单个项目 / 智能体')}
           title={t('A project knowledge graph, driven by intent', '以意图驱动的项目知识图谱')}
           intro={t(
-            'Each project keeps one ArchiMate-based intent graph as the source of truth. Agents locate the architecture element first, arm themselves with its skills/rules, work test-first, and trace every commit back to the graph.',
-            '每个项目维护一张基于 ArchiMate 的意图图作为事实源。智能体先定位架构元素，用其 Skills/Rules 武装自己，test-first 工作，并把每次 commit 回溯到图。',
+            'Each project keeps one intent graph — in the ontology of your choice (ArchiMate 3.2 today, more to come) — as the source of truth. Agents locate the architecture element first, arm themselves with its skills/rules, work test-first, and trace every commit back to the graph.',
+            '每个项目维护一张意图图——采用你选择的本体（当前为 ArchiMate 3.2，后续可换/可加）——作为事实源。智能体先定位架构元素，用其 Skills/Rules 武装自己，test-first 工作，并把每次 commit 回溯到图。',
           )}
           items={[
             {title: t('Intent-graph driven', '意图图驱动'), body: t('Locate the element before changing anything; arm with Skills/Rules; test-first; trace every commit to the graph.', '改动前先定位元素；用 Skills/Rules 武装；test-first；每次 commit 回溯到图。'), to: '/docs/onboarding/create'},
