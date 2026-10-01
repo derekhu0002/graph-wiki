@@ -102,18 +102,42 @@ if [ "$INSTALL_ENGINE" = "true" ]; then
   [ -n "$NEO4J_PASSWORD" ] || { echo "ERROR: 请设置 NEO4J_PASSWORD"; exit 1; }
   [ -n "${QWEN_KEY:-}" ] || { echo "ERROR: 请设置 QWEN_KEY"; exit 1; }
 
-  cat > "$ARGO_ROOT/.env" <<EOF
-ARGO_EMBEDDING_BASE_URL=${ARGO_EMBEDDING_BASE_URL:-}
-ARGO_EMBEDDING_MODEL=${ARGO_EMBEDDING_MODEL:-qwen3.7-text-embedding}
-ARGO_EMBEDDING_PROVIDER=alibaba-cloud-model-studio-openai-compatible-cn-beijing
-ARGO_EMBEDDING_DIMENSIONS=${ARGO_EMBEDDING_DIMENSIONS:-1536}
-ARGO_NEO4J_DATABASE_URL=neo4j://127.0.0.1:7687
-ARGO_NEO4J_DATABASE_USERNAME=${NEO4J_USER}
-ARGO_NEO4J_DATABASE_PASSWORD=${NEO4J_PASSWORD}
-QWEN_KEY=${QWEN_KEY}
-ARGO_LIVE_PROVIDER_E2E=1
-EOF
-  chmod 600 "$ARGO_ROOT/.env"
+  # 合并式写入 ~/.argo/.env：保留已有键（如 rerank 等），仅设置/覆盖我们负责的键。
+  ENV_FILE_ARG="$ARGO_ROOT/.env"
+  [ -f "$ENV_FILE_ARG" ] && cp "$ENV_FILE_ARG" "${ENV_FILE_ARG}.bak.$(date +%s)"
+  set_kv() {
+    local k="$1" v="$2"
+    if [ -f "$ENV_FILE_ARG" ] && grep -q "^${k}=" "$ENV_FILE_ARG"; then
+      sed -i "s#^${k}=.*#${k}=${v}#" "$ENV_FILE_ARG"
+    else
+      echo "${k}=${v}" >> "$ENV_FILE_ARG"
+    fi
+  }
+  set_kv ARGO_EMBEDDING_BASE_URL "${ARGO_EMBEDDING_BASE_URL:-}"
+  set_kv ARGO_EMBEDDING_MODEL "${ARGO_EMBEDDING_MODEL:-qwen3.7-text-embedding}"
+  set_kv ARGO_EMBEDDING_PROVIDER "alibaba-cloud-model-studio-openai-compatible-cn-beijing"
+  set_kv ARGO_EMBEDDING_DIMENSIONS "${ARGO_EMBEDDING_DIMENSIONS:-1536}"
+  set_kv ARGO_NEO4J_DATABASE_URL "neo4j://127.0.0.1:7687"
+  set_kv ARGO_NEO4J_DATABASE_USERNAME "${NEO4J_USER}"
+  set_kv ARGO_NEO4J_DATABASE_PASSWORD "${NEO4J_PASSWORD}"
+  set_kv QWEN_KEY "${QWEN_KEY}"
+  # 语义生命周期：两个 gate 必须同时为 1（或同时关闭），否则 embedding 不执行。
+  set_kv ARGO_LIVE_PROVIDER_E2E "1"
+  set_kv ARGO_W31_LIVE_MUTATION_VECTOR_E2E "1"
+  set_kv ARGO_EMBEDDING_MODEL_VERSION "${ARGO_EMBEDDING_MODEL_VERSION:-}"
+  set_kv ARGO_SEMANTIC_HYBRID "${ARGO_SEMANTIC_HYBRID:-0}"
+  set_kv ARGO_SEMANTIC_MEMORY_THRESHOLD "${ARGO_SEMANTIC_MEMORY_THRESHOLD:-0.70}"
+  # rerank 可选：提供 ARGO_RERANK_API_KEY 才开启，否则关闭（只用 Qwen embedding 检索）。
+  if [ -n "${ARGO_RERANK_API_KEY:-}" ]; then
+    set_kv ARGO_RERANK_API_KEY "${ARGO_RERANK_API_KEY}"
+    set_kv ARGO_RERANK_BASE_URL "${ARGO_RERANK_BASE_URL:-}"
+    set_kv ARGO_RERANK_MODEL "${ARGO_RERANK_MODEL:-}"
+    set_kv ARGO_RERANK_PROVIDER "${ARGO_RERANK_PROVIDER:-}"
+    set_kv ARGO_SEMANTIC_RERANK "1"
+  else
+    set_kv ARGO_SEMANTIC_RERANK "0"
+  fi
+  chmod 600 "$ENV_FILE_ARG"
 
   log "[2] 启动 Neo4j ($NEO4J_IMAGE)"
   mkdir -p /opt/argo-neo4j/data /opt/argo-neo4j/logs
