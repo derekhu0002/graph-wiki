@@ -19,11 +19,13 @@ function HomepageHeader({t}: {t: (e: string, z: string) => string}) {
     <header className={clsx('hero hero--primary', styles.heroBanner)}>
       <div className="container">
         <Heading as="h1" className="hero__title">{siteConfig.title}</Heading>
-        <p className="hero__subtitle">{siteConfig.tagline}</p>
+        <p className="hero__subtitle">
+          {t('Unify agent engineering with one intent architecture graph', '用一张意图架构图，统一 Agent 工程')}
+        </p>
         <p className={styles.heroLead}>
           {t(
-            'One intent graph per project, one federation across projects. ArchGraph makes architecture (ArchiMate 3.2) the single source of truth for agents — and the Graph Store hosts, links and serves project knowledge graphs across your organization.',
-            '每个项目一张意图图，项目之间一个联邦。ArchGraph 让架构（ArchiMate 3.2）成为智能体的单一事实源；Graph Store 则承载、连接并对外提供组织内各项目的知识图谱。',
+            'ArchGraph is a framework plus long-term memory on a single ArchiMate 3.2 intent graph, reached through one MCP. A project is the basic block — agents always have the graph to rely on. The Graph Store then federates project graphs into an organization-level knowledge graph.',
+            'ArchGraph 是“框架 + 长期记忆”，建立在唯一一张 ArchiMate 3.2 意图架构图之上，经由一个 MCP 访问。以项目为基本 block——让 Agent 始终“有图可依”。Graph Store 再把各项目图联邦为组织级知识图谱。',
           )}
         </p>
         <div className={styles.buttons}>
@@ -35,6 +37,34 @@ function HomepageHeader({t}: {t: (e: string, z: string) => string}) {
     </header>
   );
 }
+
+const CONSTRAINTS: Array<{en: string; zh: string; enD: string; zhD: string}> = [
+  {en: 'Locate first', zh: '定位先行', enD: 'Find the architecture element before changing anything.', zhD: '改动前先在图中定位架构元素。'},
+  {en: 'Acceptance first', zh: '验收先行', enD: 'Executable GIVEN-WHEN-THEN before implementation.', zhD: '先写可执行 GIVEN-WHEN-THEN 再实现。'},
+  {en: 'Provable change', zh: '变更可证', enD: 'Every commit traces back to the graph.', zhD: '每次 commit 都可回溯到图。'},
+  {en: 'Lossless write', zh: '写入无害', enD: 'Gate on dedup / lossless / tombstone.', zhD: '去重/无损/墓碑门禁。'},
+];
+
+function ConstraintStrip({t}: {t: (e: string, z: string) => string}) {
+  const zh = t('x', 'y') === 'y';
+  return (
+    <section className={styles.strip}>
+      <div className="container">
+        <div className="row">
+          {CONSTRAINTS.map((c, i) => (
+            <div className="col col--3" key={i}>
+              <div className={styles.constraint}>
+                <strong>{zh ? c.zh : c.en}</strong>
+                <p>{zh ? c.zhD : c.enD}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 
 function Capability({title, body, to}: {title: string; body: string; to: string}) {
   return (
@@ -73,6 +103,7 @@ export default function Home(): ReactNode {
         'ArchGraph：意图图驱动的 Agentic Engineering、组织级知识联邦，以及托管项目知识图谱的 Graph Store。',
       )}>
       <HomepageHeader t={t} />
+      <ConstraintStrip t={t} />
       <main>
         <Layer
           kicker={t('Project level · single project / agent', '项目级 · 单个项目 / 智能体')}
@@ -87,6 +118,21 @@ export default function Home(): ReactNode {
             {title: t('Executable acceptance', '可执行验收'), body: t('GIVEN-WHEN-THEN acceptance lives in the graph; validation and regression run against it.', 'GIVEN-WHEN-THEN 验收写入图中；校验与回归据此执行。'), to: '/docs/intro'},
           ]}
         />
+
+        <Layer
+          kicker={t('Memory & retrieval · the AI line', '记忆与检索 · AI 线')}
+          title={t('The graph is the memory', '图谱即记忆')}
+          intro={t(
+            'Beyond documentation, the graph is the agent\'s long-term memory: three-tier recall, GraphRAG with dual-channel retrieval, write governance, and lean, cost-aware reads.',
+            '图谱不只是文档，更是 Agent 的长期记忆：三层记忆回忆、GraphRAG 双通道检索、写入治理，以及精益、可观测成本的读取。',
+          )}
+          items={[
+            {title: t('Three-tier memory', '三层记忆'), body: t('T1 working / T2 long-term / T3 archive, recalled on demand (search by meaning, then read full context).', 'T1 工作记忆 / T2 长期记忆 / T3 归档，按需回忆（先按语义定位，再读全文）。'), to: '/docs/archimate/concepts'},
+            {title: t('GraphRAG · dual channel', 'GraphRAG · 双通道'), body: t('Hybrid retrieval (vector + graph) with rerank and a recall threshold; token-lean reads via subgraph scoping.', '向量 + 图谱混合检索，配 rerank 与召回阈值；通过子图限定实现 Token 精益读取。'), to: '/docs/intro'},
+            {title: t('Write governance', '写入治理'), body: t('Gate on write: dedup / lossless / tombstone — so knowledge is never silently lost.', '写入门禁：去重 / 无损 / 墓碑——知识不会被悄悄丢失。'), to: '/docs/intro'},
+          ]}
+        />
+
         <Layer
           kicker={t('Organization level · many projects sharing knowledge', '组织级 · 多项目知识共享')}
           title={t('From project graph to organization-level knowledge graph', '从项目图谱到组织级知识图谱')}

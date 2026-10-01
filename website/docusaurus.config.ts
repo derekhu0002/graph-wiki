@@ -4,7 +4,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'ArchGraph',
-  tagline: 'An architecture-graph framework for Agentic Engineering',
+  tagline: 'Unify agent engineering with one intent architecture graph',
   favicon: 'img/favicon.ico',
 
   url: 'https://argo.derekworkspacev5.com',
