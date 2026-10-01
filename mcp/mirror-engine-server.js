@@ -94,6 +94,20 @@ function git(args, cwd) {
   return execFileSync('git', args, { cwd, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' }).trim();
 }
 
+async function dbExists(projectId) {
+  try {
+    const { store } = engine();
+    const config = store.getNeo4jConfig({ database: 'system' });
+    const driver = store.createDriver(config);
+    const session = driver.session({ database: 'system' });
+    const r = await session.run('SHOW DATABASES YIELD name WHERE name = $n RETURN name', { n: projectId });
+    const exists = r.records.length > 0;
+    await session.close();
+    await driver.close();
+    return exists;
+  } catch { return false; }
+}
+
 function fetchRepo(projectId, sourceRepo, branch) {
   const dir = workdir(projectId);
   const branchName = branch || 'main';
@@ -120,10 +134,14 @@ async function sync(input) {
   let commit = null;
   try { commit = git(['rev-parse', 'HEAD'], dir); } catch { /* not a git dir */ }
 
-  // Idempotent by git version: skip re-projection when the commit is unchanged.
+  // Idempotent by git version — but only if the projection actually exists.
+  // 同步时的幂等不能只看 meta.ok：必须确认该成员的 Neo4j 库确实存在，否则重建（自愈）。
   const meta = readMeta(projectId);
   if (meta && commit && meta.commit === commit && meta.ok) {
-    return { status: 'ok', synced: false, reason: 'up-to-date', projectId, workspaceRoot: dir, namespaceKey: `proj:${projectId}`, commit };
+    if (await dbExists(projectId)) {
+      return { status: 'ok', synced: false, reason: 'up-to-date', projectId, workspaceRoot: dir, namespaceKey: `proj:${projectId}`, commit };
+    }
+    // DB 缺失：不跳过，继续重建。
   }
 
   const { harness } = engine();
@@ -133,7 +151,8 @@ async function sync(input) {
   // repo ships its own .qea; treat only the projection as the required gate.
   const neo4jOk = !!(report.neo4j && report.neo4j.status === 'ok');
   const semanticOk = !!(report.semanticLifecycle && report.semanticLifecycle.status === 'ok');
-  writeMeta(projectId, { commit, ok: neo4jOk, syncedAt: new Date().toISOString() });
+  // meta.ok 反映"投影 + 语义"两者是否都就绪，供 mirror_list 与幂等判断使用。
+  writeMeta(projectId, { commit, ok: neo4jOk && semanticOk, neo4jOk, semanticOk, syncedAt: new Date().toISOString() });
   return {
     status: neo4jOk ? 'ok' : 'failed',
     synced: true,
@@ -176,6 +195,7 @@ async function remove(input) {
   const dir = workdir(projectId);
   const existed = fs.existsSync(dir);
   if (existed) fs.rmSync(dir, { recursive: true, force: true });
+  fs.rmSync(metaPath(projectId), { force: true });
   return { status: 'ok', projectId, databaseDropped: dropped, workspaceRemoved: existed };
 }
 
@@ -185,7 +205,8 @@ function list() {
     .filter((d) => d.isDirectory() && !d.name.startsWith('.'))
     .map((d) => {
       const graphAbs = path.join(MIRRORS_ROOT, d.name, DEFAULT_GRAPH_PATH);
-      return { projectId: d.name, synced: fs.existsSync(graphAbs) };
+      const meta = readMeta(d.name);
+      return { projectId: d.name, synced: fs.existsSync(graphAbs) && !!(meta && meta.ok), ok: !!(meta && meta.ok) };
     });
 }
 

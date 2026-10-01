@@ -108,6 +108,7 @@ if [ "$INSTALL_ENGINE" = "true" ]; then
   [ -f "$ENV_FILE_ARG" ] && cp "$ENV_FILE_ARG" "${ENV_FILE_ARG}.bak.$(date +%s)"
   set_kv() {
     local k="$1" v="$2"
+    [ -z "$v" ] && return   # 空值不写（避免把已有值清空/写坏）
     if [ -f "$ENV_FILE_ARG" ] && grep -q "^${k}=" "$ENV_FILE_ARG"; then
       sed -i "s#^${k}=.*#${k}=${v}#" "$ENV_FILE_ARG"
     else
@@ -125,7 +126,7 @@ if [ "$INSTALL_ENGINE" = "true" ]; then
   # 语义生命周期：两个 gate 必须同时为 1（或同时关闭），否则 embedding 不执行。
   set_kv ARGO_LIVE_PROVIDER_E2E "1"
   set_kv ARGO_W31_LIVE_MUTATION_VECTOR_E2E "1"
-  set_kv ARGO_EMBEDDING_MODEL_VERSION "${ARGO_EMBEDDING_MODEL_VERSION:-}"
+  set_kv ARGO_EMBEDDING_MODEL_VERSION "${ARGO_EMBEDDING_MODEL_VERSION:-qualification-2026-07-25}"
   set_kv ARGO_SEMANTIC_HYBRID "${ARGO_SEMANTIC_HYBRID:-0}"
   set_kv ARGO_SEMANTIC_MEMORY_THRESHOLD "${ARGO_SEMANTIC_MEMORY_THRESHOLD:-0.70}"
   # rerank 可选：提供 ARGO_RERANK_API_KEY 才开启，否则关闭（只用 Qwen embedding 检索）。
