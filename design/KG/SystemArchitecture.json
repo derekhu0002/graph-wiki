@@ -1052,6 +1052,21 @@
       "id": "kb-admin-session-20261001-migrate-store-to-47",
       "name": "会话记录 2026-10-01 Graph Store 迁移至 47（NPM 包部署）",
       "type": "Business Object"
+    },
+    {
+      "description": "Graph Store 部署与迁移的强制运行规则（本轮踩坑后固化，后续会话必须遵守）。【标准流程】1) 以 NPM 包 graph-store 交付：服务器 npm i -g graph-store@<ver>；cp deploy/graph-store.env.example 并填必填项 QWEN_KEY、NEO4J_PASSWORD（缺则安装器报错退出），可选 GITHUB_TOKEN（私有仓）、ARGO_RERANK_API_KEY；graph-store deploy --config <file>。2) 服务只绑本地/私网端口（GRAPH_STORE_HOST/WEB_HOST）；对外反代/域名/TLS 由 IT 负责，且网站与 /mcp 必须同源。3) 迁移到新机：重复安装；迁移 assets/registry/registry.json（成员与授权）+ mirror_sync 重建副本。【必须避免的铯】① 不得用 cat 覆盖 ~/.argo/.env（会丢语义配置）；必须合并写入，且 ARGO_LIVE_PROVIDER_E2E 与 ARGO_W31_LIVE_MUTATION_VECTOR_E2E 必须同时=1，否则 embedding 不执行（SEMANTIC_LIFECYCLE_GATE_INVALID）；已开 rerank 但无凭据会 EXTERNAL_CREDENTIALS_REQUIRED（无 key 时置 ARGO_SEMANTIC_RERANK=0）。② 改配置后必须 systemctl restart（enable --now 不重启运行中的服务）。③ Neo4j 必须 Enterprise（多 database，一成员一库）；Community 不能 CREATE DATABASE。④ 一成员一 workspace→ARGO 派生独立 database；读取用 per-call workspaceRoot（并发安全，禁改进程级 env）。⑤ 脚本 heredoc 内不得有未转义反引号（命令替换导致递归）。⑥ .env 必须 LF + 权限 600。⑦ npm 打包网站需 website/.npmignore 保留 build/。",
+      "id": "kb-rule-deploy-runbook",
+      "name": "部署与迁移运行规则",
+      "testcases": [
+        {
+          "acceptanceCriteria": "tests/acceptance/kb_rule_deploy_runbook.js",
+          "description": "外部视角验收：部署与迁移运行规则已登记（规则类型/归属）并带可执行用例。",
+          "Input": "GIVEN canonical intent graph 位于 design/KG/SystemArchitecture.json\nWHEN 查找「部署与迁移运行规则」Rule 元素\nTHEN 存在 Rule 类型、归属 kb-admin-rules 视图（挂 kb-admin-actor），且 acceptanceCriteria 指向 tests/acceptance/kb_rule_deploy_runbook.js",
+          "name": "kb-rule-deploy-runbook-registered",
+          "type": "Acceptance Test"
+        }
+      ],
+      "type": "Rule"
     }
   ],
   "relationships": [
@@ -1618,7 +1633,8 @@
       "view_name": "个人知识库规则",
       "included_elements": [
         "kb-rule-knowledge-to-kg",
-        "kb-rule-e2e-cloud-acceptance"
+        "kb-rule-e2e-cloud-acceptance",
+        "kb-rule-deploy-runbook"
       ],
       "included_relationships": []
     },

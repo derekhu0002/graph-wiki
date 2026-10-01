@@ -122,3 +122,18 @@ docker logs --tail 50 argo-neo4j
 - `~/.argo/.env` 与 `~/.git-credentials` 均 `600`；勿入库。
 - demo 阶段 `requester` 为自称（弱鉴权），勿对外承诺强安全。
 - Token 建议定期轮换。
+
+## 8. 标准流程与常见坑（务必遵守）
+
+**标准流程**：`npm i -g graph-store` → `cp <pkg>/deploy/graph-store.env.example ./graph-store.env` → 填 `QWEN_KEY`、`NEO4J_PASSWORD`（**必填**，缺则安装器报错退出）→ `graph-store deploy --config ./graph-store.env`。一次部署起：Store + 网站 + 引擎 + 定时同步。
+
+**检查清单 / 常见坑（踩坑后固化）**：
+
+1. **`.env` 合并写入**：安装器**合并** `~/.argo/.env`（不覆盖已有键）；且 `ARGO_LIVE_PROVIDER_E2E` 与 `ARGO_W31_LIVE_MUTATION_VECTOR_E2E` **必须同时 `=1`**，否则 embedding 不执行（`SEMANTIC_LIFECYCLE_GATE_INVALID`）。开启 rerank 但无 `ARGO_RERANK_API_KEY` → `EXTERNAL_CREDENTIALS_REQUIRED`（无 key 时自动 `ARGO_SEMANTIC_RERANK=0`）。
+2. **改配置必须 `systemctl restart`**（`enable --now` 不会重启运行中的服务，改了 `HOST` 之类不生效）。
+3. **Neo4j 必须 Enterprise**（多 database，一成员一库）；Community **不支持** `CREATE DATABASE`。
+4. 每成员一个 workspace → ARGO 派生独立 database；读取用 **per-call `workspaceRoot`**（并发安全，**禁止**改进程级 `env`/`setMcpWorkspaceRoots`）。
+5. `.env` 必须 **LF + 权限 600**（否则 Neo4j 认证失败 / `SECRET_FILE_ACL_UNSAFE`）。
+6. **迁移**：复制 `DATA_DIR/assets/registry/registry.json`（成员+授权）→ `systemctl start sync-mirrors.service` 重建副本。
+7. **对外反代/域名/TLS 属 IT**：同一域名下 `/archgraph/` → 网站端口、`/mcp`·`/graph/read`·`/health` → 服务端口（**同源**）。
+8. **代理部署形态（当前生产）**：`47.107.161.168` 承载 Store(私网:18792)+网站(:18793)+引擎(:18801)+Neo4j；`120.24.114.13` 的 nginx 把 `argo.derekworkspacev5.com` **同源反代**到 47（域名不变）。

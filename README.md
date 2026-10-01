@@ -65,18 +65,28 @@ graph_read_external { requester, projectId, op }       # 授权后查询托管�
 活体授权读取（`registry_read`）仍按引用、不传副本。
 人读入口：[联邦成员页](https://argo.derekworkspacev5.com/archgraph/federation)。
 
-## 部署与迁移（可复制）
+## 部署与迁移（标准流程）
 
-在任意 Linux 服务器**安装 NPM 包并一键部署**即可（详见 [deploy/README.md](deploy/README.md)）：
+以 **NPM 包 `graph-store`** 交付：**服务器上安装 + 一条命令部署**（详见 [deploy/README.md](deploy/README.md)）。
+一次部署同时起：Graph Store（`/mcp`、`/graph/read`）、社区网站（`/archgraph/`）、ARGO 镜像引擎（Neo4j + embedding）、定时重同步。
 
 ```bash
 npm i -g graph-store
-graph-store deploy            # 填 NEO4J_PASSWORD / QWEN_KEY（配置里）
-# 本地访问: http://127.0.0.1:18792/mcp 与 /graph/read
+cp "$(npm root -g)/graph-store/deploy/graph-store.env.example" ./graph-store.env
+vi ./graph-store.env                       # 必填 QWEN_KEY、NEO4J_PASSWORD；可选 GITHUB_TOKEN、ARGO_RERANK_API_KEY
+graph-store deploy --config ./graph-store.env
+# 本地: http://127.0.0.1:18792/mcp 与 /graph/read；网站 http://127.0.0.1:18793/archgraph/
 ```
 
-服务只绑定本地端口；**对外反代/域名/TLS 由 IT 负责**。换服务器只改配置；Graph 项目侧按
-[Graph 项目配置化适配需求](community/GRAPH-PROJECT-CONFIG-ADAPTATION.md) 配置「中心地址」即可访问新实例。
+- **绑定与职责**：服务只绑本地/私网端口；**对外反代 / 域名 / TLS 由 IT 负责**，且网站与 `/mcp` 必须**同源**
+  （`/archgraph/` → 网站端口，`/mcp`·`/graph/read`·`/health` → 服务端口）。
+- **迁移**：新机重复上述安装；迁移 `assets/registry/registry.json`（成员+授权）后 `mirror_sync` 重建副本。
+- **秘密**：`QWEN_KEY`/`NEO4J_PASSWORD` 等只落在 `~/.argo/.env` 与 `DATA_DIR/graph-store.env`（600），不入仓库。
+
+> **部署运行规则**（务必遵守，踩坑后固化）：① 安装器**合并式**写 `~/.argo/.env`（勿覆盖），且 `ARGO_LIVE_PROVIDER_E2E`
+> 与 `ARGO_W31_LIVE_MUTATION_VECTOR_E2E` 必须同时 `=1`（否则 embedding 不执行）；② 改配置后 `systemctl restart`（`enable --now` 不重启）；③ Neo4j 用 **Enterprise**（多库，一成员一库）；④ 详见 [deploy/README.md](deploy/README.md) 与 KG 规则 `kb-rule-deploy-runbook`。
+
+换服务器只改配置；Graph 项目侧按 [Graph 项目配置化适配需求](community/GRAPH-PROJECT-CONFIG-ADAPTATION.md) 配置「中心地址」即可访问新实例。
 
 ## 文档
 
