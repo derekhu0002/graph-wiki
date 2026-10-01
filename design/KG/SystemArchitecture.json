@@ -517,6 +517,13 @@
           "type": "Acceptance Test",
           "Input": "GIVEN 联邦注册中心 Registry 已就绪（registry.js 模块 + 意图图已登记联邦中心视图）\nWHEN 依次执行 成员注册 → 发现 → 未授权读取 → 授权 → 授权后读取 → 注销 → 再发现\nTHEN 注册后 discover 可见基础信息；未授权读取默认拒绝；授权后读取获得开放内容引用；注销后 discover 不再可见；意图图登记联邦中心视图及关键元素",
           "acceptanceCriteria": "tests/acceptance/federation_registry.js"
+        },
+        {
+          "name": "federation-grants-listed",
+          "type": "Acceptance Test",
+          "description": "外部视角验收：registry_grants 必须返回成员间授权关系（grantor/grantee/contentId），供联邦页展示授权图与成员授权明细。",
+          "Input": "GIVEN 含授权记录的 registry（A 授权 B）\nWHEN 调用 registry_grants\nTHEN 返回授权关系（含内容范围 contentId）",
+          "acceptanceCriteria": "tests/acceptance/federation_grants.js"
         }
       ],
       "attributes": [

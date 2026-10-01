@@ -90,3 +90,15 @@ export async function registryDiscover(): Promise<FederationMember[]> {
   const r = await mcpCall('registry_discover', {});
   return r.members || [];
 }
+
+export type FederationGrant = {
+  grantor: string;
+  grantee: string;
+  contentId: string;
+  grantedAt?: string;
+};
+
+export async function registryGrants(): Promise<FederationGrant[]> {
+  const r = await mcpCall('registry_grants', {});
+  return r.grants || [];
+}

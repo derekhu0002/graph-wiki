@@ -1,7 +1,30 @@
 .card {
   margin-bottom: 1rem;
   height: 100%;
+  cursor: pointer;
 }
+
+.cardSelected {
+  outline: 2px solid var(--ifm-color-primary);
+  box-shadow: 0 0 0 3px rgba(77, 107, 254, 0.15);
+}
+
+.detail {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--ifm-color-emphasis-300);
+}
+
+.grants {
+  padding-left: 1.1rem;
+  margin: 0 0 0.5rem;
+}
+
+.grants li {
+  margin-bottom: 0.2rem;
+  font-size: 0.9rem;
+}
+
 
 .meta {
   color: var(--ifm-color-emphasis-600);

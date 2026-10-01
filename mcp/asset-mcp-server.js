@@ -311,6 +311,12 @@ function toolRegistryRead(args) {
   return registry.readAuthorized(reg, args);
 }
 
+function toolRegistryGrants() {
+  const reg = registry.load(REGISTRY_PATH);
+  const grants = registry.listGrants(reg);
+  return { status: 'ok', count: grants.length, grants };
+}
+
 // ---------- 跨项目图谱查询（外部图读取）+ 副本托管 ----------
 
 async function toolGraphReadExternal(args) {
@@ -365,6 +371,7 @@ const TOOLS = [
   { name: 'registry_discover', description: '发现已注册联邦成员的基础信息（它是谁、做什么、有什么能力）', inputSchema: { type: 'object', properties: {} } },
   { name: 'registry_authorize', description: '成员显式授权某请求方读取其对外开放内容；未授权默认拒绝', inputSchema: { type: 'object', required: ['grantor', 'grantee'], properties: { grantor: { type: 'string' }, grantee: { type: 'string' }, contentId: { type: 'string' } } } },
   { name: 'registry_read', description: '授权后读取成员开放内容（返回引用，非副本）；未授权默认拒绝', inputSchema: { type: 'object', required: ['requester', 'member'], properties: { requester: { type: 'string' }, member: { type: 'string' }, contentId: { type: 'string' } } } },
+  { name: 'registry_grants', description: '列出全部联邦授权关系（grantor→grantee, contentId, grantedAt），供成员间授权关系展示', inputSchema: { type: 'object', properties: {} } },
   { name: 'graph_read_external', description: '跨项目图谱查询：授权后经镜像引擎（复用 ARGO）按 projectId 查询托管副本；tool 为 ARGO 读工具名（getSystemArchitecture/getIntentElementContext/getArchitectureViewContext/queryNeo4jGraph/memory_search）；未授权默认拒绝', inputSchema: { type: 'object', required: ['requester', 'projectId', 'tool'], properties: { requester: { type: 'string' }, projectId: { type: 'string' }, tool: { type: 'string' }, args: { type: 'object' }, contentId: { type: 'string' } } } },
   { name: 'mirror_sync', description: '按成员已审核分支同步其仓到镜像宿主（复用 ARGO：Neo4j 投影 + .qea + embedding），按 git 版本幂等', inputSchema: { type: 'object', required: ['projectId'], properties: { projectId: { type: 'string' }, sourceRepo: { type: 'string' }, branch: { type: 'string' } } } },
   { name: 'mirror_list', description: '列出镜像宿主已托管的成员副本', inputSchema: { type: 'object', properties: {} } },
@@ -380,6 +387,7 @@ const TOOL_HANDLERS = {
   registry_discover: toolRegistryDiscover,
   registry_authorize: toolRegistryAuthorize,
   registry_read: toolRegistryRead,
+  registry_grants: toolRegistryGrants,
   graph_read_external: toolGraphReadExternal,
   mirror_sync: toolMirrorSync,
   mirror_list: toolMirrorList,

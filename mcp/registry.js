@@ -150,6 +150,16 @@ function isAuthorized(registry, requester, member, contentId) {
   );
 }
 
+// 列出全部授权记录（供联邦页展示成员间的授权关系）。
+function listGrants(registry) {
+  return (registry.grants || []).map((g) => ({
+    grantor: g.grantor,
+    grantee: g.grantee,
+    contentId: g.contentId,
+    grantedAt: g.grantedAt,
+  }));
+}
+
 // 授权后读取：默认拒绝。命中授权则返回成员开放内容引用（不返回内容副本）。
 function readAuthorized(registry, input) {
   input = input || {};
@@ -180,4 +190,5 @@ module.exports = {
   authorize,
   isAuthorized,
   readAuthorized,
+  listGrants,
 };
