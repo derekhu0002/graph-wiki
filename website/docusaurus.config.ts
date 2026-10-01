@@ -51,12 +51,10 @@ const config: Config = {
         src: 'img/logo.svg',
       },
       items: [
-        {to: '/docs/intro', label: '文档', position: 'left'},
-        {to: '/docs/archimate', label: 'ArchiMate 建模', position: 'left'},
+        {to: '/docs/intro', label: '说明', position: 'left'},
+        {to: '/ontologies', label: '本体货架', position: 'left'},
         {to: '/community', label: '社区', position: 'left'},
-        {to: '/graphs', label: '子图库', position: 'left'},
         {to: '/federation', label: '联邦成员', position: 'left'},
-        {to: '/blog', label: '博客', position: 'left'},
         {
           href: 'https://github.com/derekhu0002/archgraph',
           label: 'GitHub',
@@ -79,7 +77,8 @@ const config: Config = {
           title: '社区',
           items: [
             {label: '社区总览', to: '/community'},
-            {label: 'ArchiMate 建模专栏', to: '/docs/archimate'},
+            {label: '本体货架', to: '/ontologies'},
+            {label: 'ArchiMate 本体', to: '/ontologies/archimate'},
             {label: '子图规范', to: '/docs/community/subgraph-spec'},
             {label: '贡献指南', to: '/docs/community/contributing'},
           ],
@@ -88,6 +87,7 @@ const config: Config = {
           title: '更多',
           items: [
             {label: '博客', to: '/blog'},
+            {label: '子图库', to: '/graphs'},
             {label: 'GitHub', href: 'https://github.com/derekhu0002'},
           ],
         },
