@@ -54,17 +54,17 @@ MCP 客户端配置（本机项目）：
 { "mcp": { "graph-mcp": { "type": "remote", "url": "http://127.0.0.1:18792/mcp", "enabled": true } } }
 ```
 
-## 2. 对外访问（自有域名/URL）
+## 2. 对外访问（由 IT 负责，不在本项目范围）
 
-在 `deploy/graph-store.env` 设：
+本项目**只把服务绑到本地端口**（默认 `127.0.0.1:18792`），**不负责**反向代理 / 域名 / TLS。
+如需对外，由 IT 用 Nginx / 网关把下列路径反代到该端口：
 
-```
-ENABLE_NGINX=true
-DOMAIN=your.domain.com
-```
+- `POST /mcp`
+- `POST /graph/read`
+- `GET  /health`
 
-重跑 `sudo bash deploy/install-graph-store.sh`，脚本写入 `deploy/nginx-graph-store.conf.template` 反代
-（`/mcp`、`/graph/read`、`/health`）。生产请为域名启用 TLS。
+参考配置片段见 `deploy/nginx-graph-store.conf.template`（供 IT 复制，安装器**不再**自动写入 Nginx）。
+若由外部代理直连本机端口，可将 `GRAPH_STORE_HOST` 设为 `0.0.0.0` 或内网 IP。
 
 ## 3. 迁移到新服务器
 
@@ -103,7 +103,8 @@ docker logs --tail 50 argo-neo4j
 ## 6. 关键配置项（`deploy/graph-store.env`）
 
 见 `deploy/graph-store.env.example`。要点：`GRAPH_STORE_HOST/PORT`、`INSTALL_ENGINE`、`MIRROR_HOST/PORT`、
-`MIRROR_ENGINE_URL`、`NEO4J_*`、`ARGO_EMBEDDING_*`/`QWEN_KEY`、`ARGO_NPM_PACKAGE`、`GITHUB_TOKEN`、`ENABLE_NGINX`/`DOMAIN`。
+`MIRROR_ENGINE_URL`、`NEO4J_*`、`ARGO_EMBEDDING_*`/`QWEN_KEY`、`ARGO_NPM_PACKAGE`、`GITHUB_TOKEN`。
+（对外反代/域名/TLS 属 IT 职责，无对应配置项。）
 
 ## 7. 安全
 

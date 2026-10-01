@@ -67,16 +67,16 @@ graph_read_external { requester, projectId, op }       # 授权后查询托管�
 
 ## 部署与迁移（可复制）
 
-在任意 Linux 服务器**下载仓库 + 一键安装**即可（详见 [deploy/README.md](deploy/README.md)）：
+在任意 Linux 服务器**安装 NPM 包并一键部署**即可（详见 [deploy/README.md](deploy/README.md)）：
 
 ```bash
-cp deploy/graph-store.env.example deploy/graph-store.env   # 填 NEO4J_PASSWORD / QWEN_KEY / 域名
-sudo bash deploy/install-graph-store.sh
+npm i -g graph-store
+graph-store deploy            # 填 NEO4J_PASSWORD / QWEN_KEY（配置里）
 # 本地访问: http://127.0.0.1:18792/mcp 与 /graph/read
 ```
 
-换服务器/换域名只改配置；Graph 项目侧按 [Graph 项目配置化适配需求](community/GRAPH-PROJECT-CONFIG-ADAPTATION.md)
-配置「中心地址」即可访问新实例。
+服务只绑定本地端口；**对外反代/域名/TLS 由 IT 负责**。换服务器只改配置；Graph 项目侧按
+[Graph 项目配置化适配需求](community/GRAPH-PROJECT-CONFIG-ADAPTATION.md) 配置「中心地址」即可访问新实例。
 
 ## 文档
 

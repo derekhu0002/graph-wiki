@@ -45,8 +45,6 @@ fi
 : "${ARGO_NPM_PACKAGE:=archgraph-argo}"
 : "${NPM_REGISTRY:=https://registry.npmmirror.com}"
 : "${NODE_VERSION:=v22.11.0}"
-: "${ENABLE_NGINX:=false}"
-: "${DOMAIN:=}"
 
 ARGO_ROOT="${HOME}/.argo"
 NODE_BIN="$(command -v node || echo /usr/local/bin/node)"
@@ -157,19 +155,9 @@ systemctl enable --now asset-mcp
 systemctl enable --now sync-mirrors.timer
 
 # ---------------------------------------------------------------------------
-# 4. Nginx（可选）
+# 4. 健康检查
 # ---------------------------------------------------------------------------
-if [ "$ENABLE_NGINX" = "true" ] && [ -n "$DOMAIN" ]; then
-  log "[4] 配置 Nginx 反代 $DOMAIN"
-  sed -e "s#__DOMAIN__#${DOMAIN}#g" -e "s#__GRAPH_STORE_PORT__#${GRAPH_STORE_PORT}#g" \
-      "$PKG_DIR/deploy/nginx-graph-store.conf.template" > "/etc/nginx/conf.d/graph-store-${DOMAIN}.conf"
-  nginx -t && systemctl reload nginx
-fi
-
-# ---------------------------------------------------------------------------
-# 5. 健康检查
-# ---------------------------------------------------------------------------
-log "[5] 健康检查"
+log "[4] 健康检查"
 sleep 2
 echo -n "asset-mcp  : "; curl -s --max-time 5 "http://${GRAPH_STORE_HOST}:${GRAPH_STORE_PORT}/health" || echo "(未就绪)"
 echo
@@ -179,7 +167,7 @@ if [ "$INSTALL_ENGINE" = "true" ]; then
 fi
 cat <<EOF
 
-==> 完成。
+==> 完成。服务已在本机监听 ${GRAPH_STORE_HOST}:${GRAPH_STORE_PORT}。
     本地:  http://${GRAPH_STORE_HOST}:${GRAPH_STORE_PORT}/mcp 与 /graph/read
-    外部:  设 ENABLE_NGINX=true、DOMAIN=你的域名后重跑  graph-store deploy
+    对外:  由 IT 反向代理该端口到目标域名（本项目不负责反代/TLS）。
 EOF

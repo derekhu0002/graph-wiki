@@ -1,5 +1,6 @@
-# Graph Store 反代（由 install-graph-store.sh 用 DOMAIN / GRAPH_STORE_PORT 替换后写入 nginx conf.d）
-# 说明：生产建议启用 TLS（listen 443 ssl + 证书）。如需并入已有站点，拷贝其中的 location 块即可。
+# Graph Store 反向代理参考片段（供 IT 复制使用；安装器**不再**自动写入 Nginx）
+# 本项目只负责把服务绑到本地端口（默认 127.0.0.1:18792）；对外反代/域名/TLS 由 IT 负责。
+# 将 __DOMAIN__ 换成你的域名、__GRAPH_STORE_PORT__ 换成服务端口。生产请启用 TLS。
 server {
     listen 80;
     server_name __DOMAIN__;
