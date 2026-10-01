@@ -542,6 +542,10 @@
         {
           "name": "commit",
           "value": "2218d2a: mcp/registry.js, mcp/asset-mcp-server.js (implicit self-read, async register/background mirror build, git identity for authorize commits, branch in registry_register schema)"
+        },
+        {
+          "name": "commit",
+          "value": "f0b23a2: mcp/registry.js, mcp/asset-mcp-server.js (registry_grants), website/src/pages/federation.tsx, website/src/lib/mcp.ts, tests/acceptance/federation_grants.js"
         }
       ]
     },
