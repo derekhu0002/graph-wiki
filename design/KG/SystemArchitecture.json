@@ -893,6 +893,10 @@
         {
           "name": "commit",
           "value": "44a05ea: tests/acceptance/external_graph_read.js"
+        },
+        {
+          "name": "commit",
+          "value": "1d9a9a4: mcp/mirror-engine-server.js (self-heal: verify DB exists before up-to-date; clear .meta on remove; meta.ok=projection+semantic; mirror_list ok), deploy/install-graph-store.sh, deploy/graph-store.env.example"
         }
       ]
     },
