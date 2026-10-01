@@ -3,6 +3,9 @@ sidebar_position: 6
 title: 指标与评测
 ---
 
+import MetricRadar from '@site/src/components/MetricRadar';
+import MetricComparison from '@site/src/components/MetricComparison';
+
 # 指标与评测
 
 本页四部分：指标体系及每个指标解决的问题、我们如何度量与优化、当前结果、以及我们如何与基线做对比。（内部基线；重在方法。）
@@ -25,6 +28,8 @@ title: 指标与评测
 
 底层仍用标准 IR 指标：**Precision / Recall / MRR / Hit Rate@K**。
 
+<MetricComparison />
+
 ## 2. 如何度量与优化
 
 - **剖面评测框架**：沿 **场景 × 规模 × 指标** 三条轴评分，而不是一个总分。场景含精确/结构定位、语义定位、多跳导航、图仓合成、时间/版本/冲突、拒答、写入/登记、仓内内容定位。
@@ -41,6 +46,8 @@ title: 指标与评测
 - Agent 成本—召回：导航任务上证据召回完整，轮次少、Token 预算小。
 
 > 这些是小样本内部数字，不是跨分布基准。
+
+<MetricRadar />
 
 ## 4. 对照评测
 

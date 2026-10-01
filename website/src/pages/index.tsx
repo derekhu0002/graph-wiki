@@ -6,6 +6,7 @@ import Layout from '@theme/Layout';
 import Heading from '@theme/Heading';
 
 import styles from './index.module.css';
+import {StreamDiagram1, StreamDiagram2, StreamDiagram3} from '@site/src/components/StreamDiagrams';
 
 function useT() {
   const {i18n} = useDocusaurusContext();
@@ -44,6 +45,7 @@ function ValueStream({
   capability,
   value,
   links,
+  diagram,
 }: {
   no: string;
   kicker: string;
@@ -52,6 +54,7 @@ function ValueStream({
   capability: string;
   value: string;
   links: Array<{label: string; to: string}>;
+  diagram: ReactNode;
 }) {
   return (
     <section className={styles.stream}>
@@ -63,6 +66,7 @@ function ValueStream({
           <div className="col col--10">
             <p className={styles.kicker}>{kicker}</p>
             <Heading as="h2">{title}</Heading>
+            <div className={styles.streamDiagram}>{diagram}</div>
             <div className={styles.streamGrid}>
               <div><h4>{'!'}</h4><p>{problem}</p></div>
               <div><h4>{'→'}</h4><p>{capability}</p></div>
@@ -112,6 +116,7 @@ export default function Home(): ReactNode {
           capability={t('One intent graph as the source of truth (locate → arm → accept, trace every commit), plus long-term memory with GraphRAG and write governance.', '以唯一意图图为事实源（定位 → 武装 → 验收，每次 commit 可回溯），并配长期记忆：GraphRAG 与写入治理。')}
           value={t('Agents work grounded and under control; architecture becomes executable, inspectable, reusable knowledge — a closed loop of write → read → verify.', '智能体有图可依、可控；架构变成可执行、可检查、可复用的知识——形成「写 → 读 → 验」的闭环。')}
           links={[{label: t('Create a project', '创建项目'), to: '/docs/onboarding/create'}, {label: t('Architecture', '架构'), to: '/docs/architecture'}]}
+          diagram={<StreamDiagram1 />}
         />
 
         <ValueStream
@@ -122,6 +127,7 @@ export default function Home(): ReactNode {
           capability={t('Project = the basic building block. A federation registry plus a Graph Store host queryable replicas and serve cross-project reads under authorization (default deny).', '项目 = 基本积木。联邦注册中心 + Graph Store 托管可查询副本，并在授权下提供跨项目读取（默认拒绝）。')}
           value={t('Assemble an organization-level knowledge graph from projects — flexible, modular, without merging graphs or losing content sovereignty.', '把零散项目“搭积木”式拼成组织级知识图谱——灵活、模块化，且不合并图谱、不丢失内容主权。')}
           links={[{label: t('Join the federation', '加入联邦'), to: '/docs/onboarding/join-federation'}, {label: t('Federation page', '联邦页'), to: '/federation'}]}
+          diagram={<StreamDiagram2 />}
         />
 
         <ValueStream
@@ -132,6 +138,7 @@ export default function Home(): ReactNode {
           capability={t('A unified MCP reads/writes the graph; the ontology is pluggable and the MCP is decoupled from the graph/ontology.', '统一 MCP 读写图谱；本体可插拔，且 MCP 与图谱/本体解耦。')}
           value={t('Open-closed and evolvable: swap ontologies per project, and keep improving read/write capabilities independently.', '开闭原则、可演进：每个项目可自定本体；读写能力可独立持续优化。')}
           links={[{label: t('Architecture', '架构'), to: '/docs/architecture'}, {label: t('Metrics & evaluation', '指标与评测'), to: '/docs/metrics'}]}
+          diagram={<StreamDiagram3 />}
         />
 
         <section className={styles.advantagesSection}>

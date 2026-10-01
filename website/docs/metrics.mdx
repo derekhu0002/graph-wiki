@@ -3,6 +3,9 @@ sidebar_position: 6
 title: Metrics & evaluation
 ---
 
+import MetricRadar from '@site/src/components/MetricRadar';
+import MetricComparison from '@site/src/components/MetricComparison';
+
 # Metrics & evaluation
 
 This page covers four things: the metric system and what each metric solves, how we measure and
@@ -28,6 +31,8 @@ cost metric so we never trade recall for speed silently.
 
 Underneath, standard IR metrics apply: **Precision / Recall / MRR / Hit Rate@K**.
 
+<MetricComparison />
+
 ## 2. How we measure & optimize
 
 - **Profile evaluation framework**: we score along three axes — **scenario × scale × metrics** — rather
@@ -50,6 +55,8 @@ Representative internal baselines (from our harnesses; small, single-project —
 - Agent cost–recall: full evidence recall with a few turns and a small token budget on navigation tasks.
 
 > These are internal numbers on a small dataset, not a cross-distribution benchmark.
+
+<MetricRadar />
 
 ## 4. Comparative evaluation
 
