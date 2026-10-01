@@ -1083,6 +1083,10 @@
         {
           "name": "configSeparation",
           "value": "正确做法（已验证）：Graph Store 的引擎配置写自己的 DATA_DIR/argo.env，由 argo-mirror-engine.service 的 EnvironmentFile 注入进程环境（ARGO 引擎读 process.env）。不写 ARGO 的 ~/.argo/.env（两者配置分离）。切勿设 ARGO_ENV_FILE 指向自定义路径（ARGO provenance 校验会拒：仓内 SECRET_FILE_NOT_IGNORED、仓外 EXTERNAL_CREDENTIALS_REQUIRED）。"
+        },
+        {
+          "name": "commit",
+          "value": "c137e57: deploy/install-graph-store.sh, deploy/systemd/argo-mirror-engine.service, deploy/README.md, README.md"
         }
       ]
     }
