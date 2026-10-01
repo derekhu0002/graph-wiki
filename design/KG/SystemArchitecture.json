@@ -1022,8 +1022,28 @@
         {
           "name": "commit",
           "value": "c43ba45: package.json, bin/, mcp/static-server.js, deploy/systemd/graph-store-web.service, deploy/install-graph-store.sh, website/.npmignore"
+        },
+        {
+          "name": "commit",
+          "value": "b676248: deploy/install-graph-store.sh"
+        },
+        {
+          "name": "deployedAt",
+          "value": "47.107.161.168 @ argo.derekworkspacev5.com (migrated from 120 on 2026-10-01; full E2E passed)"
         }
       ]
+    },
+    {
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "b676248: deploy/install-graph-store.sh, deploy/graph-store.env.example"
+        }
+      ],
+      "description": "2026-10-01 迁移记录：把 Graph Store 从 120.24.114.13 迁到 47.107.161.168，并用 NPM 包方式（graph-store deploy）全量部署。47 上：服务 18792 + 网站 18793 + 镜像引擎 18801 + Neo4j Enterprise(多库) + 定时同步；registry 从 120 迁移（archgraph/soc-demo 及授权）；mirror 重建（archgraph 298 元素、soc-demo 386）；云端 E2E 全通过（授权读/未授权 403/memory_search/网站 200）。120 已删除：asset-mcp/sync-mirrors 单元、/opt/graph-wiki、nginx 的 /mcp /health /graph/read /archgraph/ location；备份于 120:/root/graph-wiki-backup.tgz。关键坑与修复：安装器原先 cat 覆盖 ~/.argo/.env，丢掉 ARGO_W31_LIVE_MUTATION_VECTOR_E2E 与语义/rerank 键 → 先报 SEMANTIC_LIFECYCLE_GATE_INVALID（两 gate 必须同为 1），后报 EXTERNAL_CREDENTIALS_REQUIRED（rerank 未关且无凭据）。修复：安装器改为**合并式写入**（保留已有键），并写入两个 gate + ARGO_SEMANTIC_HYBRID/THRESHOLD + 可选 rerank（提供 ARGO_RERANK_API_KEY 才开，否则 ARGO_SEMANTIC_RERANK=0）。固定安装器后重跑 deploy 并重验通过。commit b676248。",
+      "id": "kb-admin-session-20261001-migrate-store-to-47",
+      "name": "会话记录 2026-10-01 Graph Store 迁移至 47（NPM 包部署）",
+      "type": "Business Object"
     }
   ],
   "relationships": [
@@ -1577,7 +1597,8 @@
         "kb-admin-session-20260922-federation-page",
         "kb-admin-session-20260923-registry-sync",
         "kb-admin-session-20261001-cross-project-query",
-        "kb-admin-session-20261001-mirror-engine"
+        "kb-admin-session-20261001-mirror-engine",
+        "kb-admin-session-20261001-migrate-store-to-47"
       ],
       "included_relationships": []
     },
