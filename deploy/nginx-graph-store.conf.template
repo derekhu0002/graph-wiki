@@ -1,0 +1,35 @@
+# Graph Store 反代（由 install-graph-store.sh 用 DOMAIN / GRAPH_STORE_PORT 替换后写入 nginx conf.d）
+# 说明：生产建议启用 TLS（listen 443 ssl + 证书）。如需并入已有站点，拷贝其中的 location 块即可。
+server {
+    listen 80;
+    server_name __DOMAIN__;
+
+    # --- MCP 端点 ---
+    location /mcp {
+        proxy_pass http://127.0.0.1:__GRAPH_STORE_PORT__/mcp;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+        proxy_set_header Connection '';
+    }
+
+    # --- 跨项目图谱查询 REST ---
+    location /graph/read {
+        proxy_pass http://127.0.0.1:__GRAPH_STORE_PORT__/graph/read;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /health {
+        proxy_pass http://127.0.0.1:__GRAPH_STORE_PORT__/health;
+        proxy_set_header Host $host;
+    }
+}

@@ -1,0 +1,10 @@
+[Unit]
+Description=Periodic federation mirror sync
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=30min
+Unit=sync-mirrors.service
+
+[Install]
+WantedBy=timers.target

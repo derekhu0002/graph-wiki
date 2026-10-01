@@ -60,10 +60,23 @@ graph_read_external { requester, projectId, op }       # 授权后查询托管�
 # 或 REST: POST https://argo.derekworkspacev5.com/graph/read
 ```
 
-中心托管成员经 **push/merge 审核**后开放的图谱**可用性副本**；成员仓仍是事实源，
-副本按 git 版本同步。每张副本使用独立命名空间 `proj:<projectId>`，查询不跨图。
+中心托管成员经 **push/merge 审核**后开放的图谱**可用性副本**（复用 ARGO 引擎做 Neo4j 投影 + Qwen 向量化）；
+成员仓仍是事实源，副本按 git 版本同步。**每个成员一个独立 Neo4j database**（= `projectId`），查询不跨图。
 活体授权读取（`registry_read`）仍按引用、不传副本。
 人读入口：[联邦成员页](https://argo.derekworkspacev5.com/archgraph/federation)。
+
+## 部署与迁移（可复制）
+
+在任意 Linux 服务器**下载仓库 + 一键安装**即可（详见 [deploy/README.md](deploy/README.md)）：
+
+```bash
+cp deploy/graph-store.env.example deploy/graph-store.env   # 填 NEO4J_PASSWORD / QWEN_KEY / 域名
+sudo bash deploy/install-graph-store.sh
+# 本地访问: http://127.0.0.1:18792/mcp 与 /graph/read
+```
+
+换服务器/换域名只改配置；Graph 项目侧按 [Graph 项目配置化适配需求](community/GRAPH-PROJECT-CONFIG-ADAPTATION.md)
+配置「中心地址」即可访问新实例。
 
 ## 文档
 
@@ -73,6 +86,9 @@ graph_read_external { requester, projectId, op }       # 授权后查询托管�
 | [子图规范](community/SUBGRAPH-SPEC.md) | 子图命名、类型、质量门槛 |
 | [贡献指南](community/CONTRIBUTING.md) | 如何贡献 / 获取子图 |
 | [MCP 服务说明](mcp/README.md) | 服务部署与工具 |
+| [部署与迁移](deploy/README.md) | 一键安装、迁移、拆分部署 |
+| [Graph 项目适配说明书](community/EXTERNAL-GRAPH-QUERY-ADAPTATION.md) | 跨项目查询接口与调用契约 |
+| [Graph 项目配置化适配需求](community/GRAPH-PROJECT-CONFIG-ADAPTATION.md) | 地址分层配置 / 跨仓 / 可复制 |
 
 ## 当前图谱资产
 

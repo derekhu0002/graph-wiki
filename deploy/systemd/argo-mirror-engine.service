@@ -1,0 +1,18 @@
+[Unit]
+Description=ARGO Mirror Engine (Neo4j + ARGO engine; reuses ARGO)
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=root
+Environment=ARGO_ROOT=__HOME__/.argo
+Environment=MIRRORS_ROOT=__HOME__/mirrors
+Environment=MIRROR_ENGINE_HOST=__MIRROR_HOST__
+Environment=MIRROR_ENGINE_PORT=__MIRROR_PORT__
+ExecStart=__NODE__ __REPO__/mcp/mirror-engine-server.js
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

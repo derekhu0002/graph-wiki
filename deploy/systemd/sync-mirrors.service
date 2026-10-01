@@ -1,0 +1,10 @@
+[Unit]
+Description=Sync all federation mirrors via ARGO mirror engine
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=__REPO__
+Environment=ASSET_REPO_ROOT=__REPO__
+Environment=MIRROR_ENGINE_URL=__MIRROR_ENGINE_URL__
+ExecStart=__NODE__ __REPO__/mcp/sync-mirrors.js
