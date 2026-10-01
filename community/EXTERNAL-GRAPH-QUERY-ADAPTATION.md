@@ -148,3 +148,14 @@ Content-Type: application/json
 - 中心接口已交付并**云端 E2E 通过**（`argo.derekworkspacev5.com`）：授权读 archgraph = 298 元素（`database=archgraph`）、未授权 403、未知成员 403、`memory_search` 语义命中、`mirror_list` 含 archgraph+soc-demo。
 - 已建真实副本：**archgraph（298 元素）**、**soc-demo（386 元素）**，各占独立 Neo4j database。
 - 关键提交：`ad695c7`（初版）、`1ead05b`（120 代理）、`2e2ced7`（幂等+定时同步）、`44a05ea`（验收测试）、本条刷新提交。
+
+## 10. 契约澄清（回应 ArchGraph issue #1）
+
+1. **状态持久化与"被清空"**：中心的成员/授权（`DATA_DIR/assets/registry/registry.json`）与副本（`DATA_DIR/mirrors` + 各成员 Neo4j database）都**落盘**，**跨重启/重部署保留**（安装器不清理 `DATA_DIR`）。observed 的"变空"是**运维显式执行了一次清空**（按需求重置），不是重启导致。成员若发现 `member_not_found`，应**重新注册**（`registry_register`）并等待副本重建。
+2. **注册/同步是长任务**：`registry_register` 现在**立即返回**（`mirror.status="accepted"`，副本在**后台异步**构建）；`mirror_sync` 为长耗时（克隆+投影+embedding，约 0.2–3 分钟）。请**轮询 `mirror_list`** 判断是否就绪，勿依赖单次 MCP 超时。已把 `registry_register` 的 `branch` 加入 schema。
+3. **副本是否被 embedding**：是。`mirror_sync` → 镜像引擎调用 ARGO **`buildHarnessReport`（即 `initializeWorkspace` 逻辑）**，含 **semanticLifecycle / embedding 回填**。此前语义读失败是因为当时引擎的 ARGO 配置（`ARGO_EMBEDDING_*`/`ARGO_LIVE_PROVIDER_E2E`）缺失/为空；现已配好，`memory_search` 正常。配置位于 **ARGO 自己的 `~/.argo/.env`**（引擎自动读取）。
+4. **自读授权**：已改为**隐式放行**——`requester === projectId`（读自己的副本）无需显式自授权；读他人仍需显式授权（默认拒绝不变）。
+5. **授权提交**：`registry_authorize` 的 git 提交此前因中心 git 身份未设而失败（`Author identity unknown`）。已修：提交时带 `-c user.name/user.email`（并把身份写入 `DATA_DIR` git 配置），授权现可正常版本化。
+6. **`branch`**：`registry_register` schema 已补 `branch`（文档与实现一致）。
+
+> 注意：以上 3/4/5/6 为本次修复（中心侧），请 ArchGraph 侧按第 2 条改为**轮询**判定同步完成。

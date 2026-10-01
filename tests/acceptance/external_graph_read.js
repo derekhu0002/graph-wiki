@@ -111,8 +111,9 @@ async function main() {
     // THEN 5: 注册自动建副本
     const beforeSync = stub.calls.sync.length;
     const regRes = await mcp(base, 'registry_register', { id: 'C', name: '项目 C', sourceRepo: '/tmp/c' });
-    check(regRes.status === 'ok' && regRes.mirror && regRes.mirror.synced === true, 'THEN5 注册返回镜像同步结果');
-    check(stub.calls.sync.some((s) => s.projectId === 'C') && stub.calls.sync.length === beforeSync + 1, 'THEN5 注册自动触发引擎镜像同步');
+    check(regRes.status === 'ok' && regRes.mirror && regRes.mirror.status === 'accepted', 'THEN5 注册返回 accepted（后台异步建副本）');
+    await new Promise((r) => setTimeout(r, 400));
+    check(stub.calls.sync.some((s) => s.projectId === 'C') && stub.calls.sync.length === beforeSync + 1, 'THEN5 注册后台触发引擎镜像同步');
 
     // THEN 6: 注销联动移除镜像
     const beforeRemove = stub.calls.remove.length;

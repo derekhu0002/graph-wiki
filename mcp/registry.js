@@ -139,6 +139,8 @@ function authorize(registry, input) {
 }
 
 function isAuthorized(registry, requester, member, contentId) {
+  // 自读：请求方就是成员本人时隐式放行（读自己的副本无需自授权）。
+  if (String(requester) === String(member)) return true;
   const key = String(contentId || '*').trim() || '*';
   return (registry.grants || []).some(
     (g) =>
