@@ -1030,6 +1030,14 @@
         {
           "name": "deployedAt",
           "value": "47.107.161.168 @ argo.derekworkspacev5.com (migrated from 120 on 2026-10-01; full E2E passed)"
+        },
+        {
+          "name": "commit",
+          "value": "312fd50: deploy/install-graph-store.sh (restart services on deploy)"
+        },
+        {
+          "name": "topology",
+          "value": "47.107.161.168 承载 Store(172.18.2.191:18792)+网站(172.18.2.191:18793)+引擎(127.0.0.1:18801)+Neo4j; 120.24.114.13 nginx 同源反代 argo.derekworkspacev5.com -> 47（域名不变）。公网 E2E 通过。"
         }
       ]
     },
