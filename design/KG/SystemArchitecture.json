@@ -1082,11 +1082,15 @@
         },
         {
           "name": "configSeparation",
-          "value": "正确做法（已验证）：Graph Store 的引擎配置写自己的 DATA_DIR/argo.env，由 argo-mirror-engine.service 的 EnvironmentFile 注入进程环境（ARGO 引擎读 process.env）。不写 ARGO 的 ~/.argo/.env（两者配置分离）。切勿设 ARGO_ENV_FILE 指向自定义路径（ARGO provenance 校验会拒：仓内 SECRET_FILE_NOT_IGNORED、仓外 EXTERNAL_CREDENTIALS_REQUIRED）。"
+          "value": "正确模型（已验证）：ARGO 引擎配置（embedding/QWEN_KEY/Neo4j/gates/rerank）写入 ARGO 自己的 ~/.argo/.env，ARGO 引擎/接口自动读取，无需我们注入；不要建额外 argo.env，不要设 ARGO_ENV_FILE（provenance 校验会拒）。Graph Store 服务配置在 graph-store.env。初始化/embedding 复用 ARGO 能力（buildHarnessReport=initializeWorkspace 逻辑 + callTool），非自写脚本。"
         },
         {
           "name": "commit",
           "value": "c137e57: deploy/install-graph-store.sh, deploy/systemd/argo-mirror-engine.service, deploy/README.md, README.md"
+        },
+        {
+          "name": "commit",
+          "value": "274260c: deploy/install-graph-store.sh, deploy/systemd/argo-mirror-engine.service, deploy/README.md, README.md"
         }
       ]
     }
