@@ -1,48 +1,60 @@
 ---
 sidebar_position: 1
-title: 介绍
+title: Introduction
 ---
 
-# ArchGraph — 意图图驱动的 Agentic Engineering 框架
+# ArchGraph — an architecture-graph framework for Agentic Engineering
 
-**ArchGraph** 构建一种**统一语言**，把 harness 设计与目标产品设计放进**同一个模型**——
-让你用单一视图工作和观察，对你的 Agent 拥有真实控制力。
+**ArchGraph** builds a single, unified language that puts your harness design and your product design
+into **one model**, so you work from one view — and keep real control over your agents.
 
-## 核心理念
+## Core idea
 
 ```
-人 / Coding Agent ←→ ARGO MCP ←→ 意图架构图 (ArchiMate 3.2) ←→ Enterprise Architect
+Coding Agent  <->  ARGO MCP  <->  Intent graph (ArchiMate 3.2)  <->  Enterprise Architect
 ```
 
-- **意图图是唯一事实源**：架构图（ArchiMate 3.2 建模）是 Agentic Engineering 的中心
-- **Harness 无关**：ARGO 工具链可分发到 GitHub Copilot / Cursor / OpenCode /
-  DeepSeek Harness / OpenClaw 等主流编码 Agent 环境
-- **Test-first 工作流**：GIVEN-WHEN-THEN 可执行验收 + 每次 commit 回溯到图
+- **The intent graph is the source of truth** — the ArchiMate 3.2 model is the center of Agentic Engineering.
+- **Harness-agnostic** — the ARGO toolchain distributes to GitHub Copilot / Cursor / OpenCode / DeepSeek
+  Harness / OpenClaw.
+- **Test-first** — executable GIVEN-WHEN-THEN acceptance; every commit is traced back to the graph.
 
-## 工作原理
+## How it works
 
-Agent 在项目里工作时会自动：
+While working in a project, an agent automatically:
 
-1. **定位**：改动任何东西前，先在意图图中定位任务背后的架构元素
-2. **武装**：用该元素的 Skills 与 Rules 武装自己
-3. **验收**：test-first（GIVEN-WHEN-THEN），每次 commit 都回溯到图
+1. **Locate** — before changing anything, locate the architecture element behind the task in the intent graph.
+2. **Arm** — load that element's Skills and Rules.
+3. **Accept** — work test-first (GIVEN-WHEN-THEN); every commit is traced to the graph.
 
-## 安装
+## Beyond one project: federation and the Graph Store
+
+ArchGraph scales from **one project** to an **organization**:
+
+- **Federation** — projects register as members, discover each other, and authorize knowledge sharing
+  (default deny). See [Join the federation](/docs/onboarding/join-federation).
+- **Graph Store** — an always-online center that hosts a queryable replica of each member's knowledge graph
+  (projected into Neo4j with embeddings) and serves it through one query API, so any project can read another's
+  knowledge (with authorization). See [Collaborate](/docs/onboarding/collaborate).
+- **Ontologies** — ArchiMate 3.2 is the base ontology; the [ontology shelf](/ontologies) is extensible.
+
+## Install
 
 ```bash
 npm install -g archgraph-argo
 argo-deploy
 ```
 
-一条命令把 ARGO 工具链、skills、rules 部署到 GitHub Copilot / Cursor / OpenCode /
-DeepSeek Harness / OpenClaw，并自动注册 `argo` MCP server。
+One command deploys the ARGO toolchain, skills and rules into GitHub Copilot / Cursor / OpenCode /
+DeepSeek Harness / OpenClaw, and registers the `argo` MCP server.
 
-> 语义（Graph RAG）查询还需要在 `~/.argo/.env` 配置 Neo4j 与向量引擎；
-> 其余开箱即用。
+> Semantic (Graph RAG) queries additionally need Neo4j and an embedding provider configured in
+> ARGO's own `~/.argo/.env`; everything else works out of the box.
 
-## 相关资源
+## Resources
 
-- [GitHub 仓库](https://github.com/derekhu0002/archgraph)
-- [社区图谱库](https://github.com/derekhu0002/graph-wiki)
-- [子图规范](/docs/community/subgraph-spec)
-- [贡献指南](/docs/community/contributing)
+- [GitHub repository](https://github.com/derekhu0002/archgraph)
+- [Community graph library](https://github.com/derekhu0002/graph-wiki)
+- [Onboarding](/docs/onboarding)
+- [Ontologies](/ontologies)
+- [Federation](/federation)

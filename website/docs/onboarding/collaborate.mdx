@@ -1,40 +1,46 @@
 ---
-title: 共享与协作
+title: Collaborate
 sidebar_position: 4
-description: 授权读取、跨项目查询、贡献子图，参与联邦协作
+description: Authorized reads, cross-project queries, contributing subgraphs
 ---
 
-# 共享与协作
+# Share & collaborate
 
-加入联邦后，你可以在**授权**前提下与联盟内其它项目相互共享知识、相互协作。
+Once you have joined the federation, you can share knowledge and collaborate with other projects in the
+alliance — under **authorization**.
 
-## 1. 按授权读取他人知识
+## 1. Read another project's knowledge (authorized)
 
-所有数据查询/检索工具支持可选 `projectId`：**不传 = 本仓；传了 = 外仓**，工具会路由到中心并返回外部项目的真实结果：
+All data query/retrieval tools accept an optional `projectId`: **absent = own repo; present = external repo**.
+The tool routes to the center and returns the external project's real results:
 
-- REST：`POST https://argo.derekworkspacev5.com/graph/read`
+- REST: `POST https://argo.derekworkspacev5.com/graph/read`
   ```jsonc
-  { "requester": "<self projectId>", "projectId": "<目标 projectId>",
+  { "requester": "<self projectId>", "projectId": "<target projectId>",
     "tool": "getSystemArchitecture | getIntentElementContext | getArchitectureViewContext | queryNeo4jGraph | memory_search",
-    "args": { /* 该工具原生参数 */ } }
+    "args": { /* native params of that tool */ } }
   ```
-- 未授权默认拒绝（`denied/not_authorized`）。
+- Unauthorized reads are denied by default (`denied/not_authorized`).
 
-## 2. 授予他人读取
+## 2. Grant access to others
 
-作为知识所有方，用 `registry_authorize` 明确授权（可精确到 `contentId`）。撤销整套关系可用 `registry_deregister`（同时回收其相关授权与副本）。
+As the owner, use `registry_authorize` to grant explicitly (optionally scoped to a `contentId`). Revoking an
+entire relationship is via `registry_deregister` (which also reclaims related grants and the replica).
 
-## 3. 共享子图（图谱库）
+## 3. Share subgraphs (graph library)
 
-把可复用的架构片段作为**子图**共享：`graph_submit`（提交，自动 schema 校验）、`graph_get`（获取）、`graph_update`（更新）。子图库见 [子图库](/graphs)（建设中）。
+Share reusable architecture fragments as **subgraphs**: `graph_submit` (submit, auto schema-validated),
+`graph_get` (fetch), `graph_update` (update). See the [subgraph library](/graphs) (under construction).
 
-## 4. 发现与可视化
+## 4. Discover & visualize
 
-- `registry_discover`：发现成员（谁、做什么、有什么能力）。
-- 联邦页：成员 + **授权关系图**，可查看每个项目**授出/被授**及其**范围** → [/federation](/federation)。
+- `registry_discover`: discover members (who they are, what they do, capabilities).
+- Federation page: members + an **authorization graph**, with each project's **outgoing/incoming** grants and
+  scope → [/federation](/federation).
 
-## 5. 协作要点
+## 5. Collaboration notes
 
-- **内容主权**：成员仓是事实源；中心保存的是**可用性副本**（授权后读取），按版本同步。
-- **只读外仓**：跨项目读取为只读；写/变更始终在各自项目内完成。
-- **时效**：副本按 git 版本同步（注册即建 + 周期重同步），结果以引擎返回的版本为准。
+- **Content sovereignty**: the member repo is the source of truth; the center keeps an **availability replica**
+  (read under authorization), synced by version.
+- **Read-only external**: cross-project reads are read-only; writes/changes always happen inside each project.
+- **Freshness**: replicas sync by git version (built on register + periodic re-sync); results carry the version.

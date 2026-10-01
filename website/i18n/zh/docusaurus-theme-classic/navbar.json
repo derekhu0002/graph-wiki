@@ -1,0 +1,12 @@
+{
+  "title": {"message": "ArchGraph", "description": "The title in the navbar"},
+  "logo.alt": {"message": "ArchGraph Logo", "description": "The alt text of navbar logo"},
+  "item.label.Onboarding": {"message": "新项目接入", "description": "Navbar item with label Onboarding"},
+  "item.label.Ontologies": {"message": "本体货架", "description": "Navbar item with label Ontologies"},
+  "item.label.Federation": {"message": "联邦成员", "description": "Navbar item with label Federation"},
+  "item.label.GitHub": {"message": "GitHub", "description": "Navbar item with label GitHub"},
+  "item.label.Overview": {"message": "概览", "description": "Navbar item with label Overview"},
+  "item.label.Create a project": {"message": "创建新项目", "description": "Navbar item with label Create a project"},
+  "item.label.Join the federation": {"message": "加入联邦", "description": "Navbar item with label Join the federation"},
+  "item.label.Collaborate": {"message": "共享与协作", "description": "Navbar item with label Collaborate"}
+}

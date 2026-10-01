@@ -1,29 +1,29 @@
 ---
 sidebar_position: 3
-title: 贡献指南
+title: Contributing
 ---
 
-# 贡献指南
+# Contributing
 
-> 权威源见仓库 [`community/CONTRIBUTING.md`](https://github.com/derekhu0002/graph-wiki/blob/main/community/CONTRIBUTING.md)
+> Authoritative source: [`community/CONTRIBUTING.md`](https://github.com/derekhu0002/graph-wiki/blob/main/community/CONTRIBUTING.md)
 
-## 获取子图（Consume）
+## Consume subgraphs
 
 ```jsonc
-graph_list                        // 看社区子图
-graph_get { id: "abot-overseer-capability-001" }  // 获取整张图
+graph_list                                        // browse community subgraphs
+graph_get { id: "abot-overseer-capability-001" }  // fetch a full graph
 ```
 
-## 贡献子图（Contribute）
+## Contribute a subgraph
 
-1. **裁剪**：从项目意图图切出有独立复用价值的子图
-2. **提交**：`graph_submit { id: "...", graph: {...}, name, version, description }`
-3. 服务自动做 schema 校验 → 通过则入库 + git commit
+1. **Trim** — cut an independently reusable fragment from your project's intent graph.
+2. **Submit** — `graph_submit { id: "...", graph: {...}, name, version, description }`.
+3. The service validates the schema automatically — if it passes, it is stored and committed.
 
-更新用 `graph_update { id: "...", graph: {...}, version: "1.1.0" }`。
+Update with `graph_update { id: "...", graph: {...}, version: "1.1.0" }`.
 
-## 行为约定
+## Conduct
 
-- 只提交你有权共享的内容
-- 不提交含敏感/密钥信息的图
-- 尊重来源：复用他图时保留 sourceRepo/sourceCommit
+- Submit only content you have the right to share.
+- Never submit graphs containing sensitive information or secrets.
+- Respect provenance: keep sourceRepo/sourceCommit when reusing another graph.

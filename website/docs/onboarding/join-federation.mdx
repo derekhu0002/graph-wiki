@@ -1,40 +1,43 @@
 ---
-title: 加入联邦
+title: Join the federation
 sidebar_position: 3
-description: 在联邦中心登记成员、取得 projectId、由中心构建知识副本
+description: Register as a member, get a projectId, have the center build your replica
 ---
 
-# 加入联邦
+# Join the federation
 
-登记进**联邦中心**后，你的项目就成为一个可被组织内其它项目按授权访问的成员。
+After registering with the **federation center**, your project becomes a member that other projects in the
+organization can access under authorization.
 
-## 1. 注册成员（得到 projectId）
+## 1. Register a member (get a projectId)
 
-通过 **Graph MCP**（远程：`https://argo.derekworkspacev5.com/mcp`）调用：
+Via **Graph MCP** (remote: `https://argo.derekworkspacev5.com/mcp`):
 
 ```jsonc
 // registry_register
-{ "id": "<你的项目 id>", "name": "<名称>", "role": "<作用职责>",
+{ "id": "<your project id>", "name": "<name>", "role": "<purpose>",
   "capabilities": ["..."], "openContent": [ /* {id,name,ref} */ ],
   "sourceRepo": "https://github.com/<owner>/<repo>", "branch": "main" }
 ```
 
-- 中心确认 `id` **全局唯一**（同一 id 被不同来源仓注册会被拒绝）。
-- 注册会**自动在后台构建你项目的知识副本**（克隆仓库 → Neo4j 投影 + embedding）。
-- 结束后请**轮询 `mirror_list`** 判断副本是否就绪（长任务）。
+- The center confirms the `id` is **globally unique** (the same id from a different source repo is rejected).
+- Registration **builds your knowledge replica in the background** (clone repo → Neo4j projection + embeddings).
+- Afterwards, **poll `mirror_list`** to see when the replica is ready (it is a long-running task).
 
-## 2. 本地持久化身份
+## 2. Persist your identity locally
 
-把中心返回的 `projectId` 记到本地（如 `.argo/federation.json`：`{ projectId, sourceRepo, centerUrl, branch }`），供后续调用 `requester` 与判断"本仓/外仓"。
+Store the returned `projectId` locally (e.g. `.argo/federation.json`: `{ projectId, sourceRepo, centerUrl, branch }`)
+to use as `requester` and to tell "own repo vs external repo".
 
-## 3. 授权与自读
+## 3. Authorize and self-read
 
-- **自读**：`requester == projectId`（读自己的副本）**隐式放行**，无需自授权。
-- **授权他人**：`registry_authorize { grantor, grantee, contentId }`（`contentId` 缺省 `*` 表示全部开放内容）。
+- **Self-read**: `requester == projectId` (reading your own replica) is **implicitly allowed**.
+- **Authorize others**: `registry_authorize { grantor, grantee, contentId }` (`contentId` defaults to `*` = all
+  open content).
 
-## 4. 校验
+## 4. Verify
 
-- `registry_discover` 能看到你与其他成员；`mirror_list` 显示你的副本 `ok:true`。
-- 联邦页可视化成员与授权关系：[/federation](/federation)。
+- `registry_discover` shows you and other members; `mirror_list` shows your replica `ok:true`.
+- The federation page visualizes members and authorization relations: [/federation](/federation).
 
-> 相关接口与调用契约详见《Graph 项目适配说明书》（跨项目图谱查询）。
+> The interface and call contract are detailed in the "Graph project adaptation" spec (cross-project graph query).

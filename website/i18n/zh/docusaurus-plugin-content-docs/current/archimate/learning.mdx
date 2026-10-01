@@ -1,0 +1,43 @@
+---
+sidebar_position: 3
+title: 学习资源
+---
+
+# ArchiMate 学习资源
+
+运用 ArchGraph 所需的基础建模能力——ArchiMate 的学习路径与权威资源。
+
+## 官方权威资源
+
+| 资源 | 说明 |
+|---|---|
+| [The Open Group – ArchiMate Forum](https://www.opengroup.org/archimate-forum/archimate-overview) | 官方维护页 |
+| [ArchiMate 3.2 Specification](https://pubs.opengroup.org/architecture/archimate32-doc/) | 正式规范（在线版） |
+| [ArchiMate 官方网站](https://www.archimate.org/) | 社区资源汇聚 |
+
+## 建模工具
+
+| 工具 | 说明 |
+|---|---|
+| **Archi** | 免费开源 ArchiMate 工具（[archimatetool.com](https://www.archimatetool.com/)） |
+| **Enterprise Architect** | 商业工具，支持 ArchiMate 3.x |
+| **任意绘图工具** | 均可用于练习元素与关系布局 |
+
+## 学习路线建议
+
+1. 建立核心框架直觉（三层 × 三面，代表元素）。
+2. 掌握关系语义（Composition/Aggregation、Assignment、Realization、Serving、Access）。
+3. 视图与视角（View vs Viewpoint，常见视角）。
+4. 结合 ArchGraph 实践：阅读[介绍](/docs/intro)与[子图规范](/docs/community/subgraph-spec)，用 `graph_get` 拉取社区子图分析。
+
+## 与 ArchGraph 的对照
+
+| ArchiMate 概念 | ArchGraph 用法 |
+|---|---|
+| Business Actor | Agent / 角色 / 项目总管 |
+| Capability | Agent 的核心能力 |
+| Business Process | 工作流 / 门禁 / 验收流程 |
+| Rule / Skill | 治理规则 / 技能资源 |
+| Artifact | 图谱 JSON / 配置文件 |
+| View | 子图视角 |
+| Relationship 矩阵 | graph_submit 自动校验类型与关系合法性 |

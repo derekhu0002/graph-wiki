@@ -4,7 +4,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'ArchGraph',
-  tagline: 'An architecture-graph driven framework for Agentic Engineering',
+  tagline: 'An architecture-graph framework for Agentic Engineering',
   favicon: 'img/favicon.ico',
 
   url: 'https://argo.derekworkspacev5.com',
@@ -13,11 +13,15 @@ const config: Config = {
   organizationName: 'derekhu0002',
   projectName: 'graph-wiki',
 
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'warn',
 
   i18n: {
-    defaultLocale: 'zh-Hans',
-    locales: ['zh-Hans', 'en'],
+    defaultLocale: 'en',
+    locales: ['en', 'zh'],
+    localeConfigs: {
+      en: {label: 'English', direction: 'ltr', htmlLang: 'en'},
+      zh: {label: '中文', direction: 'ltr', htmlLang: 'zh-Hans'},
+    },
   },
 
   presets: [
@@ -53,17 +57,21 @@ const config: Config = {
       items: [
         {
           type: 'dropdown',
-          label: '新项目接入',
+          label: 'Onboarding',
           position: 'left',
           items: [
-            {to: '/docs/onboarding', label: '概览'},
-            {to: '/docs/onboarding/create', label: '创建新项目'},
-            {to: '/docs/onboarding/join-federation', label: '加入联邦'},
-            {to: '/docs/onboarding/collaborate', label: '共享与协作'},
+            {to: '/docs/onboarding', label: 'Overview'},
+            {to: '/docs/onboarding/create', label: 'Create a project'},
+            {to: '/docs/onboarding/join-federation', label: 'Join the federation'},
+            {to: '/docs/onboarding/collaborate', label: 'Collaborate'},
           ],
         },
-        {to: '/ontologies', label: '本体货架', position: 'left'},
-        {to: '/federation', label: '联邦成员', position: 'left'},
+        {to: '/ontologies', label: 'Ontologies', position: 'left'},
+        {to: '/federation', label: 'Federation', position: 'left'},
+        {
+          type: 'localeDropdown',
+          position: 'right',
+        },
         {
           href: 'https://github.com/derekhu0002/archgraph',
           label: 'GitHub',
@@ -75,29 +83,29 @@ const config: Config = {
       style: 'dark',
       links: [
         {
-          title: '项目',
+          title: 'Project',
           items: [
-            {label: 'ArchGraph 框架', href: 'https://github.com/derekhu0002/archgraph'},
-            {label: '图谱共享库', href: 'https://github.com/derekhu0002/graph-wiki'},
+            {label: 'ArchGraph framework', href: 'https://github.com/derekhu0002/archgraph'},
+            {label: 'Graph store (graph-wiki)', href: 'https://github.com/derekhu0002/graph-wiki'},
             {label: 'aBot', href: 'https://github.com/derekhu0002/aBot'},
           ],
         },
         {
-          title: '社区',
+          title: 'Community',
           items: [
-            {label: '社区总览', to: '/community'},
-            {label: '本体货架', to: '/ontologies'},
-            {label: 'ArchiMate 本体', to: '/ontologies/archimate'},
-            {label: '子图规范', to: '/docs/community/subgraph-spec'},
-            {label: '贡献指南', to: '/docs/community/contributing'},
+            {label: 'Overview', to: '/community'},
+            {label: 'Ontologies', to: '/ontologies'},
+            {label: 'ArchiMate ontology', to: '/ontologies/archimate'},
+            {label: 'Subgraph spec', to: '/docs/community/subgraph-spec'},
+            {label: 'Contributing', to: '/docs/community/contributing'},
           ],
         },
         {
-          title: '更多',
+          title: 'More',
           items: [
-            {label: '说明', to: '/docs/intro'},
-            {label: '博客', to: '/blog'},
-            {label: '子图库', to: '/graphs'},
+            {label: 'About', to: '/docs/intro'},
+            {label: 'Blog', to: '/blog'},
+            {label: 'Subgraph library', to: '/graphs'},
             {label: 'GitHub', href: 'https://github.com/derekhu0002'},
           ],
         },

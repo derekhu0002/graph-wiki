@@ -1,41 +1,47 @@
 ---
-title: 从无到有创建项目
+title: Create a project
 sidebar_position: 2
-description: 初始化工作区、建立意图图谱、跑通本地验收
+description: Initialize a workspace, build the intent graph, pass local acceptance
 ---
 
-# 从无到有创建项目
+# Create a project from scratch
 
-一个新项目的第一步，是拥有自己的**意图图谱**（`design/KG/SystemArchitecture.json`）与本地工具链。
+The first step for a new project is to have its own **intent graph** (`design/KG/SystemArchitecture.json`)
+and local toolchain.
 
-## 1. 初始化工作区（ARGO）
+## 1. Initialize the workspace (ARGO)
 
-用 ArchGraph 的 ARGO 工具链初始化工作区，它会生成/校验图谱骨架、投影与语义索引：
+Use ArchGraph's ARGO toolchain to initialize the workspace — it bootstraps/validates the graph skeleton,
+projection and semantic index:
 
-- 运行 `argo-init`（ARGO MCP 的 `initializeWorkspace`）：bootstrap 工作区 + Neo4j 投影 + 语义生命周期（embedding）+ canonical 校验。
-- 可用 Graph 项目（ArchGraph 框架）的 `initializeWorkspace` 确保环境就绪。
+- Run `argo-init` (the ARGO MCP `initializeWorkspace`): workspace bootstrap + Neo4j projection + semantic
+  lifecycle (embeddings) + canonical validation.
+- The ArchGraph (Graph) project's `initializeWorkspace` can be used to ensure the environment is ready.
 
-> 约束：Neo4j 需支持多 database（Enterprise）；embedding 走阿里 Qwen（键放 ARGO 自己的 `~/.argo/.env`）。
+> Constraints: Neo4j must support multiple databases (Enterprise); embeddings use Alibaba Qwen (key in ARGO's
+> own `~/.argo/.env`).
 
-## 2. 建立意图图谱
+## 2. Build the intent graph
 
-图谱由三部分组成：**elements / relationships / views**（ArchiMate 或所选本体）。用 ARGO MCP 的变更工具增删改：
+A graph has three parts: **elements / relationships / views** (of ArchiMate or the chosen ontology). Use the
+ARGO MCP mutation tools:
 
 - `addArchitectureElement` / `updateArchitectureElement`
 - `addArchitectureRelationship`
-- `addArchitectureView`（视图挂在元素下，保持顶层视图唯一）
+- `addArchitectureView` (attach views under elements; keep exactly one top-level view)
 
-建议先列出业务要素（Actor/Capability/Service），再补关系与视图。
+List business elements (Actor/Capability/Service) first, then add relationships and views.
 
-## 3. 本地验收（先测试、后实现）
+## 3. Local acceptance (test-first)
 
-为每个关键元素写**可执行的 GIVEN-WHEN-THEN 验收**，并用图谱校验 + 验收测试跑通：
+Write **executable GIVEN-WHEN-THEN acceptance** for every key element, and run validation + tests:
 
-- `validateSystemArchitecture`（schema/结构校验）
-- `runArchitectureTests`（执行图中的验收用例）
+- `validateSystemArchitecture` (schema/structure validation)
+- `runArchitectureTests` (run the graph's acceptance cases)
 
-> 规则：可端到端验证的必须端到端验证；正式验收在云端环境执行。
+> Rule: anything end-to-end verifiable must be verified end-to-end; formal acceptance runs in the cloud environment.
 
-## 4.（可选）产出子图
+## 4. (Optional) Produce a subgraph
 
-把可复用的部分裁成**子图**（子图库用于社区共享，建设中）：`graph_submit` 提交到图谱库。
+Trim reusable parts into a **subgraph** (the subgraph library is for community sharing, under construction):
+submit with `graph_submit`.
