@@ -98,4 +98,60 @@
   color: var(--ifm-color-emphasis-700);
 }
 
+.stream {
+  padding: 2.5rem 0;
+  border-top: 1px solid var(--ifm-color-emphasis-100);
+}
+
+.streamNo {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: var(--ifm-color-primary);
+  opacity: 0.55;
+  line-height: 1;
+}
+
+.streamGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.streamGrid h4 {
+  margin: 0 0 0.25rem;
+  color: var(--ifm-color-primary);
+  font-size: 1.1rem;
+}
+
+.streamGrid p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.streamLinks {
+  margin-top: 0.5rem;
+}
+
+@media screen and (max-width: 996px) {
+  .streamGrid { grid-template-columns: 1fr; }
+}
+
+.advantagesSection {
+  padding: 2.5rem 0;
+  background: var(--ifm-color-emphasis-100);
+}
+
+.ontologyNote {
+  margin-top: 1rem;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.95rem;
+}
+
+.featureCard .button {
+  margin-top: 0.5rem;
+}
+
+
 

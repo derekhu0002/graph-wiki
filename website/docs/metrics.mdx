@@ -1,0 +1,67 @@
+---
+sidebar_position: 6
+title: Metrics & evaluation
+---
+
+# Metrics & evaluation
+
+This page covers four things: the metric system and what each metric solves, how we measure and
+optimize, our current results, and how we compare against baselines. (Internal baselines; methodology
+is the point.)
+
+## 1. Metric system
+
+We separate **retrieval/memory quality** from **agent cost**, and always pair a quality metric with a
+cost metric so we never trade recall for speed silently.
+
+| Metric | Solves |
+|---|---|
+| Success / accuracy | Did the task get the right answer? |
+| Evidence recall | Was all required evidence retrieved (does not miss)? |
+| Evidence precision | Is retrieved evidence relevant (does not noise)? |
+| First-hit | How often the first hit is correct (fewer round-trips). |
+| Turns / tool calls (by backend) / round-trips | Agent effort; graph↔repo ping-pong is the real cost multiplier. |
+| Tokens (in/out/reasoning) & compression | Context cost. |
+| Latency (model / MCP / repo) | Responsiveness. |
+| Abstention (refusal) / hallucination | Correctly refusing when there is no answer. |
+| Write governance (dedup / lossless / tombstone) | Knowledge is not silently lost on write. |
+
+Underneath, standard IR metrics apply: **Precision / Recall / MRR / Hit Rate@K**.
+
+## 2. How we measure & optimize
+
+- **Profile evaluation framework**: we score along three axes — **scenario × scale × metrics** — rather
+  than one overall number. Scenarios include exact/structural lookup, semantic lookup, multi-hop
+  navigation, graph+repo composition, time/version/conflict, abstention, write/registration, and
+  in-repo content.
+- **Executable harnesses**: dataset + runner (e.g., a memory-eval runner and an agent cost–recall
+  harness) so results are reproducible and regression-tested.
+- **Recall-first red line**: any speed-up by shrinking the candidate pool is exposed via an explicit
+  failed-task list — never hidden.
+
+## 3. Current approach & results
+
+Mechanisms: three-tier memory (T1/T2/T3), two-step recall (locate by meaning → read full context),
+hybrid retrieval with rerank and a recall threshold, token-lean subgraph scoping.
+
+Representative internal baselines (from our harnesses; small, single-project — see caveats):
+
+- Memory eval: ~28/28 success, refusing correctly when unanswerable; low-ms latency; ~94.5% context compression.
+- Agent cost–recall: full evidence recall with a few turns and a small token budget on navigation tasks.
+
+> These are internal numbers on a small dataset, not a cross-distribution benchmark.
+
+## 4. Comparative evaluation
+
+- **E1 — mechanism (on/off MCP)**: same repo, same model, same prompt; the only variable is whether the
+  agent has the graph MCP. (Note: because a repository is already shaped by the framework's rules, E1
+  systematically *under*-estimates the framework's value.)
+- **E2 — institutional**: a repo built *with* the framework vs a repo built *without*, each using its
+  native retrieval, same raw material/agent/task set. This measures the framework's total value.
+- **E2′ — ablation**: strip curation (graph JSON / summaries / commit ledger) from the framework repo to
+  reduce content differences.
+- **Baseline comparison (e.g., LightRAG)**: same agent, same model, same workflow; two MCP backends
+  (ArchGraph vs LightRAG) with strict isolation and neutral instructions, so the **only variable is the
+  memory backend**.
+
+We are happy to share the datasets, runners and comparison plans for review.

@@ -19,18 +19,16 @@ function HomepageHeader({t}: {t: (e: string, z: string) => string}) {
     <header className={clsx('hero hero--primary', styles.heroBanner)}>
       <div className="container">
         <Heading as="h1" className="hero__title">{siteConfig.title}</Heading>
-        <p className="hero__subtitle">
-          {t('Unify agent engineering with one intent architecture graph', '用一张意图架构图，统一 Agent 工程')}
-        </p>
+        <p className="hero__subtitle">{t('Unify agent engineering with one intent architecture graph', '用一张意图架构图，统一 Agent 工程')}</p>
         <p className={styles.heroLead}>
           {t(
-            'ArchGraph is a framework plus long-term memory built on one intent architecture graph, reached through one MCP. The graph\'s ontology is pluggable — ArchiMate 3.2 is the base today, and more ontologies can be added. A project is the basic block; the Graph Store federates project graphs into an organization-level knowledge graph.',
-            'ArchGraph 是“框架 + 长期记忆”，建立在唯一一张意图架构图之上，经由一个 MCP 访问。图的「本体可插拔」——ArchiMate 3.2 只是当前的基础本体，还可扩展更多本体。以项目为基本 block；Graph Store 再把各项目图联邦为组织级知识图谱。',
+            'A framework plus long-term memory on one intent graph, reached through one MCP. Build a project knowledge graph, compose many into an organization-level graph — on a flexible architecture.',
+            '一个“框架 + 长期记忆”，建立在唯一一张意图图之上，经由一个 MCP 访问。可为单个项目构建知识图谱，再把众多项目组合成组织级图谱——一切都建立在灵活可插拔的架构上。',
           )}
         </p>
         <div className={styles.buttons}>
           <Link className="button button--secondary button--lg" to="/docs/onboarding">{t('Get started', '开始使用')}</Link>
-          <Link className="button button--outline button--lg" to="/ontologies">{t('Explore ontologies', '浏览本体')}</Link>
+          <Link className="button button--outline button--lg" to="/docs/architecture">{t('Architecture', '架构')}</Link>
           <Link className="button button--outline button--lg" to="/federation">{t('Federation', '联邦')}</Link>
         </div>
       </div>
@@ -38,57 +36,59 @@ function HomepageHeader({t}: {t: (e: string, z: string) => string}) {
   );
 }
 
-const CONSTRAINTS: Array<{en: string; zh: string; enD: string; zhD: string}> = [
-  {en: 'Locate first', zh: '定位先行', enD: 'Find the architecture element before changing anything.', zhD: '改动前先在图中定位架构元素。'},
-  {en: 'Acceptance first', zh: '验收先行', enD: 'Executable GIVEN-WHEN-THEN before implementation.', zhD: '先写可执行 GIVEN-WHEN-THEN 再实现。'},
-  {en: 'Provable change', zh: '变更可证', enD: 'Every commit traces back to the graph.', zhD: '每次 commit 都可回溯到图。'},
-  {en: 'Lossless write', zh: '写入无害', enD: 'Gate on dedup / lossless / tombstone.', zhD: '去重/无损/墓碑门禁。'},
-];
-
-function ConstraintStrip({t}: {t: (e: string, z: string) => string}) {
-  const zh = t('x', 'y') === 'y';
+function ValueStream({
+  no,
+  kicker,
+  title,
+  problem,
+  capability,
+  value,
+  links,
+}: {
+  no: string;
+  kicker: string;
+  title: string;
+  problem: string;
+  capability: string;
+  value: string;
+  links: Array<{label: string; to: string}>;
+}) {
   return (
-    <section className={styles.strip}>
+    <section className={styles.stream}>
       <div className="container">
         <div className="row">
-          {CONSTRAINTS.map((c, i) => (
-            <div className="col col--3" key={i}>
-              <div className={styles.constraint}>
-                <strong>{zh ? c.zh : c.en}</strong>
-                <p>{zh ? c.zhD : c.enD}</p>
-              </div>
+          <div className="col col--2">
+            <div className={styles.streamNo}>{no}</div>
+          </div>
+          <div className="col col--10">
+            <p className={styles.kicker}>{kicker}</p>
+            <Heading as="h2">{title}</Heading>
+            <div className={styles.streamGrid}>
+              <div><h4>{'!'}</h4><p>{problem}</p></div>
+              <div><h4>{'→'}</h4><p>{capability}</p></div>
+              <div><h4>{'✓'}</h4><p>{value}</p></div>
             </div>
-          ))}
+            <p className={styles.streamLinks}>
+              {links.map((l) => (
+                <Link key={l.to} className="button button--secondary button--sm margin-right--sm" to={l.to}>{l.label} →</Link>
+              ))}
+            </p>
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
-
-function Capability({title, body, to}: {title: string; body: string; to: string}) {
+function Advantage({t, tk, tb, td, to}: {t: (e: string, z: string) => string; tk: string; tb: string; td: string; to: string}) {
   return (
     <div className="col col--4">
       <div className={styles.featureCard}>
-        <h3><Link to={to}>{title}</Link></h3>
-        <p>{body}</p>
+        <h3>{t(tk, tb)}</h3>
+        <p>{t('', '')}{td}</p>
+        <Link className="button button--outline button--sm" to={to}>{t('Learn more', '了解详情')} →</Link>
       </div>
     </div>
-  );
-}
-
-function Layer({kicker, title, intro, items}: {kicker: string; title: string; intro: string; items: Array<{title: string; body: string; to: string}>}) {
-  return (
-    <section className={styles.layerSection}>
-      <div className="container">
-        <p className={styles.kicker}>{kicker}</p>
-        <Heading as="h2">{title}</Heading>
-        <p className={styles.layerIntro}>{intro}</p>
-        <div className="row">
-          {items.map((it, i) => (<Capability key={i} title={it.title} body={it.body} to={it.to} />))}
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -99,73 +99,75 @@ export default function Home(): ReactNode {
     <Layout
       title={`${siteConfig.title} — ${siteConfig.tagline}`}
       description={t(
-        'ArchGraph: intent-graph–driven Agentic Engineering, org-level knowledge federation, and a Graph Store for hosted project knowledge graphs.',
-        'ArchGraph：意图图驱动的 Agentic Engineering、组织级知识联邦，以及托管项目知识图谱的 Graph Store。',
+        'ArchGraph: build a project knowledge graph, compose an organization-level graph, on a flexible architecture with a pluggable ontology and a decoupled read/write MCP.',
+        'ArchGraph：为项目构建知识图谱、组合组织级图谱，架构灵活——本体可插拔、读写 MCP 与图谱解耦。',
       )}>
       <HomepageHeader t={t} />
-      <ConstraintStrip t={t} />
       <main>
-        <Layer
-          kicker={t('Project level · single project / agent', '项目级 · 单个项目 / 智能体')}
-          title={t('A project knowledge graph, driven by intent', '以意图驱动的项目知识图谱')}
-          intro={t(
-            'Each project keeps one intent graph — in the ontology of your choice (ArchiMate 3.2 today, more to come) — as the source of truth. Agents locate the architecture element first, arm themselves with its skills/rules, work test-first, and trace every commit back to the graph.',
-            '每个项目维护一张意图图——采用你选择的本体（当前为 ArchiMate 3.2，后续可换/可加）——作为事实源。智能体先定位架构元素，用其 Skills/Rules 武装自己，test-first 工作，并把每次 commit 回溯到图。',
-          )}
-          items={[
-            {title: t('Intent-graph driven', '意图图驱动'), body: t('Locate the element before changing anything; arm with Skills/Rules; test-first; trace every commit to the graph.', '改动前先定位元素；用 Skills/Rules 武装；test-first；每次 commit 回溯到图。'), to: '/docs/onboarding/create'},
-            {title: t('Harness-agnostic', 'Harness 无关'), body: t('One ARGO toolchain distributes to Copilot / Cursor / OpenCode / DeepSeek Harness / OpenClaw.', '一套 ARGO 工具链分发到 Copilot / Cursor / OpenCode / DeepSeek Harness / OpenClaw。'), to: '/docs/intro'},
-            {title: t('Executable acceptance', '可执行验收'), body: t('GIVEN-WHEN-THEN acceptance lives in the graph; validation and regression run against it.', 'GIVEN-WHEN-THEN 验收写入图中；校验与回归据此执行。'), to: '/docs/intro'},
-          ]}
+        <ValueStream
+          no="1"
+          kicker={t('Value stream · project level', '价值流 · 项目级')}
+          title={t('Build a project knowledge graph', '为单个项目构建知识图谱')}
+          problem={t('Project context is scattered across prompts and files; agents are ungrounded and knowledge is not durable.', '项目上下文散落在提示词与文件里；智能体缺乏依据，知识也无法沉淀。')}
+          capability={t('One intent graph as the source of truth (locate → arm → accept, trace every commit), plus long-term memory with GraphRAG and write governance.', '以唯一意图图为事实源（定位 → 武装 → 验收，每次 commit 可回溯），并配长期记忆：GraphRAG 与写入治理。')}
+          value={t('Agents work grounded and under control; architecture becomes executable, inspectable, reusable knowledge — a closed loop of write → read → verify.', '智能体有图可依、可控；架构变成可执行、可检查、可复用的知识——形成「写 → 读 → 验」的闭环。')}
+          links={[{label: t('Create a project', '创建项目'), to: '/docs/onboarding/create'}, {label: t('Architecture', '架构'), to: '/docs/architecture'}]}
         />
 
-        <Layer
-          kicker={t('Memory & retrieval · the AI line', '记忆与检索 · AI 线')}
-          title={t('The graph is the memory', '图谱即记忆')}
-          intro={t(
-            'Beyond documentation, the graph is the agent\'s long-term memory: three-tier recall, GraphRAG with dual-channel retrieval, write governance, and lean, cost-aware reads.',
-            '图谱不只是文档，更是 Agent 的长期记忆：三层记忆回忆、GraphRAG 双通道检索、写入治理，以及精益、可观测成本的读取。',
-          )}
-          items={[
-            {title: t('Three-tier memory', '三层记忆'), body: t('T1 working / T2 long-term / T3 archive, recalled on demand (search by meaning, then read full context).', 'T1 工作记忆 / T2 长期记忆 / T3 归档，按需回忆（先按语义定位，再读全文）。'), to: '/docs/archimate/concepts'},
-            {title: t('GraphRAG · dual channel', 'GraphRAG · 双通道'), body: t('Hybrid retrieval (vector + graph) with rerank and a recall threshold; token-lean reads via subgraph scoping.', '向量 + 图谱混合检索，配 rerank 与召回阈值；通过子图限定实现 Token 精益读取。'), to: '/docs/intro'},
-            {title: t('Write governance', '写入治理'), body: t('Gate on write: dedup / lossless / tombstone — so knowledge is never silently lost.', '写入门禁：去重 / 无损 / 墓碑——知识不会被悄悄丢失。'), to: '/docs/intro'},
-          ]}
+        <ValueStream
+          no="2"
+          kicker={t('Value stream · organization level', '价值流 · 组织级')}
+          title={t('Compose project graphs into an organization graph', '把项目图谱组合成组织级图谱')}
+          problem={t('Many projects, siloed knowledge; no shared, governed way to reuse each other\'s context.', '项目众多、知识孤岛；缺乏共享且受治理的复用方式。')}
+          capability={t('Project = the basic building block. A federation registry plus a Graph Store host queryable replicas and serve cross-project reads under authorization (default deny).', '项目 = 基本积木。联邦注册中心 + Graph Store 托管可查询副本，并在授权下提供跨项目读取（默认拒绝）。')}
+          value={t('Assemble an organization-level knowledge graph from projects — flexible, modular, without merging graphs or losing content sovereignty.', '把零散项目“搭积木”式拼成组织级知识图谱——灵活、模块化，且不合并图谱、不丢失内容主权。')}
+          links={[{label: t('Join the federation', '加入联邦'), to: '/docs/onboarding/join-federation'}, {label: t('Federation page', '联邦页'), to: '/federation'}]}
         />
 
-        <Layer
-          kicker={t('Organization level · many projects sharing knowledge', '组织级 · 多项目知识共享')}
-          title={t('From project graph to organization-level knowledge graph', '从项目图谱到组织级知识图谱')}
-          intro={t(
-            "The Graph Store adds a federation on top of individual projects: a registry for membership and authorization, an always-online mirror host that projects a member's graph into Neo4j with embeddings, and one query API so any project can read another's knowledge (with authorization).",
-            'Graph Store 在单个项目之上增加一层联邦：成员与授权注册中心、始终在线的镜像宿主（把成员图投影进 Neo4j 并做 embedding），以及一个查询 API，让任一项目在授权后读取他方知识。',
-          )}
-          items={[
-            {title: t('Federation registry', '联邦注册中心'), body: t('Self-register, discover members, authorize cross-project reads — default deny.', '自注册、发现成员、授权跨项目读取——默认拒绝。'), to: '/federation'},
-            {title: t('Graph Store (mirror host)', 'Graph Store（镜像宿主）'), body: t('The center hosts reviewed, queryable replicas of project graphs (one Neo4j database per project); projects need not be online.', '中心托管经审核、可查询的项目图副本（每项目一个 Neo4j 库）；项目无需在线。'), to: '/docs/onboarding/join-federation'},
-            {title: t('Cross-project query', '跨项目查询'), body: t('One endpoint, five read tools, optional projectId — structural and semantic (embeddings) reads across projects.', '一个端点、五个读工具、可选 projectId——跨项目的结构 + 语义（embedding）读取。'), to: '/docs/onboarding/collaborate'},
-          ]}
+        <ValueStream
+          no="3"
+          kicker={t('Value stream · the enabling architecture', '价值流 · 支撑架构')}
+          title={t('A flexible architecture that powers both', '支撑上述场景的灵活架构')}
+          problem={t('A rigid, single-ontology, tightly-coupled design would lock you in and be hard to evolve.', '单一本体、紧耦合的僵化设计会造成锁定、难以演进。')}
+          capability={t('A unified MCP reads/writes the graph; the ontology is pluggable and the MCP is decoupled from the graph/ontology.', '统一 MCP 读写图谱；本体可插拔，且 MCP 与图谱/本体解耦。')}
+          value={t('Open-closed and evolvable: swap ontologies per project, and keep improving read/write capabilities independently.', '开闭原则、可演进：每个项目可自定本体；读写能力可独立持续优化。')}
+          links={[{label: t('Architecture', '架构'), to: '/docs/architecture'}, {label: t('Metrics & evaluation', '指标与评测'), to: '/docs/metrics'}]}
         />
-        <Layer
-          kicker={t('Ecosystem · ontologies, subgraphs, community', '生态 · 本体、子图、社区')}
-          title={t('A governed, extensible ecosystem', '受治理、可扩展的生态')}
-          intro={t(
-            'ArchiMate 3.2 is the base ontology; the shelf is extensible. Reusable architecture fragments become shared subgraphs — validated by the service on submit and browsable in the community site.',
-            'ArchiMate 3.2 是基础本体，货架可扩展。可复用的架构片段成为共享子图——提交时由服务校验，并在社区站浏览。',
-          )}
-          items={[
-            {title: t('Ontology shelf', '本体货架'), body: t('ArchiMate 3.2 as the base, with room for more ontologies (security, data, process…).', '以 ArchiMate 3.2 为基础，可扩展更多本体（安全、数据、流程…）。'), to: '/ontologies'},
-            {title: t('Subgraph library', '子图库'), body: t('Contribute reusable graph fragments; consume them at project kickoff. Auto schema-validated.', '贡献可复用图片段；开工时复用。自动 schema 校验。'), to: '/graphs'},
-            {title: t('Open community', '开放社区'), body: t('Any agent project can register, contribute subgraphs and participate in the federation.', '任何 Agent 项目都能注册、贡献子图、参与联邦。'), to: '/community'},
-          ]}
-        />
+
+        <section className={styles.advantagesSection}>
+          <div className="container">
+            <Heading as="h2">{t('Architecture advantages', '架构优势')}</Heading>
+            <div className="row">
+              <Advantage t={t}
+                tk="Pluggable ontology" tb="本体可插拔"
+                td={t('The graph\'s ontology is replaceable and customizable — each project defines its own graph. Open-closed: extend or swap without rewriting the framework.', '图谱本体可替换、可自定义——每个项目都能定义自己的图谱。开闭原则：可扩展、可替换，无需重写框架。')}
+                to="/ontologies" />
+              <Advantage t={t}
+                tk="Decoupled read/write" tb="读写解耦"
+                td={t('The read/write MCP is decoupled from any graph/ontology; it owns ontology-agnostic but critical capabilities: write governance, read/write performance, retrieval precision & recall — and their measurement.', '读写 MCP 与图谱/本体解耦；它负责与本体无关但极其关键的能力：写入治理、读写性能与效率、检索准确率与召回率，以及这些指标的度量。')}
+                to="/docs/architecture" />
+              <Advantage t={t}
+                tk="Measured, comparable" tb="可度量、可对比"
+                td={t('A profile evaluation framework (scenario × scale × metrics) and fair comparisons against RAG baselines (e.g., LightRAG) under the same agent.', '剖面评测框架（场景 × 规模 × 指标），并在同一 Agent 下与 RAG 基线（如 LightRAG）做公平对照。')}
+                to="/docs/metrics" />
+            </div>
+            <p className={styles.ontologyNote}>
+              {t(
+                'Default ontology: ArchiMate 3.2 — a widely adopted, formally specified enterprise-architecture standard with a defined relationship matrix. More ontologies live on the ',
+                '默认本体：ArchiMate 3.2——一个被广泛采用、有正式规范与关系矩阵的企业架构标准。更多本体见 ',
+              )}
+              <Link to="/ontologies">{t('ontology shelf', '本体货架')}</Link>{t('.', '。')}
+            </p>
+          </div>
+        </section>
+
         <section className={styles.insightSection}>
           <div className="container">
             <Heading as="h2">{t('Why this matters', '为什么重要')}</Heading>
             <p>
               {t(
-                'Agentic engineering needs more than prompts: it needs a durable, queryable model of the system. Knowledge graphs plus retrieval (Graph RAG) give agents grounded, inspectable context, and MCP makes that context callable by any agent. ArchGraph takes this a step further — the architecture graph is the artifact agents read and write, and the federation turns isolated project graphs into an organization-level knowledge graph, with membership, authorization and hosted availability. Architecture stops being a document and becomes shared, executable knowledge.',
-                'Agentic Engineering 不止需要提示词，还需要一个持久、可查询的系统模型。知识图谱 + 检索（Graph RAG）为智能体提供有据可查的上下文，MCP 让该上下文可被任意智能体调用。ArchGraph 更进一步：架构图就是智能体读写的事实源，联邦把孤立的项目图汇聚为组织级知识图谱，并带来成员、授权与托管可用性。架构不再是文档，而成为共享的、可执行的 knowledge。',
+                'Agentic engineering needs a durable, queryable model of the system, not just prompts. Knowledge graphs plus retrieval give agents grounded context; MCP makes it callable by any agent. ArchGraph makes the architecture graph the artifact agents read and write, and the federation turns isolated project graphs into an organization-level knowledge graph — architecture stops being a document and becomes shared, executable knowledge.',
+                'Agentic Engineering 需要一个持久、可查询的系统模型，而不只是提示词。知识图谱 + 检索为智能体提供有据可依的上下文，MCP 让它可被任意智能体调用。ArchGraph 让架构图成为智能体读写的事实源，联邦把孤立的项目图汇聚为组织级知识图谱——架构不再是文档，而是共享的、可执行的 knowledge。',
               )}
             </p>
           </div>

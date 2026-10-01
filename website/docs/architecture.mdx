@@ -1,0 +1,45 @@
+---
+sidebar_position: 5
+title: Architecture
+---
+
+# Architecture
+
+ArchGraph has two architectural properties that make it flexible and evolvable. Both power the
+[value streams on the home page](/): building a project graph, and composing an organization-level graph.
+
+## 1. Pluggable ontology
+
+A graph is defined by its **ontology** — the type system and rules of its elements and relationships.
+The ontology is **replaceable and customizable**: each project can define and evolve its own graph.
+
+This is the **open-closed principle**: you extend or swap the ontology without rewriting the framework.
+
+- ArchiMate 3.2 is the **default** ontology — a widely adopted, formally specified enterprise-architecture
+  standard with a defined relationship matrix. See the [ontology shelf](/ontologies).
+- Other ontologies (security, data, process…) can be added; the shelf is a catalog, not a hard limit.
+
+## 2. Read/write decoupled from the graph
+
+The **read/write MCP** is decoupled from any specific graph or ontology. It owns capabilities that are
+**ontology-agnostic but critical** to producing and consuming a graph:
+
+| Capability | What it covers |
+|---|---|
+| **Write governance** | Dedup / lossless / tombstone gates — knowledge is never silently lost. |
+| **Read/write performance & efficiency** | Token-lean reads by subgraph scoping; write paths that stay cheap as graphs grow. |
+| **Retrieval precision & recall** | Hybrid (vector + graph) retrieval, rerank, thresholds, two-step recall. |
+| **Measurement** | A profile evaluation framework (scenario × scale × metrics) — see [Metrics & evaluation](/docs/metrics). |
+
+Because these live in the MCP (not in the ontology), **you can keep improving them independently** —
+better governance, faster reads, higher recall — without touching any project's graph or ontology.
+
+## Why this matters
+
+- **No lock-in**: swap or extend the ontology per project; adopt new ontologies over time.
+- **Evolvable**: the read/write pipeline improves continuously along measurable metrics.
+- **Composable**: the same framework builds a single project graph *and* composes many into an
+  organization-level graph (the [federation](/federation)).
+
+> Details of the metric system we optimize against, how we measure, our current results and our
+> comparative benchmarks are on [Metrics & evaluation](/docs/metrics).
