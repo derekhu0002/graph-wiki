@@ -1075,6 +1075,10 @@
         {
           "name": "deliveryStatus",
           "value": "delivered"
+        },
+        {
+          "name": "lesson",
+          "value": "ARGO 引擎只接受其审定全局 env（~/.argo/.env）；用 ARGO_ENV_FILE 指向自定义路径会被 provenance 校验拒绝：在 git 仓内报 SECRET_FILE_NOT_IGNORED，在仓外报 EXTERNAL_CREDENTIALS_REQUIRED。故只能合并写入 ~/.argo/.env（备份+不覆盖），并在 DATA_DIR/argo.env 留源副本；服务配置单独在 graph-store.env。勿再尝试用 ARGO_ENV_FILE 分离。"
         }
       ]
     }

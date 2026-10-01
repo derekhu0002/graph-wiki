@@ -119,7 +119,7 @@ docker logs --tail 50 argo-neo4j
 
 ## 7. 安全
 
-- `~/.argo/.env` 与 `~/.git-credentials` 均 `600`；勿入库。
+- 引擎凭据**合并写入** ARGO 的 `~/.argo/.env`（安装器先备份、不覆盖已有键），并在 `DATA_DIR/argo.env` 留源副本；服务配置在 `DATA_DIR/graph-store.env`；Git 凭据 `~/.git-credentials`。均 `600`、不入库。
 - demo 阶段 `requester` 为自称（弱鉴权），勿对外承诺强安全。
 - Token 建议定期轮换。
 
@@ -129,7 +129,7 @@ docker logs --tail 50 argo-neo4j
 
 **检查清单 / 常见坑（踩坑后固化）**：
 
-1. **`.env` 合并写入**：安装器**合并** `~/.argo/.env`（不覆盖已有键）；且 `ARGO_LIVE_PROVIDER_E2E` 与 `ARGO_W31_LIVE_MUTATION_VECTOR_E2E` **必须同时 `=1`**，否则 embedding 不执行（`SEMANTIC_LIFECYCLE_GATE_INVALID`）。开启 rerank 但无 `ARGO_RERANK_API_KEY` → `EXTERNAL_CREDENTIALS_REQUIRED`（无 key 时自动 `ARGO_SEMANTIC_RERANK=0`）。
+1. **引擎配置位置**：ARGO 镜像引擎只接受其"审定"的全局 `~/.argo/.env`（`ARGO_ENV_FILE` 指向任意路径会被其 provenance 校验拒绝）。安装器**合并式**写入（不覆盖已有键、先备份），并把源副本另存到 `DATA_DIR/argo.env`；我们的**服务**配置单独在 `DATA_DIR/graph-store.env`。其中 `ARGO_LIVE_PROVIDER_E2E` 与 `ARGO_W31_LIVE_MUTATION_VECTOR_E2E` **必须同时 `=1`**（否则 `SEMANTIC_LIFECYCLE_GATE_INVALID`）；开启 rerank 但无 `ARGO_RERANK_API_KEY` → `EXTERNAL_CREDENTIALS_REQUIRED`（无 key 时自动 `ARGO_SEMANTIC_RERANK=0`）。
 2. **改配置必须 `systemctl restart`**（`enable --now` 不会重启运行中的服务，改了 `HOST` 之类不生效）。
 3. **Neo4j 必须 Enterprise**（多 database，一成员一库）；Community **不支持** `CREATE DATABASE`。
 4. 每成员一个 workspace → ARGO 派生独立 database；读取用 **per-call `workspaceRoot`**（并发安全，**禁止**改进程级 `env`/`setMcpWorkspaceRoots`）。

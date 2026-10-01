@@ -83,7 +83,7 @@ graph-store deploy --config ./graph-store.env
 - **迁移**：新机重复上述安装；迁移 `assets/registry/registry.json`（成员+授权）后 `mirror_sync` 重建副本。
 - **秘密**：`QWEN_KEY`/`NEO4J_PASSWORD` 等只落在 `~/.argo/.env` 与 `DATA_DIR/graph-store.env`（600），不入仓库。
 
-> **部署运行规则**（务必遵守，踩坑后固化）：① 安装器**合并式**写 `~/.argo/.env`（勿覆盖），且 `ARGO_LIVE_PROVIDER_E2E`
+> **部署运行规则**（务必遵守，踩坑后固化）：① ARGO 引擎只接受其审定文件 `~/.argo/.env`——安装器**合并写入**（备份、不覆盖已有键）并在 `DATA_DIR/argo.env` 留源副本，服务配置单独在 `DATA_DIR/graph-store.env`；且 `ARGO_LIVE_PROVIDER_E2E`
 > 与 `ARGO_W31_LIVE_MUTATION_VECTOR_E2E` 必须同时 `=1`（否则 embedding 不执行）；② 改配置后 `systemctl restart`（`enable --now` 不重启）；③ Neo4j 用 **Enterprise**（多库，一成员一库）；④ 详见 [deploy/README.md](deploy/README.md) 与 KG 规则 `kb-rule-deploy-runbook`。
 
 换服务器只改配置；Graph 项目侧按 [Graph 项目配置化适配需求](community/GRAPH-PROJECT-CONFIG-ADAPTATION.md) 配置「中心地址」即可访问新实例。
