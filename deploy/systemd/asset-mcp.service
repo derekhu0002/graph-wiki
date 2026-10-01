@@ -5,13 +5,15 @@ After=network.target
 [Service]
 Type=simple
 User=root
-WorkingDirectory=__REPO__
-EnvironmentFile=__REPO__/deploy/graph-store.env
-Environment=ASSET_REPO_ROOT=__REPO__
+WorkingDirectory=__DATA__
+EnvironmentFile=__DATA__/graph-store.env
+Environment=ASSET_REPO_ROOT=__DATA__
+Environment=ASSET_ROOT=__DATA__/assets
+Environment=ASSET_GIT_DIR=__DATA__
 Environment=ASSET_MCP_HOST=__GRAPH_STORE_HOST__
 Environment=ASSET_MCP_PORT=__GRAPH_STORE_PORT__
 Environment=MIRROR_ENGINE_URL=__MIRROR_ENGINE_URL__
-ExecStart=__NODE__ __REPO__/mcp/asset-mcp-server.js
+ExecStart=__NODE__ __PKG__/mcp/asset-mcp-server.js
 Restart=always
 RestartSec=3
 

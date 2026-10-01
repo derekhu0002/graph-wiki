@@ -4,7 +4,8 @@ After=network.target
 
 [Service]
 Type=oneshot
-WorkingDirectory=__REPO__
-Environment=ASSET_REPO_ROOT=__REPO__
+WorkingDirectory=__DATA__
+Environment=ASSET_REPO_ROOT=__DATA__
+Environment=ASSET_ROOT=__DATA__/assets
 Environment=MIRROR_ENGINE_URL=__MIRROR_ENGINE_URL__
-ExecStart=__NODE__ __REPO__/mcp/sync-mirrors.js
+ExecStart=__NODE__ __PKG__/mcp/sync-mirrors.js

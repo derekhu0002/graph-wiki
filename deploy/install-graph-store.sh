@@ -1,27 +1,34 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Graph Store + ARGO Mirror Engine — one-command installer (Linux server)
+# Graph Store + ARGO Mirror Engine — one-command installer
 #
-# Usage:
-#   git clone <repo> && cd <repo>
-#   cp deploy/graph-store.env.example deploy/graph-store.env
-#   vi deploy/graph-store.env           # 填 Neo4j 密码、QWEN_KEY、域名等
-#   sudo bash deploy/install-graph-store.sh
+# Typical flow (NPM form):
+#   npm i -g graph-store@<version>
+#   graph-store deploy                 # reads deploy/graph-store.env (bundled) or --config
 #
-# 幂等：重复执行会重装/重启服务。默认在本机同时部署
-#   - Graph Store（asset MCP，127.0.0.1:$GRAPH_STORE_PORT）
-#   - ARGO 镜像引擎（ARGO + Neo4j + embedding，127.0.0.1:$MIRROR_PORT）
-# 若 INSTALL_ENGINE=false，则只部署 Store 并把 MIRROR_ENGINE_URL 指向外部引擎。
+# Or from a git checkout:
+#   cp deploy/graph-store.env.example deploy/graph-store.env && sudo bash deploy/install-graph-store.sh
+#
+# Layout:
+#   PKG_DIR  = where this package's code lives (mcp/, deploy/)   [GRAPH_STORE_PKG_DIR]
+#   DATA_DIR = writable runtime data (assets/, git, mirrors, env) [GRAPH_STORE_DATA_DIR, default /opt/graph-store]
 # =============================================================================
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-ENV_FILE="$REPO_ROOT/deploy/graph-store.env"
+PKG_DIR="${GRAPH_STORE_PKG_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
+DATA_DIR="${GRAPH_STORE_DATA_DIR:-/opt/graph-store}"
 
-if [ -f "$ENV_FILE" ]; then
+# ---- 解析 --config ----
+CONFIG_FILE="${GRAPH_STORE_ENV_FILE:-}"
+args=("$@")
+for i in "${!args[@]}"; do
+  if [ "${args[$i]}" = "--config" ] && [ -n "${args[$((i+1))]:-}" ]; then CONFIG_FILE="${args[$((i+1))]}"; fi
+done
+[ -z "$CONFIG_FILE" ] && [ -f "$PKG_DIR/deploy/graph-store.env" ] && CONFIG_FILE="$PKG_DIR/deploy/graph-store.env"
+if [ -n "$CONFIG_FILE" ] && [ -f "$CONFIG_FILE" ]; then
   # shellcheck disable=SC1090
-  set -a; . "$ENV_FILE"; set +a
+  set -a; . "$CONFIG_FILE"; set +a
 fi
 
 : "${GRAPH_STORE_HOST:=127.0.0.1}"
@@ -40,12 +47,26 @@ fi
 : "${NODE_VERSION:=v22.11.0}"
 : "${ENABLE_NGINX:=false}"
 : "${DOMAIN:=}"
-: "${ASSET_ROOT:=$REPO_ROOT/assets}"
 
 ARGO_ROOT="${HOME}/.argo"
 NODE_BIN="$(command -v node || echo /usr/local/bin/node)"
-
 log() { echo -e "\n==> $*"; }
+
+log "PKG_DIR=$PKG_DIR  DATA_DIR=$DATA_DIR"
+
+# ---------------------------------------------------------------------------
+# 0. 数据目录（writable）+ 规范化配置
+# ---------------------------------------------------------------------------
+log "[0] 初始化数据目录 $DATA_DIR"
+mkdir -p "$DATA_DIR/assets" "$DATA_DIR/mirrors"
+if [ ! -d "$DATA_DIR/.git" ]; then git init -q "$DATA_DIR" 2>/dev/null || true; fi
+cat > "$DATA_DIR/graph-store.env" <<EOF
+GRAPH_STORE_HOST=${GRAPH_STORE_HOST}
+GRAPH_STORE_PORT=${GRAPH_STORE_PORT}
+MIRROR_HOST=${MIRROR_HOST}
+MIRROR_PORT=${MIRROR_PORT}
+MIRROR_ENGINE_URL=${MIRROR_ENGINE_URL}
+EOF
 
 # ---------------------------------------------------------------------------
 # 1. Node.js
@@ -53,8 +74,7 @@ log() { echo -e "\n==> $*"; }
 if ! command -v node >/dev/null 2>&1; then
   log "[1] 安装 Node.js $NODE_VERSION ($NPM_REGISTRY)"
   tmp="$(mktemp -d)"
-  url="${NPM_REGISTRY}/-/binary/node/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.xz"
-  curl -fsSL -o "$tmp/node.tar.xz" "$url"
+  curl -fsSL -o "$tmp/node.tar.xz" "${NPM_REGISTRY}/-/binary/node/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.xz"
   tar -xf "$tmp/node.tar.xz" -C /usr/local --strip-components=1
   rm -rf "$tmp"
   NODE_BIN=/usr/local/bin/node
@@ -62,22 +82,21 @@ fi
 log "[1] node: $($NODE_BIN --version)"
 
 # ---------------------------------------------------------------------------
-# 2. ARGO engine + Neo4j + embedding (仅 INSTALL_ENGINE=true)
+# 2. ARGO engine + Neo4j + embedding
 # ---------------------------------------------------------------------------
 if [ "$INSTALL_ENGINE" = "true" ]; then
   log "[2] 安装 ARGO 引擎 ($ARGO_NPM_PACKAGE)"
   npm i -g "$ARGO_NPM_PACKAGE" --registry="$NPM_REGISTRY" >/dev/null
-  PKG_DIR="$(npm root -g)/$ARGO_NPM_PACKAGE"
+  PKG_ARGO="$(npm root -g)/$ARGO_NPM_PACKAGE/argo"
   mkdir -p "$ARGO_ROOT"
-  cp -r "$PKG_DIR/argo/scripts" "$PKG_DIR/argo/schema" "$PKG_DIR/argo/defaults" "$ARGO_ROOT/" 2>/dev/null || true
-  [ -d "$PKG_DIR/argo/mcp-bridges" ] && cp -r "$PKG_DIR/argo/mcp-bridges" "$ARGO_ROOT/"
-  cp "$PKG_DIR/argo/package.json" "$ARGO_ROOT/"
+  cp -r "$PKG_ARGO/scripts" "$PKG_ARGO/schema" "$PKG_ARGO/defaults" "$ARGO_ROOT/"
+  [ -d "$PKG_ARGO/mcp-bridges" ] && cp -r "$PKG_ARGO/mcp-bridges" "$ARGO_ROOT/"
+  cp "$PKG_ARGO/package.json" "$ARGO_ROOT/"
   ( cd "$ARGO_ROOT" && npm install --registry="$NPM_REGISTRY" >/dev/null )
 
-  if [ -z "$NEO4J_PASSWORD" ]; then echo "ERROR: 请在 $ENV_FILE 设置 NEO4J_PASSWORD"; exit 1; fi
-  if [ -z "${QWEN_KEY:-}" ]; then echo "ERROR: 请在 $ENV_FILE 设置 QWEN_KEY"; exit 1; fi
+  [ -n "$NEO4J_PASSWORD" ] || { echo "ERROR: 请设置 NEO4J_PASSWORD"; exit 1; }
+  [ -n "${QWEN_KEY:-}" ] || { echo "ERROR: 请设置 QWEN_KEY"; exit 1; }
 
-  log "[2] 写 $ARGO_ROOT/.env (600)"
   cat > "$ARGO_ROOT/.env" <<EOF
 ARGO_EMBEDDING_BASE_URL=${ARGO_EMBEDDING_BASE_URL:-}
 ARGO_EMBEDDING_MODEL=${ARGO_EMBEDDING_MODEL:-qwen3.7-text-embedding}
@@ -91,7 +110,7 @@ ARGO_LIVE_PROVIDER_E2E=1
 EOF
   chmod 600 "$ARGO_ROOT/.env"
 
-  log "[2] 启动 Neo4j ($NEO4J_IMAGE) —— 需支持多 database"
+  log "[2] 启动 Neo4j ($NEO4J_IMAGE)"
   mkdir -p /opt/argo-neo4j/data /opt/argo-neo4j/logs
   docker rm -f argo-neo4j >/dev/null 2>&1 || true
   docker run -d --name argo-neo4j --restart unless-stopped \
@@ -104,7 +123,6 @@ EOF
     "$NEO4J_IMAGE" >/dev/null
 
   if [ -n "${GITHUB_TOKEN:-}" ]; then
-    log "[2] 配置私有仓 Git 凭据"
     printf 'https://x-access-token:%s@github.com\n' "$GITHUB_TOKEN" > "$HOME/.git-credentials"
     chmod 600 "$HOME/.git-credentials"
     git config --global credential.helper store || true
@@ -112,11 +130,12 @@ EOF
 fi
 
 # ---------------------------------------------------------------------------
-# 3. systemd units（模板替换）
+# 3. systemd units
 # ---------------------------------------------------------------------------
 log "[3] 安装 systemd 单元"
 install_unit() {
-  sed -e "s#__REPO__#${REPO_ROOT}#g" \
+  sed -e "s#__PKG__#${PKG_DIR}#g" \
+      -e "s#__DATA__#${DATA_DIR}#g" \
       -e "s#__HOME__#${HOME}#g" \
       -e "s#__NODE__#${NODE_BIN}#g" \
       -e "s#__GRAPH_STORE_HOST__#${GRAPH_STORE_HOST}#g" \
@@ -126,10 +145,10 @@ install_unit() {
       -e "s#__MIRROR_PORT__#${MIRROR_PORT}#g" \
       "$1" > "/etc/systemd/system/$(basename "$1")"
 }
-install_unit "$REPO_ROOT/deploy/systemd/asset-mcp.service"
-install_unit "$REPO_ROOT/deploy/systemd/sync-mirrors.service"
-install_unit "$REPO_ROOT/deploy/systemd/sync-mirrors.timer"
-[ "$INSTALL_ENGINE" = "true" ] && install_unit "$REPO_ROOT/deploy/systemd/argo-mirror-engine.service"
+install_unit "$PKG_DIR/deploy/systemd/asset-mcp.service"
+install_unit "$PKG_DIR/deploy/systemd/sync-mirrors.service"
+install_unit "$PKG_DIR/deploy/systemd/sync-mirrors.timer"
+[ "$INSTALL_ENGINE" = "true" ] && install_unit "$PKG_DIR/deploy/systemd/argo-mirror-engine.service"
 systemctl daemon-reload
 
 log "[3] 启动服务"
@@ -142,9 +161,8 @@ systemctl enable --now sync-mirrors.timer
 # ---------------------------------------------------------------------------
 if [ "$ENABLE_NGINX" = "true" ] && [ -n "$DOMAIN" ]; then
   log "[4] 配置 Nginx 反代 $DOMAIN"
-  sed -e "s#__DOMAIN__#${DOMAIN}#g" \
-      -e "s#__GRAPH_STORE_PORT__#${GRAPH_STORE_PORT}#g" \
-      "$REPO_ROOT/deploy/nginx-graph-store.conf.template" > "/etc/nginx/conf.d/graph-store-${DOMAIN}.conf"
+  sed -e "s#__DOMAIN__#${DOMAIN}#g" -e "s#__GRAPH_STORE_PORT__#${GRAPH_STORE_PORT}#g" \
+      "$PKG_DIR/deploy/nginx-graph-store.conf.template" > "/etc/nginx/conf.d/graph-store-${DOMAIN}.conf"
   nginx -t && systemctl reload nginx
 fi
 
@@ -162,8 +180,6 @@ fi
 cat <<EOF
 
 ==> 完成。
-    本地访问:   http://${GRAPH_STORE_HOST}:${GRAPH_STORE_PORT}/mcp  (MCP)
-                http://${GRAPH_STORE_HOST}:${GRAPH_STORE_PORT}/graph/read  (REST)
-    MCP 客户端:  {"mcp":{"graph-mcp":{"type":"remote","url":"http://127.0.0.1:${GRAPH_STORE_PORT}/mcp","enabled":true}}}
-    外部访问:   设置 ENABLE_NGINX=true 与 DOMAIN=你的域名，再重跑本脚本。
+    本地:  http://${GRAPH_STORE_HOST}:${GRAPH_STORE_PORT}/mcp 与 /graph/read
+    外部:  设 ENABLE_NGINX=true、DOMAIN=你的域名后重跑  graph-store deploy
 EOF

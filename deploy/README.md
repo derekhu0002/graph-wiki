@@ -1,7 +1,7 @@
 # Graph Store 部署与迁移
 
 把「Graph Store（联邦注册中心 + 跨项目图谱查询）+ ARGO 镜像引擎」部署到任意 Linux 服务器。
-**本机下载仓库 + 一键安装**即可；换服务器、换域名只改配置。
+**做成 NPM 包 `graph-store`**：服务器上 `npm i -g` + 一条 `graph-store deploy` 即可；换服务器、换域名只改配置。
 
 ## 0. 前提
 
@@ -9,7 +9,34 @@
 - 出网可达：npm 镜像（安装 ARGO 引擎）、embedding 端点（阿里 Qwen）。
 - 若成员仓为私有：准备一个**只读 Git Token**（`GITHUB_TOKEN`）。
 
-## 1. 一键部署（单机，store + 引擎同机）
+## 1. 发布与安装（NPM 形态）
+
+维护者发布：
+
+```bash
+npm publish            # 发布 graph-store（如命名冲突，用 @scope/graph-store）
+```
+
+服务器安装并部署：
+
+```bash
+npm i -g graph-store@<version>
+cp <pkg>/deploy/graph-store.env.example graph-store.env   # 或直接编辑后 --config 指定
+vi graph-store.env     # 填 NEO4J_PASSWORD、QWEN_KEY、（可选）GITHUB_TOKEN
+graph-store deploy --config ./graph-store.env
+# 或：graph-store deploy（读取包内 deploy/graph-store.env）
+```
+
+本地即可访问（默认 `127.0.0.1`，同机项目直接用）：
+
+```
+MCP :  http://127.0.0.1:18792/mcp
+REST:  http://127.0.0.1:18792/graph/read
+```
+
+> 代码在包目录（`$(npm root -g)/graph-store`），可写数据在 `DATA_DIR`（默认 `/opt/graph-store`）。
+
+## 1b. 从源码部署（等价）
 
 ```bash
 git clone <repo> && cd graph-wiki
@@ -20,13 +47,6 @@ sudo bash deploy/install-graph-store.sh
 
 安装脚本会：装 Node（缺则装）→ 装 ARGO 引擎 + 写 `~/.argo/.env`(600) → 起 Neo4j（Enterprise，支持多库）
 → 装并启动 systemd 单元（`asset-mcp`、`argo-mirror-engine`、`sync-mirrors.timer`）→ 健康检查。
-
-本地即可访问（默认 `127.0.0.1`，同机项目可直接用）：
-
-```
-MCP :  http://127.0.0.1:18792/mcp
-REST:  http://127.0.0.1:18792/graph/read
-```
 
 MCP 客户端配置（本机项目）：
 

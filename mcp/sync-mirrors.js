@@ -23,7 +23,8 @@ function resolveRepoRoot() {
   }
   return process.cwd();
 }
-const REGISTRY_PATH = path.join(resolveRepoRoot(), 'assets', 'registry', 'registry.json');
+const ASSET_ROOT = process.env.ASSET_ROOT || path.join(resolveRepoRoot(), 'assets');
+const REGISTRY_PATH = path.join(ASSET_ROOT, 'registry', 'registry.json');
 
 (async () => {
   const reg = registry.load(REGISTRY_PATH);
