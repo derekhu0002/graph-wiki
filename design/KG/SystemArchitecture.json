@@ -772,6 +772,12 @@
           "name": "commit",
           "value": "2e2ced7: mcp/sync-mirrors.js"
         }
+      ],
+      "subdiagram_views": [
+        {
+          "view_id": "cross-project-graph-query-deploy-view",
+          "view_name": "跨项目图谱查询-部署与打包"
+        }
       ]
     },
     {
@@ -998,6 +1004,22 @@
       "id": "graph-project-config-adaptation-spec",
       "name": "Graph 项目配置化适配需求说明书",
       "type": "Business Object"
+    },
+    {
+      "id": "graph-store-npm-package",
+      "name": "graph-store NPM 包（一键部署）",
+      "type": "Artifact",
+      "description": "可发布的 NPM 包 graph-store：bin/graph-store CLI（deploy/serve/engine/doctor/version）+ mcp 服务代码 + deploy 安装脚本/配置模板/systemd 单元。服务器上 `npm i -g graph-store && graph-store deploy` 即完成部署（PKG_DIR=包目录，DATA_DIR 可写数据默认 /opt/graph-store）；支持本机 127.0.0.1 与自定义域名对外。已在真实服务器验证。",
+      "attributes": [
+        {
+          "name": "repoPath",
+          "value": "package.json, bin/graph-store.js, deploy/"
+        },
+        {
+          "name": "commit",
+          "value": "6c87e0e: package.json, bin/, deploy/, mcp/sync-mirrors.js"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -1490,6 +1512,16 @@
       "target_id": "project-id-router",
       "target_name": "项目ID路由",
       "type": "Association"
+    },
+    {
+      "id": "npm-package-deploys-mirror",
+      "name": "一键部署",
+      "type": "Association",
+      "source_id": "graph-store-npm-package",
+      "source_name": "graph-store NPM 包（一键部署）",
+      "statement": "graph-store NPM 包（一键部署） --(Association)--> 联邦副本托管服务",
+      "target_id": "mirror-host-service",
+      "target_name": "联邦副本托管服务"
     }
   ],
   "views": [
@@ -1727,6 +1759,19 @@
       "parent_element_id": "kg-service-domain",
       "view_id": "cross-project-graph-query-view",
       "view_name": "跨项目图谱查询"
+    },
+    {
+      "view_id": "cross-project-graph-query-deploy-view",
+      "view_name": "跨项目图谱查询-部署与打包",
+      "parent_element_id": "mirror-host-service",
+      "description": "跨项目图谱查询的打包与部署子视图：NPM 包 graph-store、一键安装脚本与配置模板（可复制部署到任意服务器）。",
+      "included_elements": [
+        "graph-store-npm-package",
+        "mirror-host-service"
+      ],
+      "included_relationships": [
+        "npm-package-deploys-mirror"
+      ]
     }
   ]
 }
