@@ -102,9 +102,9 @@ if [ "$INSTALL_ENGINE" = "true" ]; then
   [ -n "$NEO4J_PASSWORD" ] || { echo "ERROR: 请设置 NEO4J_PASSWORD"; exit 1; }
   [ -n "${QWEN_KEY:-}" ] || { echo "ERROR: 请设置 QWEN_KEY"; exit 1; }
 
-  # Graph Store 的引擎配置写到**我们自己的文件** ${DATA_DIR}/argo.env，由 systemd EnvironmentFile 注入进程环境给 ARGO 引擎；
-  # **不写 ARGO 自己的 ~/.argo/.env**（ARGO 的配置归 ARGO，Graph Store 的配置归 Graph Store，互不混淆）。
-  ENV_FILE_ARG="$DATA_DIR/argo.env"
+  # ARGO 引擎配置写入 **ARGO 自己的 ~/.argo/.env**（ARGO 引擎/接口会自动读取，无需我们注入）；合并式（先备份、不覆盖已有键）。
+  # Graph Store 的服务配置另在 ${DATA_DIR}/graph-store.env，两者分离。
+  ENV_FILE_ARG="$ARGO_ROOT/.env"
   [ -f "$ENV_FILE_ARG" ] && cp "$ENV_FILE_ARG" "${ENV_FILE_ARG}.bak.$(date +%s)"
   set_kv() {
     local k="$1" v="$2"

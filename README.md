@@ -83,8 +83,8 @@ graph-store deploy --config ./graph-store.env
 - **迁移**：新机重复上述安装；迁移 `assets/registry/registry.json`（成员+授权）后 `mirror_sync` 重建副本。
 - **秘密**：`QWEN_KEY`/`NEO4J_PASSWORD` 等只落在 `~/.argo/.env` 与 `DATA_DIR/graph-store.env`（600），不入仓库。
 
-> **部署运行规则**（务必遵守，踩坑后固化）：① Graph Store 的引擎配置写**我们自己的** `DATA_DIR/argo.env`（systemd 注入进程环境给 ARGO 引擎），**不写 ARGO 的 `~/.argo/.env`**（ARGO 的归 ARGO，Graph Store 的归 Graph Store）；且 `ARGO_LIVE_PROVIDER_E2E`
-> 与 `ARGO_W31_LIVE_MUTATION_VECTOR_E2E` 必须同时 `=1`（否则 embedding 不执行）——**不要**设 `ARGO_ENV_FILE`（会被 ARGO provenance 校验拒绝）；② 改配置后 `systemctl restart`（`enable --now` 不重启）；③ Neo4j 用 **Enterprise**（多库，一成员一库）；④ 详见 [deploy/README.md](deploy/README.md) 与 KG 规则 `kb-rule-deploy-runbook`。
+> **部署运行规则**（务必遵守，踩坑后固化）：① ARGO 引擎配置（embedding/QWEN_KEY/Neo4j/gates）写入 **ARGO 自己的 `~/.argo/.env`**（ARGO 接口自动读取，无需注入；安装器合并写入、不覆盖）——**不要**设 `ARGO_ENV_FILE`（会被 provenance 校验拒绝）；Graph Store 服务配置在 `DATA_DIR/graph-store.env`。且 `ARGO_LIVE_PROVIDER_E2E`
+> 与 `ARGO_W31_LIVE_MUTATION_VECTOR_E2E` 必须同时 `=1`（否则 embedding 不执行）；② 改配置后 `systemctl restart`（`enable --now` 不重启）；③ Neo4j 用 **Enterprise**（多库，一成员一库）；④ 详见 [deploy/README.md](deploy/README.md) 与 KG 规则 `kb-rule-deploy-runbook`。
 
 换服务器只改配置；Graph 项目侧按 [Graph 项目配置化适配需求](community/GRAPH-PROJECT-CONFIG-ADAPTATION.md) 配置「中心地址」即可访问新实例。
 
