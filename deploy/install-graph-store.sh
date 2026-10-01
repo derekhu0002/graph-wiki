@@ -185,10 +185,12 @@ install_unit "$PKG_DIR/deploy/systemd/sync-mirrors.timer"
 systemctl daemon-reload
 
 log "[3] 启动服务"
-if [ "$INSTALL_ENGINE" = "true" ]; then systemctl enable --now argo-mirror-engine; fi
-systemctl enable --now asset-mcp
+# enable --now 不会重启已在运行的服务（改配置后不生效），因此先 enable 再 restart。
+enable_restart() { systemctl enable "$1" >/dev/null 2>&1 || true; systemctl restart "$1"; }
+if [ "$INSTALL_ENGINE" = "true" ]; then enable_restart argo-mirror-engine; fi
+enable_restart asset-mcp
 systemctl enable --now sync-mirrors.timer
-[ "$INSTALL_WEB" = "true" ] && systemctl enable --now graph-store-web
+[ "$INSTALL_WEB" = "true" ] && enable_restart graph-store-web
 
 # ---------------------------------------------------------------------------
 # 4. 健康检查
