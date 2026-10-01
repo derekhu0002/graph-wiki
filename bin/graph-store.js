@@ -6,6 +6,7 @@
  *   graph-store deploy [--config <env-file>]   # one-command install/deploy (Linux + root)
  *   graph-store serve                          # run the Graph Store service (asset MCP) in foreground
  *   graph-store engine                         # run the ARGO mirror engine in foreground
+ *   graph-store web                            # run the community site (website/build) in foreground
  *   graph-store doctor                         # environment check
  *   graph-store version
  *
@@ -29,6 +30,7 @@ Usage:
                                              deploy/graph-store.env or --config; default data dir /opt/graph-store.
   graph-store serve                          Run the Graph Store (asset MCP) in the foreground.
   graph-store engine                         Run the ARGO mirror engine in the foreground.
+  graph-store web                            Run the community site (website/build) in the foreground.
   graph-store doctor                         Check the environment (node/docker/curl/bash).
   graph-store version
 
@@ -71,6 +73,9 @@ switch (cmd) {
     break;
   case 'engine':
     require(path.join(PKG_DIR, 'mcp', 'mirror-engine-server.js'));
+    break;
+  case 'web':
+    require(path.join(PKG_DIR, 'mcp', 'static-server.js'));
     break;
   case 'doctor':
     doctor();

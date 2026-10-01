@@ -45,6 +45,10 @@ fi
 : "${ARGO_NPM_PACKAGE:=archgraph-argo}"
 : "${NPM_REGISTRY:=https://registry.npmmirror.com}"
 : "${NODE_VERSION:=v22.11.0}"
+: "${INSTALL_WEB:=true}"
+: "${WEB_HOST:=127.0.0.1}"
+: "${WEB_PORT:=18793}"
+: "${WEB_BASE:=/archgraph/}"
 
 ARGO_ROOT="${HOME}/.argo"
 NODE_BIN="$(command -v node || echo /usr/local/bin/node)"
@@ -64,6 +68,9 @@ GRAPH_STORE_PORT=${GRAPH_STORE_PORT}
 MIRROR_HOST=${MIRROR_HOST}
 MIRROR_PORT=${MIRROR_PORT}
 MIRROR_ENGINE_URL=${MIRROR_ENGINE_URL}
+WEB_HOST=${WEB_HOST}
+WEB_PORT=${WEB_PORT}
+WEB_BASE=${WEB_BASE}
 EOF
 
 # ---------------------------------------------------------------------------
@@ -141,18 +148,23 @@ install_unit() {
       -e "s#__MIRROR_ENGINE_URL__#${MIRROR_ENGINE_URL}#g" \
       -e "s#__MIRROR_HOST__#${MIRROR_HOST}#g" \
       -e "s#__MIRROR_PORT__#${MIRROR_PORT}#g" \
+      -e "s#__WEB_HOST__#${WEB_HOST}#g" \
+      -e "s#__WEB_PORT__#${WEB_PORT}#g" \
+      -e "s#__WEB_BASE__#${WEB_BASE}#g" \
       "$1" > "/etc/systemd/system/$(basename "$1")"
 }
 install_unit "$PKG_DIR/deploy/systemd/asset-mcp.service"
 install_unit "$PKG_DIR/deploy/systemd/sync-mirrors.service"
 install_unit "$PKG_DIR/deploy/systemd/sync-mirrors.timer"
 [ "$INSTALL_ENGINE" = "true" ] && install_unit "$PKG_DIR/deploy/systemd/argo-mirror-engine.service"
+[ "$INSTALL_WEB" = "true" ] && install_unit "$PKG_DIR/deploy/systemd/graph-store-web.service"
 systemctl daemon-reload
 
 log "[3] 启动服务"
 if [ "$INSTALL_ENGINE" = "true" ]; then systemctl enable --now argo-mirror-engine; fi
 systemctl enable --now asset-mcp
 systemctl enable --now sync-mirrors.timer
+[ "$INSTALL_WEB" = "true" ] && systemctl enable --now graph-store-web
 
 # ---------------------------------------------------------------------------
 # 4. 健康检查
@@ -165,9 +177,13 @@ if [ "$INSTALL_ENGINE" = "true" ]; then
   echo -n "mirror-eng : "; curl -s --max-time 5 "http://${MIRROR_HOST}:${MIRROR_PORT}/health" || echo "(未就绪)"
   echo
 fi
+if [ "$INSTALL_WEB" = "true" ]; then
+  echo -n "web        : "; curl -s -o /dev/null -w '%{http_code}' --max-time 5 "http://${WEB_HOST}:${WEB_PORT}${WEB_BASE}" && echo " (${WEB_BASE})"
+fi
 cat <<EOF
 
-==> 完成。服务已在本机监听 ${GRAPH_STORE_HOST}:${GRAPH_STORE_PORT}。
-    本地:  http://${GRAPH_STORE_HOST}:${GRAPH_STORE_PORT}/mcp 与 /graph/read
-    对外:  由 IT 反向代理该端口到目标域名（本项目不负责反代/TLS）。
+==> 完成。本机监听：
+    服务:  http://${GRAPH_STORE_HOST}:${GRAPH_STORE_PORT}/mcp 与 /graph/read
+    网站:  http://${WEB_HOST}:${WEB_PORT}${WEB_BASE}
+    对外:  由 IT 反代到域名；网站与 /mcp 需**同源**（同一域名下 /archgraph/ 指网站端口，/mcp 指服务端口）。
 EOF

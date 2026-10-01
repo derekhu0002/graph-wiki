@@ -1,0 +1,6 @@
+# npm 打包忽略规则（优先于 .gitignore）：保留预构建的 build/，供 graph-store 包直接提供网站
+node_modules/
+.docusaurus/
+.cache-loader/
+*.log
+.env*
