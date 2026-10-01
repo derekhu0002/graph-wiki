@@ -1009,15 +1009,19 @@
       "id": "graph-store-npm-package",
       "name": "graph-store NPM 包（一键部署）",
       "type": "Artifact",
-      "description": "可发布的 NPM 包 graph-store：bin/graph-store CLI（deploy/serve/engine/doctor/version）+ mcp 服务代码 + deploy 安装脚本/配置模板/systemd 单元。服务器上 `npm i -g graph-store && graph-store deploy` 即完成部署（PKG_DIR=包目录，DATA_DIR 可写数据默认 /opt/graph-store）；支持本机 127.0.0.1 与自定义域名对外。已在真实服务器验证。",
+      "description": "可发布的 NPM 包 graph-store：bin/graph-store CLI（deploy/serve/engine/web/doctor/version）+ 全部 MCP 服务代码（asset-mcp-server.js，共 12 个工具，非仅 read）+ ARGO 镜像引擎 + deploy 安装脚本/配置模板/systemd 单元 + **社区网站（website/build 预构建）+ 零依赖静态服务 static-server.js（graph-store web，base /archgraph/）**。服务器上 `npm i -g graph-store && graph-store deploy` 即同时起：服务（/mcp、/graph/read）、网站（/archgraph/）、镜像引擎、定时同步；均为本地端口，对外由 IT 同源反代。已在真实服务器验证。",
       "attributes": [
         {
           "name": "repoPath",
-          "value": "package.json, bin/graph-store.js, deploy/"
+          "value": "package.json, bin/graph-store.js, mcp/, deploy/, website/build/"
         },
         {
           "name": "commit",
           "value": "6c87e0e: package.json, bin/, deploy/, mcp/sync-mirrors.js"
+        },
+        {
+          "name": "commit",
+          "value": "c43ba45: package.json, bin/, mcp/static-server.js, deploy/systemd/graph-store-web.service, deploy/install-graph-store.sh, website/.npmignore"
         }
       ]
     }
