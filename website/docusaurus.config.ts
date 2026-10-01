@@ -63,7 +63,6 @@ const config: Config = {
           ],
         },
         {to: '/ontologies', label: '本体货架', position: 'left'},
-        {to: '/community', label: '社区', position: 'left'},
         {to: '/federation', label: '联邦成员', position: 'left'},
         {
           href: 'https://github.com/derekhu0002/archgraph',
