@@ -978,6 +978,26 @@
           "value": "5ffe587: design/KG/SystemArchitecture.json"
         }
       ]
+    },
+    {
+      "attributes": [
+        {
+          "name": "repoPath",
+          "value": "community/GRAPH-PROJECT-CONFIG-ADAPTATION.md"
+        },
+        {
+          "name": "commit",
+          "value": "4bf7893: community/GRAPH-PROJECT-CONFIG-ADAPTATION.md, deploy/, README.md"
+        },
+        {
+          "name": "addressedTo",
+          "value": "ArchGraph 框架项目（Graph 项目）"
+        }
+      ],
+      "description": "面向 Graph 项目的配置化适配需求（配套可复制部署）：(FR-C1) 跨仓/外仓支持，中心地址来自环境变量（可配），不写死；(FR-C2) 项目内配置——不同项目可指向不同中心；(FR-C3) 地址分层：默认用户级默认地址，项目本地配置优先覆盖，缺失则报错不猜测；(FR-C4) requester=本仓 projectId（本地身份）。配套 graph-wiki 侧 deploy/ 一键安装脚本 + 配置模板，新服务器下载仓库即可部署，本地默认 127.0.0.1，对外可配域名。正文见仓库文件。",
+      "id": "graph-project-config-adaptation-spec",
+      "name": "Graph 项目配置化适配需求说明书",
+      "type": "Business Object"
     }
   ],
   "relationships": [
@@ -1450,6 +1470,26 @@
       "target_id": "external-graph-query-adaptation-spec",
       "target_name": "Graph 项目适配需求说明书",
       "type": "Association"
+    },
+    {
+      "id": "notice-supplemented-by-configspec",
+      "name": "补充需求",
+      "source_id": "graph-project-external-query-notice",
+      "source_name": "Graph 项目需求通知：跨项目图谱查询适配",
+      "statement": "Graph 项目需求通知：跨项目图谱查询适配 --(Association)--> Graph 项目配置化适配需求说明书",
+      "target_id": "graph-project-config-adaptation-spec",
+      "target_name": "Graph 项目配置化适配需求说明书",
+      "type": "Association"
+    },
+    {
+      "id": "configspec-governs-router",
+      "name": "规范地址配置",
+      "source_id": "graph-project-config-adaptation-spec",
+      "source_name": "Graph 项目配置化适配需求说明书",
+      "statement": "Graph 项目配置化适配需求说明书 --(Association)--> 项目ID路由",
+      "target_id": "project-id-router",
+      "target_name": "项目ID路由",
+      "type": "Association"
     }
   ],
   "views": [
@@ -1662,7 +1702,8 @@
         "mirror-mcp-artifact",
         "external-graph-query-adaptation-spec",
         "kb-rule-e2e-cloud-acceptance",
-        "graph-project-external-query-notice"
+        "graph-project-external-query-notice",
+        "graph-project-config-adaptation-spec"
       ],
       "included_relationships": [
         "mirror-artifact-realize",
@@ -1679,7 +1720,9 @@
         "rule-e2e-cloud-constrains-api",
         "rule-e2e-cloud-constrains-mirror",
         "notice-adapts-api",
-        "notice-based-on-spec"
+        "notice-based-on-spec",
+        "notice-supplemented-by-configspec",
+        "configspec-governs-router"
       ],
       "parent_element_id": "kg-service-domain",
       "view_id": "cross-project-graph-query-view",
