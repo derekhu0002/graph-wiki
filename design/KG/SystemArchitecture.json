@@ -1101,6 +1101,18 @@
           "value": "274260c: deploy/install-graph-store.sh, deploy/systemd/argo-mirror-engine.service, deploy/README.md, README.md"
         }
       ]
+    },
+    {
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "1d9a9a4: mcp/mirror-engine-server.js, deploy/install-graph-store.sh, deploy/graph-store.env.example"
+        }
+      ],
+      "description": "2026-10-01 里程碑：跨项目图谱查询通过**外部验收**（ArchGraph 独立复验 issue #1 全绿、已关闭）。5 个读工具对 proj:archgraph 均返回真实结果：结构 queryNeo4jGraph=298 元素；语义 getSystemArchitecture(semanticRetrieval invoked)/memory_search(0.99)；getIntentElementContext/getArchitectureViewContext 正常；mirror_sync 正确 up-to-date。另确认 async register、implicit self-read、git-identity commits、schema branch。ArchGraph 全量 e2e 10/10。关键坑与修复（commit 1d9a9a4）：① remove() 未清 .meta → 陈旧 meta 使重建被幂等跳过、库丢失；② sync() up-to-date 前未校验 DB 存在 → 现加 dbExists 自愈；③ meta.ok 改为投影+语义两者；④ 安装器不写空值（保护 ARGO_EMBEDDING_MODEL_VERSION）。配置模型：引擎配置归 ARGO 自己的 ~/.argo/.env（自动读取），服务配置归 graph-store.env。拓扑：域名→120 nginx→47(Store 18792/网站 18793/引擎 18801/Neo4j Enterprise 一成员一库)。",
+      "id": "kb-admin-session-20261001-xg-accepted",
+      "name": "会话记录 2026-10-01 跨项目查询外部验收通过",
+      "type": "Business Object"
     }
   ],
   "relationships": [
@@ -1655,7 +1667,8 @@
         "kb-admin-session-20260923-registry-sync",
         "kb-admin-session-20261001-cross-project-query",
         "kb-admin-session-20261001-mirror-engine",
-        "kb-admin-session-20261001-migrate-store-to-47"
+        "kb-admin-session-20261001-migrate-store-to-47",
+        "kb-admin-session-20261001-xg-accepted"
       ],
       "included_relationships": []
     },
