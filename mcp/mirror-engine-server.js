@@ -28,7 +28,9 @@
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
-const { execFileSync } = require('node:child_process');
+const { execFileSync, execFile } = require('node:child_process');
+const { promisify } = require('node:util');
+const execFileAsync = promisify(execFile);
 
 const HOME = process.env.HOME || '/root';
 const ARGO_ROOT = process.env.ARGO_ROOT || path.join(HOME, '.argo');
@@ -94,6 +96,35 @@ function git(args, cwd) {
   return execFileSync('git', args, { cwd, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' }).trim();
 }
 
+// Async git that does NOT block the event loop. Network ops force HTTP/1.1:
+// git/curl's default HTTP/2 to github.com intermittently fails with
+// "Error in the HTTP2 framing layer", which is fatal for fresh clones.
+function gitAsync(args, cwd) {
+  return execFileAsync('git', args, { cwd, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+    .then((r) => r.stdout.trim());
+}
+
+// Concurrency limiter: keep at most MAX_CONCURRENT_SYNCS syncs in flight so a
+// burst of registrations can never saturate the single-threaded engine and
+// starve /mirrors or /health (which surfaced as engine_unreachable).
+let _activeSyncs = 0;
+const MAX_CONCURRENT_SYNCS = 2;
+const _syncQueue = [];
+function runSync(fn) {
+  return new Promise((resolve, reject) => {
+    const start = () => {
+      _activeSyncs++;
+      Promise.resolve().then(fn).then(resolve, reject).finally(() => {
+        _activeSyncs--;
+        const next = _syncQueue.shift();
+        if (next) next();
+      });
+    };
+    if (_activeSyncs < MAX_CONCURRENT_SYNCS) start();
+    else _syncQueue.push(start);
+  });
+}
+
 async function dbExists(projectId) {
   try {
     const { store } = engine();
@@ -108,19 +139,36 @@ async function dbExists(projectId) {
   } catch { return false; }
 }
 
-function fetchRepo(projectId, sourceRepo, branch) {
+async function cloneWithRetry(dir, sourceRepo, branchName) {
+  let lastErr;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await gitAsync(['-c', 'http.version=HTTP/1.1', 'clone', '--depth', '1', '--branch', branchName, sourceRepo, '.'], dir);
+      return;
+    } catch (e) {
+      lastErr = e;
+      // Drop any half-written clone so the next attempt starts clean.
+      try { fs.rmSync(path.join(dir, '.git'), { recursive: true, force: true }); } catch {}
+      await new Promise((r) => setTimeout(r, 1000 * attempt));
+    }
+  }
+  throw lastErr;
+}
+
+async function fetchRepo(projectId, sourceRepo, branch) {
   const dir = workdir(projectId);
   const branchName = branch || 'main';
   if (!sourceRepo) return dir;
+  const netCfg = ['-c', 'http.version=HTTP/1.1'];
   if (!fs.existsSync(path.join(dir, '.git'))) {
     fs.mkdirSync(dir, { recursive: true });
-    git(['clone', '--depth', '1', '--branch', branchName, sourceRepo, '.'], dir);
+    await cloneWithRetry(dir, sourceRepo, branchName);
   } else {
     // Transient network failure must not break an already-built mirror: keep the
     // existing checkout and let the caller's commit check decide re-projection.
     try {
-      git(['fetch', '--depth', '1', 'origin', branchName], dir);
-      git(['reset', '--hard', `origin/${branchName}`], dir);
+      await gitAsync([...netCfg, 'fetch', '--depth', '1', 'origin', branchName], dir);
+      await gitAsync(['reset', '--hard', `origin/${branchName}`], dir);
     } catch { /* keep current checkout */ }
   }
   return dir;
@@ -128,7 +176,7 @@ function fetchRepo(projectId, sourceRepo, branch) {
 
 async function sync(input) {
   const projectId = safeId(input.projectId);
-  const dir = fetchRepo(projectId, input.sourceRepo, input.branch);
+  const dir = await fetchRepo(projectId, input.sourceRepo, input.branch);
   const graphAbs = path.join(dir, DEFAULT_GRAPH_PATH);
   if (!fs.existsSync(graphAbs)) return { status: 'failed', reason: 'graph_not_found', projectId, graphAbs };
   let commit = null;
@@ -228,7 +276,7 @@ function readBody(req) {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   if (req.method === 'GET' && url.pathname === '/health') {
-    return sendJson(res, 200, { status: 'ok', service: 'argo-mirror-engine', argoRoot: ARGO_ROOT, mirrorsRoot: MIRRORS_ROOT });
+    return sendJson(res, 200, { status: 'ok', service: 'argo-mirror-engine', argoRoot: ARGO_ROOT, mirrorsRoot: MIRRORS_ROOT, activeSyncs: _activeSyncs, queuedSyncs: _syncQueue.length });
   }
   if (req.method === 'GET' && url.pathname === '/mirrors') {
     return sendJson(res, 200, { status: 'ok', count: list().length, mirrors: list() });
@@ -236,7 +284,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'POST' && (url.pathname === '/mirror/sync' || url.pathname === '/mirror/remove' || url.pathname === '/graph/read')) {
     try {
       const body = await readBody(req);
-      const result = url.pathname === '/mirror/sync' ? await sync(body)
+      const result = url.pathname === '/mirror/sync' ? await runSync(() => sync(body))
         : url.pathname === '/mirror/remove' ? await remove(body)
         : await read(body);
       const status = result.status === 'ok' ? 200 : result.status === 'denied' ? 403 : result.status === 'bad_request' ? 400 : 502;
