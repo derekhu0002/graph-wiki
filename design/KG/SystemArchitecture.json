@@ -908,6 +908,10 @@
         {
           "name": "commit",
           "value": "1d9a9a4: mcp/mirror-engine-server.js (self-heal: verify DB exists before up-to-date; clear .meta on remove; meta.ok=projection+semantic; mirror_list ok), deploy/install-graph-store.sh, deploy/graph-store.env.example"
+        },
+        {
+          "name": "commit",
+          "value": "32c5f7e: mcp/mirror-engine-server.js (resilience: max-2 concurrency limiter + async HTTP/1.1 git + clone retry x3; fixes engine_unreachable during registration bursts)"
         }
       ]
     },
