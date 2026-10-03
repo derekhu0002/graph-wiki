@@ -76,6 +76,7 @@ async function main() {
     ev(1800e3, { kind: 'read', projectId: 'B', tool: 'queryNeo4jGraph', status: 'ok' }),
     ev(2300e3, { kind: 'read', projectId: 'G', tool: 'memory_search', status: 'failed', reason: 'transient' }),
     ev(1700e3, { kind: 'read', projectId: 'G', tool: 'memory_search', status: 'ok' }),
+    ev(1650e3, { kind: 'read', projectId: 'ghost', tool: 'memory_search', status: 'denied', reason: 'mirror_not_synced' }),
   ].join('\n') + '\n', 'utf8');
   fs.writeFileSync(path.join(logDir, 'store.ndjson'), [
     ev(1000e3, { kind: 'graph_read', requester: 'B', projectId: 'A', tool: 'queryNeo4jGraph', status: 'denied', reason: 'not_authorized' }),
@@ -118,6 +119,8 @@ async function main() {
   check(codes.has('upstream_unreachable'), 'THEN6b ls-remote 失败不再静默，报告 upstream_unreachable');
   check(!report.findings.some((f) => f.projectId === 'F'), 'THEN6c 后到的成功事件清除先前的失败（按项目取最新）');
   check(!report.findings.some((f) => f.code === 'read_failed' && f.projectId === 'G'), 'THEN6d 读成功清除先前的读失败（按项目+工具取最新）');
+  check(!report.findings.some((f) => f.code === 'read_failed' && f.projectId === 'ghost'), 'THEN6e 非注册成员（探针）读失败不告警');
+  check(report.findings.some((f) => f.code === 'read_failed' && f.projectId === 'A'), 'THEN6e 注册成员的读失败仍告警');
   check(codes.has('argo_version_changed'), 'THEN7 发现 argo_version_changed（框架升级信号）');
   check(syncCalls.some((c) => c.projectId === 'A'), 'THEN8 heal 对 not ok 副本触发 mirror_sync');
   check(!syncCalls.some((c) => c.projectId === 'B'), 'THEN8 ok 副本不误重建');

@@ -1,6 +1,6 @@
 {
   "name": "graph-store",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "ArchGraph Graph Store: federation registry + cross-project graph query, with an ARGO mirror engine (reuses ARGO for Neo4j projection + embeddings). Install once, deploy with one command.",
   "license": "MIT",
   "bin": {

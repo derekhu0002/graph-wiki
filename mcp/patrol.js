@@ -127,10 +127,15 @@ async function runPatrol(options = {}) {
     if (e.status !== 'ok') findings.push({ level: 'warn', code: 'schema_failed', projectId: e.projectId, reason: e.reason });
   }
 
+  let reg = null;
+  try { reg = registry.load(registryPath); } catch { reg = null; }
+  const registeredIds = new Set(((reg && reg.members) || []).filter((m) => m.status === 'active').map((m) => m.id));
+
   const engineReads = engineEvents.filter((e) => e.kind === 'read');
   // Latest outcome per (project, tool) only: a later success clears an earlier failure.
+  // Failures for ids that are not registered members are probe artifacts, not mirror health.
   for (const e of latestByKey(engineReads, (x) => `${x.projectId}\u0000${x.tool}`)) {
-    if (e.status && e.status !== 'ok') {
+    if (e.status && e.status !== 'ok' && (!reg || registeredIds.has(e.projectId))) {
       findings.push({ level: 'warn', code: 'read_failed', projectId: e.projectId, tool: e.tool, status: e.status, reason: e.reason });
     }
   }
@@ -144,8 +149,7 @@ async function runPatrol(options = {}) {
     findings.push({ level: 'warn', code: 'read_deny_rate_high', reads: readTotal, denied: readDenied });
   }
 
-  let members = [];
-  try { members = (registry.load(registryPath).members || []).filter((m) => m.status === 'active' && m.sourceRepo); } catch { members = []; }
+  const members = ((reg && reg.members) || []).filter((m) => m.status === 'active' && m.sourceRepo);
   const byId = new Map(mirrors.map((m) => [m.projectId, m]));
   const now = Date.now();
   const unreachable = [];
