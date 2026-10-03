@@ -39,6 +39,10 @@ async function main() {
   git(remote, 'init', '-q', '-b', 'main');
   const c1 = commit(remote, 'f.txt', 'one');
 
+  // THEN 0: no sourceRepo + no checkout → cannot clone
+  const r0 = await fetchRepo(path.join(tmp, 'fresh-no-src'), undefined, 'main');
+  check(r0.fetchOk === false && r0.fetchError === 'no_sourceRepo', 'THEN0 无 sourceRepo 无法克隆时 fetchOk=false');
+
   // THEN 1: clone
   const r1 = await fetchRepo(mirror, remote, 'main');
   check(r1.fetchOk === true && r1.branch === 'main', 'THEN1 首次 fetch 克隆成功');
@@ -49,6 +53,11 @@ async function main() {
   const r2 = await fetchRepo(mirror, remote, 'main');
   check(r2.fetchOk === true, 'THEN2 再次 fetch 成功');
   check(git(mirror, 'rev-parse', 'HEAD') === c2, 'THEN2 HEAD 推进到上游最新提交');
+
+  // THEN 2b: omitted sourceRepo must still refresh from origin (no silent no-op)
+  const c2b = commit(remote, 'f.txt', 'two-b');
+  const r2b = await fetchRepo(mirror, undefined, 'main');
+  check(r2b.fetchOk === true && git(mirror, 'rev-parse', 'HEAD') === c2b, 'THEN2b 省略 sourceRepo 仍从 origin 刷新');
 
   // THEN 3: switch to a new upstream branch
   git(remote, 'checkout', '-q', '-b', 'dev');

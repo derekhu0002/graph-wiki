@@ -24,7 +24,7 @@ const NET_CFG = [
   '-c', 'http.lowSpeedLimit=1000',
   '-c', 'http.lowSpeedTime=60',
 ];
-const NET_TIMEOUT_MS = Number(process.env.MIRROR_GIT_TIMEOUT_MS || 180000);
+const NET_TIMEOUT_MS = Number(process.env.MIRROR_GIT_TIMEOUT_MS || 120000);
 
 function git(args, cwd) {
   return execFileSync('git', args, { cwd, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' }).trim();
@@ -52,9 +52,10 @@ async function cloneWithRetry(dir, sourceRepo, branchName) {
 
 async function fetchRepo(dir, sourceRepo, branch) {
   const branchName = branch || 'main';
-  if (!sourceRepo) return { dir, fetchOk: true, branch: branchName };
   const refspec = `+refs/heads/${branchName}:refs/remotes/origin/${branchName}`;
-  if (!fs.existsSync(path.join(dir, '.git'))) {
+  const hasGit = fs.existsSync(path.join(dir, '.git'));
+  if (!hasGit) {
+    if (!sourceRepo) return { dir, fetchOk: false, branch: branchName, fetchError: 'no_sourceRepo' };
     try {
       fs.mkdirSync(dir, { recursive: true });
       await cloneWithRetry(dir, sourceRepo, branchName);
@@ -63,6 +64,8 @@ async function fetchRepo(dir, sourceRepo, branch) {
     }
     return { dir, fetchOk: true, branch: branchName };
   }
+  // An existing checkout always refreshes from its `origin`, even when the caller
+  // omitted sourceRepo — silently skipping the fetch would masquerade as up-to-date.
   try {
     await gitAsync([...NET_CFG, 'fetch', '--depth', '1', 'origin', refspec], dir, NET_TIMEOUT_MS);
     await gitAsync(['reset', '--hard', `origin/${branchName}`], dir);
