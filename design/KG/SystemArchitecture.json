@@ -1197,6 +1197,26 @@
           "value": "1a09ee8: mcp/obs.js, mcp/patrol.js, bin/graph-store.js, deploy/systemd/graph-store-patrol.service, deploy/systemd/graph-store-patrol.timer, tests/acceptance/patrol_insights.js, tests/acceptance/mirror_engine_observability.js"
         }
       ]
+    },
+    {
+      "id": "kb-admin-session-20261003-schema-observability",
+      "name": "会话记录 2026-10-03 schema自适应与巡检",
+      "type": "Business Object",
+      "description": "2026-10-03 会话摘要：落实『项目 schema 变化自动适配、ARGO 逻辑变化人工适配』原则并建立可观测/巡检。背景诊断链：联邦副本分支为注册 branch（缺省字面回退 main，非自动探测）；授权为并集语义（通配 * 吞掉显式 ID，且 graph_read_external 的 contentId 不与 openContent 校验，实际开放更宽）；registry_read 仅返回开放内容引用、查授权范围应用 registry_grants；archgraph 当前发布分支经副本 commit 与 GitHub 分支 HEAD 匹配确认为 main@4af4d08。关键决策：① schema 校验自适应（mcp/graph-schema.js 动态类型，优先级 显式 schema > 图自述 graph.schema > 框架经镜像引擎 POST /schema 按 projectId 解析 > 开放模式仅结构校验；结构校验留中心；仅封闭 schema 判非法类型；引擎不可用不阻塞并标注 schemaSource）；② 镜像/读主链本就自动适配（委托 ARGO 按成员 workspace 解析 schema），唯一硬编码副本是 graph-schema 类型清单，已移除；③ 统一 JSONL 打点 mcp/obs.js（engine/store/patrol，GRAPH_STORE_LOG_DIR），引擎 /health 增 argoVersion+logDir、/mirrors 增 commit/syncedAt/neo4jOk/semanticOk、新增 POST /schema；④ 巡检 mcp/patrol.js + graph-store patrol [--heal] + graph-store-patrol.timer(15min)：聚合同步/语义/schema 失败、读拒绝率、上游漂移（git ls-remote vs commit，仅超 stale 阈值）、ARGO 版本变化（框架升级信号）、schema 兼容冒烟，--heal 自愈 not ok 副本，快照 patrol-latest.json，异常退出码非 0。验收先行：tests/acceptance/schema_autoadapt.js、patrol_insights.js、mirror_engine_observability.js 全绿；本地全量 acceptance 通过（仅 kg_mcp_gateway 因远程网关 18789 未起，属环境无关）。意图图新增 mirror-observability-view（挂 mirror-host-service）含 schema-autoadapt-func/mirror-patrol-func+3 关系与用例，注册 commit 1a09ee8/63ec666。经验：① 视图元素上限 15，新增应挂分层子视图；② 关系必须显式带 source_name/target_name；③ 引擎 /schema 在未装 ARGO 时 require 失败须优雅降级（502，健康不崩）。TODO：云端部署（新包版本 + patrol timer + 日志目录）并跑真实巡检；patrol 对 drift 暂只报告（30min 定时同步兜底）；ARGO 报告结构/工具名/模块路径变化仍需人工适配。",
+      "attributes": [
+        {
+          "name": "memoryTier",
+          "value": "T2"
+        },
+        {
+          "name": "commit",
+          "value": "1a09ee8: mcp/graph-schema.js, mcp/obs.js, mcp/patrol.js, mcp/mirror-engine-server.js, mcp/mirror-engine-client.js, mcp/asset-mcp-server.js, tests/acceptance (schema_autoadapt/patrol_insights/mirror_engine_observability), deploy/systemd, community/EXTERNAL-GRAPH-QUERY-ADAPTATION.md"
+        },
+        {
+          "name": "commit",
+          "value": "63ec666: docs(kg) register commit 1a09ee8"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -1782,7 +1802,8 @@
         "kb-admin-session-20261001-cross-project-query",
         "kb-admin-session-20261001-mirror-engine",
         "kb-admin-session-20261001-migrate-store-to-47",
-        "kb-admin-session-20261001-xg-accepted"
+        "kb-admin-session-20261001-xg-accepted",
+        "kb-admin-session-20261003-schema-observability"
       ],
       "included_relationships": []
     },
