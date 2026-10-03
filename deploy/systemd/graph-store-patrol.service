@@ -1,5 +1,5 @@
 [Unit]
-Description=Sync all federation mirrors via ARGO mirror engine
+Description=Graph Store mirror patrol (log insights + drift/upgrade detection + auto-heal)
 After=network.target
 
 [Service]
@@ -9,4 +9,4 @@ Environment=ASSET_REPO_ROOT=__DATA__
 Environment=ASSET_ROOT=__DATA__/assets
 Environment=MIRROR_ENGINE_URL=__MIRROR_ENGINE_URL__
 Environment=GRAPH_STORE_LOG_DIR=__DATA__/logs
-ExecStart=__NODE__ __PKG__/mcp/sync-mirrors.js
+ExecStart=__NODE__ __PKG__/mcp/patrol.js --heal

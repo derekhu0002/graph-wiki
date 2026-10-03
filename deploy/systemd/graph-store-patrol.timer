@@ -1,0 +1,10 @@
+[Unit]
+Description=Periodic Graph Store mirror patrol (every 15 minutes)
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=15min
+Unit=graph-store-patrol.service
+
+[Install]
+WantedBy=timers.target

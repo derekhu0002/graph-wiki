@@ -78,7 +78,7 @@ async function main() {
   const stub = await startStub();
   const port = 21000 + Math.floor(Math.random() * 15000);
   const child = spawn(process.execPath, [path.join(__dirname, '..', '..', 'mcp', 'asset-mcp-server.js')], {
-    env: { ...process.env, ASSET_REPO_ROOT: assetRoot, ASSET_ROOT: assetRoot, ASSET_MCP_HOST: '127.0.0.1', ASSET_MCP_PORT: String(port), MIRROR_ENGINE_URL: `http://127.0.0.1:${stub.port}` },
+    env: { ...process.env, ASSET_REPO_ROOT: assetRoot, ASSET_ROOT: assetRoot, ASSET_MCP_HOST: '127.0.0.1', ASSET_MCP_PORT: String(port), MIRROR_ENGINE_URL: `http://127.0.0.1:${stub.port}`, GRAPH_STORE_LOG_DIR: path.join(assetRoot, 'logs') },
     stdio: ['ignore', 'ignore', 'pipe'],
   });
   const base = `http://127.0.0.1:${port}`;

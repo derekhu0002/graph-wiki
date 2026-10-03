@@ -43,4 +43,6 @@ module.exports = {
   readExternal: (body) => call('/graph/read', 'POST', body, 120000),
   removeMirror: (body) => call('/mirror/remove', 'POST', body, 60000),
   listMirrors: () => call('/mirrors', 'GET', null, 15000),
+  getSchema: (body) => call('/schema', 'POST', body, 30000),
+  getHealth: () => call('/health', 'GET', null, 10000),
 };

@@ -102,13 +102,22 @@ MIRROR_ENGINE_URL=http://<引擎内网IP>:18801
 | `graph-store-web.service` | 本机 | 社区网站（静态，`/archgraph/`）|
 | `argo-mirror-engine.service` | 引擎机 | ARGO 镜像引擎（Neo4j + ARGO + embedding）|
 | `sync-mirrors.timer` | Store 机 | 每 30 分钟幂等重同步所有成员副本 |
+| `graph-store-patrol.timer` | Store 机 | 每 15 分钟巡检（日志洞察 + 漂移/框架升级检测 + `--heal` 自愈坏副本）|
 | docker `argo-neo4j` | 引擎机 | Neo4j（一成员一 database）|
 
 ```bash
-systemctl status asset-mcp argo-mirror-engine sync-mirrors.timer
+systemctl status asset-mcp argo-mirror-engine sync-mirrors.timer graph-store-patrol.timer
 journalctl -u argo-mirror-engine -n 50 --no-pager
 docker logs --tail 50 argo-neo4j
+graph-store patrol            # 手动巡检（--heal 自愈 not-ok 副本）
+graph-store patrol --heal
 ```
+
+**巡检与日志（vlog）**：服务/引擎/巡检统一写 JSONL 到 `DATA_DIR/logs/`（`GRAPH_STORE_LOG_DIR`）：
+`engine.ndjson`（sync/read/schema/start，含 durationMs、commit、semanticOk、argoVersion）、
+`store.ndjson`（graph_read/graph_validate/registry）、`patrol.ndjson` + `patrol-latest.json`（巡检快照）。
+`patrol` 从这些日志与 `/health`/`/mirrors`（commit/syncedAt/argoVersion）聚合洞察：同步/语义/schema 失败、
+读拒绝率、副本上游漂移、ARGO 版本变化（框架升级信号）、schema 兼容冒烟（经 `/schema`）。有异常时退出码非 0。
 
 ## 6. 关键配置项（`deploy/graph-store.env`）
 

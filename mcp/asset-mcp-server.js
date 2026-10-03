@@ -34,6 +34,7 @@ const { execFileSync } = require('node:child_process');
 const registry = require('./registry.js');
 const engineClient = require('./mirror-engine-client.js');
 const { validateGraph } = require('./graph-schema.js');
+const obs = require('./obs.js');
 
 const PORT = Number(process.env.ASSET_MCP_PORT || 18792);
 const HOST = process.env.ASSET_MCP_HOST || '127.0.0.1';
@@ -102,6 +103,26 @@ function gitCommit(message, files) {
 
 // ---------- ARCHGRAPH 图谱 Schema 校验 ----------
 // 共享校验逻辑位于 graph-schema.js（服务与验收测试、联邦副本托管共用同一套规则）。
+// schema 解析优先级：显式传入 > 图自述 > 框架（镜像引擎按 projectId 解析）> 开放模式（仅结构校验）。
+
+async function resolveValidationSchema(graph, args) {
+  const explicit = args && args.schema;
+  if (explicit && typeof explicit === 'object') {
+    return { schema: { source: 'request', ...explicit }, source: 'request' };
+  }
+  if (graph && graph.schema && typeof graph.schema === 'object') {
+    return { schema: { source: 'declared', ...graph.schema }, source: 'declared' };
+  }
+  const projectId = args && (args.projectId || args.sourceProjectId);
+  if (projectId) {
+    const r = await engineClient.getSchema({ projectId: String(projectId) });
+    if (r && r.json && r.json.status === 'ok' && r.json.schema) {
+      return { schema: { ...r.json.schema, source: 'engine' }, source: 'engine' };
+    }
+    return { schema: null, source: 'engine_unavailable', engineStatus: r && r.json ? (r.json.status || 'unavailable') : 'unavailable' };
+  }
+  return { schema: null, source: 'open' };
+}
 
 // ---------- 图谱资产读写 ----------
 
@@ -177,15 +198,28 @@ function toolGraphGet(args) {
   };
 }
 
-function toolGraphSubmit(args) {
+async function toolGraphSubmit(args) {
   const { id, graph, version, description, name, sourceRepo } = args || {};
   if (!id) throw new Error('缺少 id（图谱资产 id）');
   if (!graph || typeof graph !== 'object') throw new Error('缺少 graph（ARCHGRAPH 图谱对象）');
 
-  // 内部自动 schema 校验，不过拒收
-  const validation = validateGraph(graph);
+  // 内部自动 schema 校验，不过拒收；schema 随项目/资产声明动态解析，中心无内置类型清单。
+  const startedAt = Date.now();
+  const resolved = await resolveValidationSchema(graph, args);
+  const validation = validateGraph(graph, resolved.schema);
+  obs.append('store', {
+    kind: 'graph_validate',
+    op: 'submit',
+    graphId: id,
+    schemaSource: resolved.source,
+    engineStatus: resolved.engineStatus,
+    valid: validation.valid,
+    errorCount: validation.errors.length,
+    errors: validation.errors.slice(0, 10),
+    durationMs: Date.now() - startedAt,
+  });
   if (!validation.valid) {
-    return { status: 'failed', reason: 'schema_validation_failed', errors: validation.errors };
+    return { status: 'failed', reason: 'schema_validation_failed', schemaSource: resolved.source, errors: validation.errors };
   }
 
   const catalog = loadCatalog();
@@ -219,13 +253,13 @@ function toolGraphSubmit(args) {
   return {
     status: 'ok',
     graphId: id,
-    validation: { valid: true, errors: [] },
+    validation: { valid: true, errors: [], schemaSource: resolved.source },
     stats: graphStats(graph),
     commit: commitResult,
   };
 }
 
-function toolGraphUpdate(args) {
+async function toolGraphUpdate(args) {
   const { id, graph, version, description, name } = args || {};
   if (!id) throw new Error('缺少 id');
   const catalog = loadCatalog();
@@ -235,10 +269,23 @@ function toolGraphUpdate(args) {
   const changed = [];
   if (graph != null) {
     if (typeof graph !== 'object') throw new Error('graph 必须是对象');
-    // 内部自动 schema 校验，不过拒收
-    const validation = validateGraph(graph);
+    // 内部自动 schema 校验，不过拒收；schema 动态解析（显式 > 自述 > 框架引擎 > 开放）。
+    const startedAt = Date.now();
+    const resolved = await resolveValidationSchema(graph, args);
+    const validation = validateGraph(graph, resolved.schema);
+    obs.append('store', {
+      kind: 'graph_validate',
+      op: 'update',
+      graphId: id,
+      schemaSource: resolved.source,
+      engineStatus: resolved.engineStatus,
+      valid: validation.valid,
+      errorCount: validation.errors.length,
+      errors: validation.errors.slice(0, 10),
+      durationMs: Date.now() - startedAt,
+    });
     if (!validation.valid) {
-      return { status: 'failed', reason: 'schema_validation_failed', errors: validation.errors };
+      return { status: 'failed', reason: 'schema_validation_failed', schemaSource: resolved.source, errors: validation.errors };
     }
     const graphFile = graphAbsPath(id);
     fs.writeFileSync(graphFile, JSON.stringify(graph, null, 2) + '\n', 'utf8');
@@ -266,6 +313,7 @@ async function toolRegistryRegister(args) {
   const reg = registry.load(REGISTRY_PATH);
   const member = registry.registerMember(reg, args);
   registry.save(REGISTRY_PATH, reg);
+  obs.append('store', { kind: 'registry', op: 'register', memberId: member.id, sourceRepo: member.sourceRepo, branch: member.branch });
   const commitResult = gitCommit(`feat(registry): register member ${member.id}`, [REGISTRY_PATH]);
   // 副本建设：注册后**后台异步**触发（不阻塞本调用；构建耗时长，完成后可经 mirror_list / mirror_sync 查看）。
   let mirrorResult;
@@ -284,6 +332,7 @@ async function toolRegistryDeregister(args) {
   const reg = registry.load(REGISTRY_PATH);
   const result = registry.deregisterMember(reg, id);
   registry.save(REGISTRY_PATH, reg);
+  obs.append('store', { kind: 'registry', op: 'deregister', memberId: id });
   const removeResult = (await engineClient.removeMirror({ projectId: id })).json;
   const commitResult = gitCommit(`feat(registry): deregister member ${id}`, [REGISTRY_PATH]);
   return { status: 'ok', ...result, mirror: removeResult, commit: commitResult };
@@ -299,6 +348,7 @@ function toolRegistryAuthorize(args) {
   const reg = registry.load(REGISTRY_PATH);
   const grant = registry.authorize(reg, args);
   registry.save(REGISTRY_PATH, reg);
+  obs.append('store', { kind: 'registry', op: 'authorize', grantor: grant.grantor, grantee: grant.grantee, contentId: grant.contentId });
   const commitResult = gitCommit(
     `feat(registry): grant ${grant.grantor} -> ${grant.grantee} (${grant.contentId})`,
     [REGISTRY_PATH]
@@ -324,20 +374,34 @@ async function toolGraphReadExternal(args) {
   if (!a.requester) throw new Error('缺少 requester（请求方项目 id）');
   if (!a.projectId) throw new Error('缺少 projectId（被查项目 id）');
   if (!a.tool) throw new Error('缺少 tool（ARGO 读工具名）');
+  const startedAt = Date.now();
+  const finish = (result) => {
+    obs.append('store', {
+      kind: 'graph_read',
+      requester: a.requester,
+      projectId: a.projectId,
+      tool: a.tool,
+      contentId: a.contentId || '*',
+      status: result.status,
+      reason: result.reason,
+      durationMs: Date.now() - startedAt,
+    });
+    return result;
+  };
   const reg = registry.load(REGISTRY_PATH);
   const member = (reg.members || []).find((m) => m.id === a.projectId && m.status === 'active');
-  if (!member) return { status: 'denied', reason: 'member_not_found', requester: a.requester, projectId: a.projectId };
+  if (!member) return finish({ status: 'denied', reason: 'member_not_found', requester: a.requester, projectId: a.projectId });
   if (!registry.isAuthorized(reg, a.requester, a.projectId, a.contentId)) {
-    return { status: 'denied', reason: 'not_authorized', requester: a.requester, projectId: a.projectId };
+    return finish({ status: 'denied', reason: 'not_authorized', requester: a.requester, projectId: a.projectId });
   }
   const r = await engineClient.readExternal({ projectId: a.projectId, tool: a.tool, args: a.args || {} });
   if (!r.json || r.json.status === 'unavailable') {
-    return { status: 'denied', reason: 'engine_unreachable', requester: a.requester, projectId: a.projectId };
+    return finish({ status: 'denied', reason: 'engine_unreachable', requester: a.requester, projectId: a.projectId });
   }
   if (r.json.status !== 'ok') {
-    return { status: r.json.status, reason: r.json.reason, requester: a.requester, projectId: a.projectId };
+    return finish({ status: r.json.status, reason: r.json.reason, requester: a.requester, projectId: a.projectId });
   }
-  return { status: 'ok', requester: a.requester, projectId: a.projectId, namespaceKey: `proj:${a.projectId}`, tool: a.tool, result: r.json.result };
+  return finish({ status: 'ok', requester: a.requester, projectId: a.projectId, namespaceKey: `proj:${a.projectId}`, tool: a.tool, result: r.json.result });
 }
 
 async function toolMirrorSync(args) {
@@ -364,8 +428,8 @@ async function toolMirrorList() {
 const TOOLS = [
   { name: 'graph_list', description: '列出图谱资产', inputSchema: { type: 'object', properties: {} } },
   { name: 'graph_get', description: '获取一张图谱资产（元数据 + 完整 ARCHGRAPH 图谱）', inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
-  { name: 'graph_submit', description: '提交新图谱资产（内部自动 ARCHGRAPH schema 校验，不通过则拒收不入库）', inputSchema: { type: 'object', required: ['id', 'graph'], properties: { id: { type: 'string' }, graph: { type: 'object' }, name: { type: 'string' }, version: { type: 'string' }, description: { type: 'string' }, sourceRepo: { type: 'string' } } } },
-  { name: 'graph_update', description: '更新图谱资产（内部自动 ARCHGRAPH schema 校验，不通过则拒收不入库）', inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' }, graph: { type: 'object' }, version: { type: 'string' }, description: { type: 'string' }, name: { type: 'string' } } } },
+  { name: 'graph_submit', description: '提交新图谱资产（内部自动 schema 校验，不通过则拒收不入库；schema 随项目/资产声明动态解析，中心无内置类型清单）', inputSchema: { type: 'object', required: ['id', 'graph'], properties: { id: { type: 'string' }, graph: { type: 'object' }, name: { type: 'string' }, version: { type: 'string' }, description: { type: 'string' }, sourceRepo: { type: 'string' }, projectId: { type: 'string' }, schema: { type: 'object' } } } },
+  { name: 'graph_update', description: '更新图谱资产（内部自动 schema 校验，不通过则拒收不入库；schema 随项目/资产声明动态解析，中心无内置类型清单）', inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' }, graph: { type: 'object' }, version: { type: 'string' }, description: { type: 'string' }, name: { type: 'string' }, projectId: { type: 'string' }, schema: { type: 'object' } } } },
   { name: 'registry_register', description: '联邦成员自注册到中心（身份/职责/能力/开放内容清单）。注册即异步触发一次镜像建设（best-effort）；中心确认 id 全局唯一', inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' }, name: { type: 'string' }, role: { type: 'string' }, capabilities: { type: 'array' }, openContent: { type: 'array' }, sourceRepo: { type: 'string' }, branch: { type: 'string' } } } },
   { name: 'registry_deregister', description: '联邦成员自注销，注销后 discover 不再可见', inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
   { name: 'registry_discover', description: '发现已注册联邦成员的基础信息（它是谁、做什么、有什么能力）', inputSchema: { type: 'object', properties: {} } },

@@ -1,35 +1,39 @@
 #!/usr/bin/env node
+'use strict';
 /**
- * 共享 ARCHGRAPH 图谱 schema 校验（纯 Node 零依赖，服务与验收测试共同复用）。
+ * Shared ARCHGRAPH graph-structure validation (service, acceptance tests, and
+ * federation mirror hosting reuse the same rules).
  *
- * 从 asset-mcp-server.js 抽出，保证「图谱资产入库」与「联邦副本托管」使用
- * 同一套结构级校验规则：结构必填字段 + 元素/关系类型合法性 + id 唯一 +
- * 关系端点引用存在 + view 成员引用存在 + 顶层视图唯一。
+ * Schema-adaptive by design: type membership is enforced only when a schema is
+ * available — declared by the graph itself (`graph.schema`) or resolved from the
+ * framework (ARGO workspace schema). Without a schema the validator stays
+ * structural, so a project schema change never requires a Graph Store code change.
+ *
+ * Structure checks always stay in the center: required fields, id uniqueness,
+ * relationship endpoints, view member references, single top-level view.
  */
 
-const ARCH_ELEMENT_TYPES = [
-  'Resource', 'Capability', 'Value Stream', 'Course of Action', 'Business Actor',
-  'Business Role', 'Business Collaboration', 'Business Interface', 'Business Process',
-  'Business Function', 'Business Interaction', 'Business Event', 'Business Service',
-  'Business Object', 'Contract', 'Representation', 'Product', 'Application Component',
-  'Application Collaboration', 'Application Interface', 'Application Process',
-  'Application Function', 'Application Interaction', 'Application Event',
-  'Application Service', 'Data Object', 'Node', 'Device', 'System Software',
-  'Technology Collaboration', 'Technology Interface', 'Path', 'Communication Network',
-  'Technology Process', 'Technology Function', 'Technology Interaction',
-  'Technology Event', 'Technology Service', 'Artifact', 'Equipment', 'Facility',
-  'Distribution Network', 'Material', 'Stakeholder', 'Driver', 'Assessment', 'Goal',
-  'Outcome', 'Principle', 'Requirement', 'Constraint', 'Meaning', 'Value',
-  'Work Package', 'Deliverable', 'Implementation Event', 'Plateau', 'Gap',
-  'Grouping', 'Skill', 'Rule', 'Location', 'And Junction', 'Or Junction',
-];
+function pickArray(...candidates) {
+  for (const c of candidates) {
+    if (Array.isArray(c)) return c.map(String);
+  }
+  return null;
+}
 
-const ARCH_RELATIONSHIP_TYPES = [
-  'Access', 'Aggregation', 'Assignment', 'Association', 'Composition', 'Flow',
-  'Influence', 'Realization', 'Serving', 'Specialization', 'Triggering',
-];
+function normalizeSchema(schema) {
+  if (!schema || typeof schema !== 'object') return null;
+  const elementTypes = pickArray(schema.elementTypes, schema.archimateElementTypes, schema.elements);
+  const relationshipTypes = pickArray(schema.relationshipTypes, schema.archimateRelationshipTypes, schema.relationships);
+  if (!elementTypes && !relationshipTypes) return null;
+  return {
+    elementTypes: elementTypes ? new Set(elementTypes) : null,
+    relationshipTypes: relationshipTypes ? new Set(relationshipTypes) : null,
+    closed: schema.closed !== false && schema.open !== true,
+    source: String(schema.source || schema.schemaKind || 'declared'),
+  };
+}
 
-function validateGraph(graph) {
+function validateGraph(graph, schema) {
   const errors = [];
   if (!graph || typeof graph !== 'object') {
     return { valid: false, errors: ['graph must be an object'] };
@@ -46,6 +50,9 @@ function validateGraph(graph) {
   }
   if (errors.length > 0) return { valid: false, errors };
 
+  const norm = normalizeSchema(schema || graph.schema);
+  const closed = !!(norm && norm.closed);
+
   const elementIds = new Set();
   const seenIds = new Set();
   for (const e of graph.elements) {
@@ -56,8 +63,8 @@ function validateGraph(graph) {
     if (e.id && seenIds.has(e.id)) errors.push(`duplicate element id: ${e.id}`);
     if (e.id) seenIds.add(e.id);
     if (e.id) elementIds.add(e.id);
-    if (e.type && !ARCH_ELEMENT_TYPES.includes(e.type)) {
-      errors.push(`element "${e.name || e.id}" has invalid ArchiMate type "${e.type}"`);
+    if (closed && norm.elementTypes && e.type && !norm.elementTypes.has(e.type)) {
+      errors.push(`element "${e.name || e.id}" has type "${e.type}" not in ${norm.source} schema`);
     }
   }
 
@@ -66,8 +73,8 @@ function validateGraph(graph) {
     for (const f of ['id', 'type', 'source_id', 'target_id', 'source_name', 'target_name', 'statement']) {
       if (typeof r[f] !== 'string' || r[f].trim() === '') errors.push(`relationship "${r.id || '?'}" missing ${f}`);
     }
-    if (r.type && !ARCH_RELATIONSHIP_TYPES.includes(r.type)) {
-      errors.push(`relationship "${r.id}" has invalid type "${r.type}"`);
+    if (closed && norm.relationshipTypes && r.type && !norm.relationshipTypes.has(r.type)) {
+      errors.push(`relationship "${r.id}" has type "${r.type}" not in ${norm.source} schema`);
     }
     if (r.source_id && !elementIds.has(r.source_id)) {
       errors.push(`relationship "${r.id}" source_id "${r.source_id}" does not reference an existing element`);
@@ -99,4 +106,4 @@ function validateGraph(graph) {
   return { valid: errors.length === 0, errors };
 }
 
-module.exports = { ARCH_ELEMENT_TYPES, ARCH_RELATIONSHIP_TYPES, validateGraph };
+module.exports = { normalizeSchema, validateGraph };

@@ -31,6 +31,7 @@ const path = require('node:path');
 const { execFileSync, execFile } = require('node:child_process');
 const { promisify } = require('node:util');
 const execFileAsync = promisify(execFile);
+const obs = require('./obs.js');
 
 const HOME = process.env.HOME || '/root';
 const ARGO_ROOT = process.env.ARGO_ROOT || path.join(HOME, '.argo');
@@ -60,6 +61,10 @@ function loadEnv() {
 loadEnv();
 // Isolation is per-member database (derived from workspaceRoot); never pin a global DB.
 delete process.env.ARGO_NEO4J_DATABASE;
+
+function argoVersion() {
+  try { return JSON.parse(fs.readFileSync(path.join(ARGO_ROOT, 'package.json'), 'utf8')).version || null; } catch { return null; }
+}
 
 let _engine = null;
 function engine() {
@@ -175,6 +180,25 @@ async function fetchRepo(projectId, sourceRepo, branch) {
 }
 
 async function sync(input) {
+  const startedAt = Date.now();
+  const result = await syncInner(input);
+  obs.append('engine', {
+    kind: 'sync',
+    projectId: input && input.projectId,
+    branch: (input && input.branch) || 'main',
+    status: result.status,
+    synced: !!result.synced,
+    reason: result.reason,
+    commit: result.commit || null,
+    neo4jOk: result.neo4j ? result.neo4j.status === 'ok' : result.neo4jOk === true,
+    semanticOk: result.semanticLifecycle ? !!result.semanticLifecycle.ok : result.semanticOk === true,
+    durationMs: Date.now() - startedAt,
+    argoVersion: argoVersion(),
+  });
+  return result;
+}
+
+async function syncInner(input) {
   const projectId = safeId(input.projectId);
   const dir = await fetchRepo(projectId, input.sourceRepo, input.branch);
   const graphAbs = path.join(dir, DEFAULT_GRAPH_PATH);
@@ -217,6 +241,20 @@ async function sync(input) {
 }
 
 async function read(input) {
+  const startedAt = Date.now();
+  const result = await readInner(input);
+  obs.append('engine', {
+    kind: 'read',
+    projectId: input && input.projectId,
+    tool: input && input.tool,
+    status: result.status,
+    reason: result.reason,
+    durationMs: Date.now() - startedAt,
+  });
+  return result;
+}
+
+async function readInner(input) {
   const projectId = safeId(input.projectId);
   if (!READ_TOOLS.has(input.tool)) return { status: 'bad_request', reason: `tool_not_allowed:${input.tool}` };
   const dir = workdir(projectId);
@@ -224,6 +262,60 @@ async function read(input) {
   const { mcp } = engine();
   const result = await mcp.callTool(input.tool, { ...(input.args || {}), workspaceRoot: dir });
   return { status: 'ok', projectId, tool: input.tool, result };
+}
+
+function extractToolJson(result) {
+  if (result && Array.isArray(result.content) && result.content[0] && typeof result.content[0].text === 'string') {
+    try { return JSON.parse(result.content[0].text); } catch { return null; }
+  }
+  return result || null;
+}
+
+async function schemaInfo(input) {
+  const startedAt = Date.now();
+  const projectId = safeId(input && input.projectId);
+  const dir = workdir(projectId);
+  let out;
+  if (!fs.existsSync(path.join(dir, DEFAULT_GRAPH_PATH))) {
+    out = { status: 'denied', reason: 'mirror_not_synced', projectId };
+  } else {
+    try {
+      const { mcp } = engine();
+      const parsed = extractToolJson(await mcp.callTool('queryNeo4jGraph', { schema: true, workspaceRoot: dir }));
+      const schema = parsed && (parsed.schema || parsed);
+      const elementTypes = schema && (schema.archimateElementTypes || schema.elementTypes);
+      const relationshipTypes = schema && (schema.archimateRelationshipTypes || schema.relationshipTypes);
+      if (!schema || !Array.isArray(elementTypes)) {
+        out = { status: 'failed', reason: 'schema_unparsable', projectId };
+      } else {
+        out = {
+          status: 'ok',
+          projectId,
+          schema: {
+            schemaKind: schema.schemaKind || null,
+            schemaLanguage: schema.schemaLanguage || null,
+            elementTypes: elementTypes.map(String),
+            relationshipTypes: Array.isArray(relationshipTypes) ? relationshipTypes.map(String) : [],
+            closed: true,
+            source: 'engine',
+          },
+        };
+      }
+    } catch (e) {
+      out = { status: 'failed', reason: 'schema_failed', projectId, error: String(e && e.message ? e.message : e) };
+    }
+  }
+  obs.append('engine', {
+    kind: 'schema',
+    projectId,
+    status: out.status,
+    reason: out.reason,
+    schemaKind: out.schema ? out.schema.schemaKind : null,
+    elementTypeCount: out.schema ? out.schema.elementTypes.length : 0,
+    durationMs: Date.now() - startedAt,
+    argoVersion: argoVersion(),
+  });
+  return out;
 }
 
 async function remove(input) {
@@ -254,7 +346,16 @@ function list() {
     .map((d) => {
       const graphAbs = path.join(MIRRORS_ROOT, d.name, DEFAULT_GRAPH_PATH);
       const meta = readMeta(d.name);
-      return { projectId: d.name, synced: fs.existsSync(graphAbs) && !!(meta && meta.ok), ok: !!(meta && meta.ok) };
+      const ok = !!(meta && meta.ok);
+      return {
+        projectId: d.name,
+        synced: fs.existsSync(graphAbs) && ok,
+        ok,
+        commit: (meta && meta.commit) || null,
+        syncedAt: (meta && meta.syncedAt) || null,
+        neo4jOk: meta ? !!meta.neo4jOk : false,
+        semanticOk: meta ? !!meta.semanticOk : false,
+      };
     });
 }
 
@@ -276,16 +377,17 @@ function readBody(req) {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   if (req.method === 'GET' && url.pathname === '/health') {
-    return sendJson(res, 200, { status: 'ok', service: 'argo-mirror-engine', argoRoot: ARGO_ROOT, mirrorsRoot: MIRRORS_ROOT, activeSyncs: _activeSyncs, queuedSyncs: _syncQueue.length });
+    return sendJson(res, 200, { status: 'ok', service: 'argo-mirror-engine', argoRoot: ARGO_ROOT, mirrorsRoot: MIRRORS_ROOT, logDir: obs.logDir(), argoVersion: argoVersion(), activeSyncs: _activeSyncs, queuedSyncs: _syncQueue.length });
   }
   if (req.method === 'GET' && url.pathname === '/mirrors') {
     return sendJson(res, 200, { status: 'ok', count: list().length, mirrors: list() });
   }
-  if (req.method === 'POST' && (url.pathname === '/mirror/sync' || url.pathname === '/mirror/remove' || url.pathname === '/graph/read')) {
+  if (req.method === 'POST' && (url.pathname === '/mirror/sync' || url.pathname === '/mirror/remove' || url.pathname === '/graph/read' || url.pathname === '/schema')) {
     try {
       const body = await readBody(req);
       const result = url.pathname === '/mirror/sync' ? await runSync(() => sync(body))
         : url.pathname === '/mirror/remove' ? await remove(body)
+        : url.pathname === '/schema' ? await schemaInfo(body)
         : await read(body);
       const status = result.status === 'ok' ? 200 : result.status === 'denied' ? 403 : result.status === 'bad_request' ? 400 : 502;
       return sendJson(res, status, result);
@@ -296,4 +398,7 @@ const server = http.createServer(async (req, res) => {
   return sendJson(res, 404, { error: 'Not Found' });
 });
 
-server.listen(PORT, HOST, () => console.log(`[argo-mirror-engine] listening on http://${HOST}:${PORT} (argo ${ARGO_ROOT}, mirrors ${MIRRORS_ROOT})`));
+server.listen(PORT, HOST, () => {
+  obs.append('engine', { kind: 'start', host: HOST, port: PORT, argoRoot: ARGO_ROOT, mirrorsRoot: MIRRORS_ROOT, logDir: obs.logDir(), argoVersion: argoVersion() });
+  console.log(`[argo-mirror-engine] listening on http://${HOST}:${PORT} (argo ${ARGO_ROOT}, mirrors ${MIRRORS_ROOT})`);
+});

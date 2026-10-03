@@ -13,6 +13,7 @@ Environment=ASSET_GIT_DIR=__DATA__
 Environment=ASSET_MCP_HOST=__GRAPH_STORE_HOST__
 Environment=ASSET_MCP_PORT=__GRAPH_STORE_PORT__
 Environment=MIRROR_ENGINE_URL=__MIRROR_ENGINE_URL__
+Environment=GRAPH_STORE_LOG_DIR=__DATA__/logs
 ExecStart=__NODE__ __PKG__/mcp/asset-mcp-server.js
 Restart=always
 RestartSec=3

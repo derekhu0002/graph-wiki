@@ -159,3 +159,21 @@ Content-Type: application/json
 6. **`branch`**：`registry_register` schema 已补 `branch`（文档与实现一致）。
 
 > 注意：以上 3/4/5/6 为本次修复（中心侧），请 ArchGraph 侧按第 2 条改为**轮询**判定同步完成。
+
+## 11. Schema 自动适配（项目 schema 变化无须改中心代码）
+
+中心的图谱校验已改为 **schema 自适应**（`mcp/graph-schema.js`），不再内置 ArchiMate 类型清单：
+
+- **类型校验来源按优先级解析**：`graph.schema`（图自述，或调用方显式传 `schema`）→ 框架解析（传 `projectId`，中心经引擎新增端点 `POST /schema` 让 ARGO 在该成员 workspace 解析）→ **开放模式**（都没有时仅做结构校验，类型语义交给框架权威判定）。
+- **封闭 schema 才判非法类型**：自述/框架 schema 默认封闭（可用 `closed:false` / `open:true` 显式开放）；开放模式不查类型。
+- **结构校验始终留在中心**：必填字段、id 唯一、关系端点引用、视图成员引用、顶层视图唯一。
+- **引擎不可用不阻塞**：`projectId` 对应副本未同步/引擎不可达时回退开放模式，响应标注 `schemaSource:"engine_unavailable"`。
+- 因此成员仓改 schema（新增类型、`schemaKind=workspace/override`、自定义 bundle）→ 提交 + `mirror_sync` 重投影即生效；**只有 ARGO 逻辑接口变化**（报告结构、工具名、模块路径、配置键）才需要中心人工适配。
+
+## 12. 可观测与巡检（vlog 打点 → 洞察 → 自愈）
+
+- **打点**：统一 JSONL 到 `GRAPH_STORE_LOG_DIR`（默认 `~/.graph-store/logs`，部署为 `DATA_DIR/logs`）。
+  - `engine.ndjson`：`start`（含 argoVersion）、`sync`（status/reason/commit/neo4jOk/semanticOk/durationMs）、`schema`、`read`。
+  - `store.ndjson`：`graph_read`（授权结果/拒绝原因/耗时）、`graph_validate`（schemaSource/valid/errors）、`registry`（register/deregister/authorize）。
+- **引擎接口**：`GET /health` 增加 `argoVersion`/`logDir`；`GET /mirrors` 增加 `commit`/`syncedAt`/`neo4jOk`/`semanticOk`；新增 `POST /schema {projectId}`（返回该成员框架解析的 schema）。
+- **巡检**：`graph-store patrol [--heal]`（部署为 `graph-store-patrol.timer`，每 15 分钟）。聚合洞察：同步/语义/schema 失败、读拒绝率、副本上游漂移（`git ls-remote` 对比 `commit`）、**ARGO 版本变化（框架升级信号）**、schema 兼容冒烟（经 `/schema`）；`--heal` 对 `not ok` 副本触发 `mirror_sync`。异常时退出码非 0；快照写 `patrol-latest.json`。

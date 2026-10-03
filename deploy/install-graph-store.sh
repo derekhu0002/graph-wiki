@@ -60,7 +60,7 @@ log "PKG_DIR=$PKG_DIR  DATA_DIR=$DATA_DIR"
 # 0. 数据目录（writable）+ 规范化配置
 # ---------------------------------------------------------------------------
 log "[0] 初始化数据目录 $DATA_DIR"
-mkdir -p "$DATA_DIR/assets" "$DATA_DIR/mirrors"
+mkdir -p "$DATA_DIR/assets" "$DATA_DIR/mirrors" "$DATA_DIR/logs"
 if [ ! -d "$DATA_DIR/.git" ]; then git init -q "$DATA_DIR" 2>/dev/null || true; fi
 cat > "$DATA_DIR/graph-store.env" <<EOF
 GRAPH_STORE_HOST=${GRAPH_STORE_HOST}
@@ -182,6 +182,8 @@ install_unit() {
 install_unit "$PKG_DIR/deploy/systemd/asset-mcp.service"
 install_unit "$PKG_DIR/deploy/systemd/sync-mirrors.service"
 install_unit "$PKG_DIR/deploy/systemd/sync-mirrors.timer"
+install_unit "$PKG_DIR/deploy/systemd/graph-store-patrol.service"
+install_unit "$PKG_DIR/deploy/systemd/graph-store-patrol.timer"
 [ "$INSTALL_ENGINE" = "true" ] && install_unit "$PKG_DIR/deploy/systemd/argo-mirror-engine.service"
 [ "$INSTALL_WEB" = "true" ] && install_unit "$PKG_DIR/deploy/systemd/graph-store-web.service"
 systemctl daemon-reload
@@ -192,6 +194,7 @@ enable_restart() { systemctl enable "$1" >/dev/null 2>&1 || true; systemctl rest
 if [ "$INSTALL_ENGINE" = "true" ]; then enable_restart argo-mirror-engine; fi
 enable_restart asset-mcp
 systemctl enable --now sync-mirrors.timer
+systemctl enable --now graph-store-patrol.timer
 [ "$INSTALL_WEB" = "true" ] && enable_restart graph-store-web
 
 # ---------------------------------------------------------------------------

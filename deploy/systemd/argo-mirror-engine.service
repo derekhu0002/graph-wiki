@@ -10,6 +10,7 @@ Environment=ARGO_ROOT=__HOME__/.argo
 Environment=MIRRORS_ROOT=__DATA__/mirrors
 Environment=MIRROR_ENGINE_HOST=__MIRROR_HOST__
 Environment=MIRROR_ENGINE_PORT=__MIRROR_PORT__
+Environment=GRAPH_STORE_LOG_DIR=__DATA__/logs
 ExecStart=__NODE__ __PKG__/mcp/mirror-engine-server.js
 Restart=always
 RestartSec=3

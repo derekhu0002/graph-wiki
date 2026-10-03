@@ -743,6 +743,13 @@
           "description": "外部视角验收：跨项目图谱查询必须可执行通过——未授权默认拒绝、授权后按 projectId 读托管副本、命名空间隔离、版本再投影、注销清理、REST /graph/read 与意图图结构登记。",
           "name": "cross-project-graph-read",
           "type": "Acceptance Test"
+        },
+        {
+          "name": "mirror-engine-observability",
+          "type": "Acceptance Test",
+          "description": "外部视角验收：镜像引擎暴露版本/日志目录/副本 commit 等巡检元数据，/schema 对未同步成员与内部不可用均优雅失败。",
+          "Input": "GIVEN 隔离 ARGO_ROOT（含版本）+ MIRRORS_ROOT（含副本 meta）+ 日志目录\nWHEN 启动镜像引擎并调用 /health、/mirrors、/schema\nTHEN /health 暴露 argoVersion/logDir；/mirrors 暴露 commit/syncedAt/neo4jOk/semanticOk；/schema 未同步成员 403、内部不可用 502 且服务不崩；engine.ndjson 记录 start/schema 打点",
+          "acceptanceCriteria": "tests/acceptance/mirror_engine_observability.js"
         }
       ],
       "type": "Application Service",
@@ -792,6 +799,10 @@
         {
           "view_id": "cross-project-graph-query-deploy-view",
           "view_name": "跨项目图谱查询-部署与打包"
+        },
+        {
+          "view_id": "mirror-observability-view",
+          "view_name": "副本schema适配与巡检"
         }
       ]
     },
@@ -872,7 +883,7 @@
       "type": "Rule"
     },
     {
-      "description": "跨项目图谱查询的服务代码：mcp/mirror-engine-server.js（运行在镜像宿主 47 的 ARGO 镜像引擎服务：git 拉取 + 复用 ARGO buildHarnessReport 投影/`.qea`/Qwen embedding + callTool 读取 + 按 git commit 幂等同步）、mcp/mirror-engine-client.js（120 代理客户端，私网 MIRROR_ENGINE_URL）、mcp/sync-mirrors.js（定时/触发重同步驱动）；asset-mcp-server.js 新增 graph_read_external/mirror_sync/mirror_list 与 REST POST /graph/read（授权在 120 判定）；systemd 单元 argo-mirror-engine(47) 与 sync-mirrors.timer(120)。",
+      "description": "跨项目图谱查询的服务代码：mcp/mirror-engine-server.js（运行在镜像宿主 47 的 ARGO 镜像引擎服务：git 拉取 + 复用 ARGO buildHarnessReport 投影/`.qea`/Qwen embedding + callTool 读取 + 按 git commit 幂等同步）、mcp/mirror-engine-client.js（120 代理客户端，私网 MIRROR_ENGINE_URL）、mcp/sync-mirrors.js（定时/触发重同步驱动）；asset-mcp-server.js 新增 graph_read_external/mirror_sync/mirror_list 与 REST POST /graph/read（授权在 120 判定）；systemd 单元 argo-mirror-engine(47) 与 sync-mirrors.timer(120)。新增 schema 自适应校验（mcp/graph-schema.js 动态类型解析 + 镜像引擎 POST /schema）、统一 JSONL 打点（mcp/obs.js）、巡检与自愈（mcp/patrol.js，graph-store-patrol.timer 每 15 分钟）。",
       "id": "mirror-mcp-artifact",
       "name": "副本托管与外部读取代码",
       "type": "Artifact",
@@ -1128,6 +1139,36 @@
       "id": "kb-admin-session-20261001-xg-accepted",
       "name": "会话记录 2026-10-01 跨项目查询外部验收通过",
       "type": "Business Object"
+    },
+    {
+      "id": "schema-autoadapt-func",
+      "name": "schema 自动适配校验",
+      "type": "Application Function",
+      "description": "图谱结构校验的 schema 自适应：类型成员校验随数据源动态解析（图自述 schema > 请求显式 schema > 框架经镜像引擎 POST /schema 按 projectId 解析 > 开放模式仅结构校验），中心不再内置 ArchiMate 类型清单；结构校验（必填/id 唯一/端点引用/视图引用/顶层视图唯一）始终保留。项目 schema 变化（新类型、schemaKind=workspace/override、自定义 bundle）无须改中心代码，只有 ARGO 逻辑接口变化才需人工适配。",
+      "testcases": [
+        {
+          "name": "schema-autoadapt",
+          "type": "Acceptance Test",
+          "description": "外部视角验收：自述/框架/开放三种 schema 来源下 graph_submit/graph_update 行为正确，开放模式结构错误仍拒绝。",
+          "Input": "GIVEN stub 引擎（可按 projectId 返回 schema）+ Graph Store 服务\nWHEN 依次以自述 schema/封闭 schema/开放模式/框架 schema 提交与更新图谱\nTHEN 自定义类型按来源判定、封闭 schema 非法类型拒收、开放模式仅结构校验、引擎不可用不阻塞且标注 schemaSource",
+          "acceptanceCriteria": "tests/acceptance/schema_autoadapt.js"
+        }
+      ]
+    },
+    {
+      "id": "mirror-patrol-func",
+      "name": "副本巡检与日志洞察",
+      "type": "Application Function",
+      "description": "基于统一 JSONL 打点（engine/store/patrol）的巡检：聚合同步/语义/schema 失败、读拒绝率、副本上游漂移、ARGO 版本变化（框架升级信号）与 schema 兼容冒烟（经 /schema）；可选 --heal 对 not ok 副本触发 mirror_sync 自愈。部署为 graph-store-patrol.timer（每 15 分钟），快照 patrol-latest.json，异常退出码非 0。",
+      "testcases": [
+        {
+          "name": "patrol-insights",
+          "type": "Acceptance Test",
+          "description": "外部视角验收：注入故障日志/副本/版本后巡检须全部识别并自愈。",
+          "Input": "GIVEN 注入故障信号的 JSONL 日志 + 引擎健康/副本清单 + registry\nWHEN 运行 patrol（heal=true）\nTHEN 识别 mirror_not_ok/sync_failed/semantic_failed/schema_failed/read_deny_rate_high/mirror_drift/argo_version_changed，heal 触发坏副本同步，巡检事件与快照落盘",
+          "acceptanceCriteria": "tests/acceptance/patrol_insights.js"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -1630,6 +1671,36 @@
       "statement": "graph-store NPM 包（一键部署） --(Association)--> 联邦副本托管服务",
       "target_id": "mirror-host-service",
       "target_name": "联邦副本托管服务"
+    },
+    {
+      "id": "schema-autoadapt-realize",
+      "name": "实现schema自适应",
+      "type": "Realization",
+      "source_id": "schema-autoadapt-func",
+      "source_name": "schema 自动适配校验",
+      "target_id": "mirror-host-service",
+      "target_name": "联邦副本托管服务",
+      "statement": "schema 自动适配校验 --(Realization)--> 联邦副本托管服务"
+    },
+    {
+      "id": "patrol-realize",
+      "name": "实现巡检",
+      "type": "Realization",
+      "source_id": "mirror-patrol-func",
+      "source_name": "副本巡检与日志洞察",
+      "target_id": "mirror-host-service",
+      "target_name": "联邦副本托管服务",
+      "statement": "副本巡检与日志洞察 --(Realization)--> 联邦副本托管服务"
+    },
+    {
+      "id": "patrol-access-store",
+      "name": "读取副本与日志",
+      "type": "Access",
+      "source_id": "mirror-patrol-func",
+      "source_name": "副本巡检与日志洞察",
+      "target_id": "mirror-store",
+      "target_name": "副本命名空间存储",
+      "statement": "副本巡检与日志洞察 --(Access)--> 副本命名空间存储"
     }
   ],
   "views": [
@@ -1882,6 +1953,25 @@
       ],
       "included_relationships": [
         "npm-package-deploys-mirror"
+      ]
+    },
+    {
+      "view_id": "mirror-observability-view",
+      "view_name": "副本schema适配与巡检",
+      "parent_element_id": "mirror-host-service",
+      "description": "联邦副本托管服务的 schema 自动适配与可观测/巡检子视图：schema 随项目/资产声明与框架解析动态校验（中心无内置类型清单）；统一 JSONL 打点与定期巡检，聚合同步/语义/拒绝/漂移/框架升级信号，并自愈坏副本。",
+      "included_elements": [
+        "mirror-host-service",
+        "mirror-store",
+        "mirror-mcp-artifact",
+        "schema-autoadapt-func",
+        "mirror-patrol-func"
+      ],
+      "included_relationships": [
+        "mirror-access-store",
+        "schema-autoadapt-realize",
+        "patrol-realize",
+        "patrol-access-store"
       ]
     }
   ]
