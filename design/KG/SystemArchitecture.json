@@ -793,6 +793,10 @@
         {
           "name": "commit",
           "value": "2e2ced7: mcp/sync-mirrors.js"
+        },
+        {
+          "name": "commit",
+          "value": "1a09ee8: mcp/mirror-engine-server.js (argoVersion + /schema + JSONL 打点 + /mirrors commit/syncedAt), deploy/systemd, deploy/install-graph-store.sh"
         }
       ],
       "subdiagram_views": [
@@ -923,6 +927,10 @@
         {
           "name": "commit",
           "value": "32c5f7e: mcp/mirror-engine-server.js (resilience: max-2 concurrency limiter + async HTTP/1.1 git + clone retry x3; fixes engine_unreachable during registration bursts)"
+        },
+        {
+          "name": "commit",
+          "value": "1a09ee8: mcp/obs.js, mcp/patrol.js, mcp/graph-schema.js, mcp/mirror-engine-server.js, mcp/mirror-engine-client.js, mcp/asset-mcp-server.js, bin/graph-store.js, deploy/systemd/graph-store-patrol.*, tests/acceptance/schema_autoadapt.js, tests/acceptance/patrol_insights.js, tests/acceptance/mirror_engine_observability.js, community/EXTERNAL-GRAPH-QUERY-ADAPTATION.md, design/KG/SystemArchitecture.json"
         }
       ]
     },
@@ -1153,6 +1161,16 @@
           "Input": "GIVEN stub 引擎（可按 projectId 返回 schema）+ Graph Store 服务\nWHEN 依次以自述 schema/封闭 schema/开放模式/框架 schema 提交与更新图谱\nTHEN 自定义类型按来源判定、封闭 schema 非法类型拒收、开放模式仅结构校验、引擎不可用不阻塞且标注 schemaSource",
           "acceptanceCriteria": "tests/acceptance/schema_autoadapt.js"
         }
+      ],
+      "attributes": [
+        {
+          "name": "deliveryStatus",
+          "value": "delivered"
+        },
+        {
+          "name": "commit",
+          "value": "1a09ee8: mcp/graph-schema.js, mcp/asset-mcp-server.js, mcp/mirror-engine-server.js, mcp/mirror-engine-client.js, tests/acceptance/schema_autoadapt.js"
+        }
       ]
     },
     {
@@ -1167,6 +1185,16 @@
           "description": "外部视角验收：注入故障日志/副本/版本后巡检须全部识别并自愈。",
           "Input": "GIVEN 注入故障信号的 JSONL 日志 + 引擎健康/副本清单 + registry\nWHEN 运行 patrol（heal=true）\nTHEN 识别 mirror_not_ok/sync_failed/semantic_failed/schema_failed/read_deny_rate_high/mirror_drift/argo_version_changed，heal 触发坏副本同步，巡检事件与快照落盘",
           "acceptanceCriteria": "tests/acceptance/patrol_insights.js"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "deliveryStatus",
+          "value": "delivered"
+        },
+        {
+          "name": "commit",
+          "value": "1a09ee8: mcp/obs.js, mcp/patrol.js, bin/graph-store.js, deploy/systemd/graph-store-patrol.service, deploy/systemd/graph-store-patrol.timer, tests/acceptance/patrol_insights.js, tests/acceptance/mirror_engine_observability.js"
         }
       ]
     }
