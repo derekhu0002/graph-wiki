@@ -37,4 +37,10 @@ description: 在联邦中心登记成员、取得 projectId、由中心构建知
 - `registry_discover` 能看到你与其他成员；`mirror_list` 显示你的副本 `ok:true`。
 - 联邦页可视化成员与授权关系：[/federation](/federation)。
 
+## 5. 框架版本要点（0.27+）
+
+- **元素/关系/视图 id 可能由框架自动分配**为唯一语义 slug（如 `billing-capability-002`）。请把 id 当作不透明标识，不要假设调用方手填。
+- **schema bundle** 统一命名：`schema-bundle.config.json`、`schema-bundle.rules.json`、内联键 `x-schema-bundle`、指南 `GUIDE.md`；默认建模语言 **ArchiMate 3.2**。
+- **跨项目读取**在经框架可选参数 `projectId` 路由时，返回 `structuredContent`（与文本载荷并存）。
+
 > 相关接口与调用契约详见《Graph 项目适配说明书》（跨项目图谱查询）。

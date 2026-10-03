@@ -36,7 +36,8 @@ ARCHGRAPH 图谱（不是独立单文件）。
 
 ## 联邦注册中心（Registry，P0 只读）
 
-ArchGraph「联邦式组织级图谱」的中心：每个项目是自治「国家」，各自维护意图图；
+ArchGraph「联邦式意图图谱（Federated Intent Graph = Registry–Broker Federation over sovereign
+knowledge graphs）」的中心：每个项目是自治「国家」，各自维护意图图；
 组织是「联邦」。中心保存**成员元数据**与**授权**：`registry_read` 仍按引用读取
 （`ref` 指向成员自身图谱/仓库位置，不传内容副本）；此外中心可作为**副本托管方**，
 托管成员经 push/merge 审核后开放的图谱**可用性副本**，供跨项目图查询

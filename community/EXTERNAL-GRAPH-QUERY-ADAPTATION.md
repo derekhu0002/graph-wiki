@@ -177,3 +177,25 @@ Content-Type: application/json
   - `store.ndjson`：`graph_read`（授权结果/拒绝原因/耗时）、`graph_validate`（schemaSource/valid/errors）、`registry`（register/deregister/authorize）。
 - **引擎接口**：`GET /health` 增加 `argoVersion`/`logDir`；`GET /mirrors` 增加 `commit`/`syncedAt`/`neo4jOk`/`semanticOk`；新增 `POST /schema {projectId}`（返回该成员框架解析的 schema）。
 - **巡检**：`graph-store patrol [--heal]`（部署为 `graph-store-patrol.timer`，每 15 分钟）。聚合洞察：同步/语义/schema 失败、读拒绝率、副本上游漂移（`git ls-remote` 对比 `commit`）、**ARGO 版本变化（框架升级信号）**、schema 兼容冒烟（经 `/schema`）；`--heal` 对 `not ok` 副本触发 `mirror_sync`。异常时退出码非 0；快照写 `patrol-latest.json`。
+
+## 13. 与 ArchGraph 0.27.0-beta.12 对齐（2026-10-03）
+
+上游 dev 版本 `archgraph-argo-beta@0.27.0-beta.12`（stable 仍 `archgraph-argo@0.26.2`）的契约核对与中心兼容性（实证基于该 npm 包源码）：
+
+| 框架变化 | 中心影响 | 结论 |
+|---|---|---|
+| schema bundle 命名统一（`argob*`→`schema-bundle*`、内联键 `x-argob`→`x-schema-bundle`、`ARGOB.md`→`GUIDE.md`）| 中心 0 引用、不解析 bundle 文件（由 ARGO 按 `ARGO_SCHEMA_DIR > workspace/.argo/schema > ~/.argo/schema` 解析）| 无需改动 |
+| bundle 能力扩展（`attributesByElementType`/`extends`/mtime 缓存失效）| 由 ARGO 写入路径原生执行；中心仅经 `/schema` 读解析结果 | 自动适配 |
+| `queryNeo4jGraph {schema:true}` 返回键 | beta 仍返回 `schema.archimateElementTypes/RelationshipTypes/schemaKind/schemaLanguage` | 引擎 `/schema` 兼容 |
+| MCP `structuredContent`（跨项目）| 由消费侧（框架本地 MCP）依 `outputSchema` 构建；中心 `/graph/read` 契约与 beta 客户端 `external-graph-query.js` 逐行一致（`{status:'ok', result, namespaceKey}` / `{status:'denied', reason}`，客户端自行解包 `content[0].text`）| 无需改动 |
+| 实体 id 自动分配（slug + `allocatedId`）| 镜像只读、id 原样流转；`graph_submit/graph_update` 的资产校验仍要求显式 id（框架落盘 canonical JSON 前已分配）| 兼容 |
+| DSH 联邦接入 `argo/mcp-bridges/graph-mcp-stdio.js` | 框架包提供 | onboarding 文档 |
+| 联邦命名统一 | 文案统一为「联邦式意图图谱（Federated Intent Graph = Registry–Broker Federation over sovereign knowledge graphs）」| 已更新 |
+
+中心侧验收（GIVEN-WHEN-THEN）：
+
+1. GIVEN 拉取 `archgraph` 的 `develop-separate-schema` 分支镜像，WHEN `mirror_sync`，THEN `mirror_list` 报 `synced:true/ok:true` —— ✅ 已于 2026-10-03 达成：`commit=ee0987a`、`branch=develop-separate-schema`、`neo4jOk/semanticOk=true`（并修复了阻断它的 fetch refspec 生产缺陷）。
+2. GIVEN 跨项目 `getSystemArchitecture({ projectId })`（经 beta 客户端），WHEN 读取，THEN 返回含 `namespaceKey` 的结果且无 `-32600` —— ✅ 实测通过（见 issue #3 评论）。
+3. GIVEN 上游图中存在服务端自动分配的 slug id 元素，WHEN 经中心跨项目读取，THEN 正常按引用返回（含 `namespaceKey`）—— ✅ 读路径对 id 不透明处理，回归用例 `tests/acceptance/beta_contract.js`。
+
+> 版本通道：镜像宿主引擎在 **stable 0.26.2** 上继续运行；beta 升级经金丝雀验证后再切换（`ARGO_NPM_PACKAGE` 作为回滚开关）。

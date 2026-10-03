@@ -43,6 +43,8 @@ fi
 : "${NEO4J_HEAP:=1g}"
 : "${NEO4J_PAGECACHE:=512m}"
 : "${ARGO_NPM_PACKAGE:=archgraph-argo}"
+: "${ARGO_ROOT:=$HOME/.argo}"
+: "${ARGO_VERSION:=}"
 : "${NPM_REGISTRY:=https://registry.npmmirror.com}"
 : "${NODE_VERSION:=v22.11.0}"
 : "${INSTALL_WEB:=true}"
@@ -50,7 +52,6 @@ fi
 : "${WEB_PORT:=18793}"
 : "${WEB_BASE:=/archgraph/}"
 
-ARGO_ROOT="${HOME}/.argo"
 NODE_BIN="$(command -v node || echo /usr/local/bin/node)"
 log() { echo -e "\n==> $*"; }
 
@@ -71,6 +72,9 @@ MIRROR_ENGINE_URL=${MIRROR_ENGINE_URL}
 WEB_HOST=${WEB_HOST}
 WEB_PORT=${WEB_PORT}
 WEB_BASE=${WEB_BASE}
+ARGO_ROOT=${ARGO_ROOT}
+ARGO_NPM_PACKAGE=${ARGO_NPM_PACKAGE}
+ARGO_VERSION=${ARGO_VERSION}
 EOF
 
 # ---------------------------------------------------------------------------
@@ -187,6 +191,9 @@ install_unit() {
       -e "s#__MIRROR_ENGINE_URL__#${MIRROR_ENGINE_URL}#g" \
       -e "s#__MIRROR_HOST__#${MIRROR_HOST}#g" \
       -e "s#__MIRROR_PORT__#${MIRROR_PORT}#g" \
+      -e "s#__ARGO_ROOT__#${ARGO_ROOT}#g" \
+      -e "s#__ARGO_NPM_PACKAGE__#${ARGO_NPM_PACKAGE}#g" \
+      -e "s#__ARGO_VERSION__#${ARGO_VERSION}#g" \
       -e "s#__WEB_HOST__#${WEB_HOST}#g" \
       -e "s#__WEB_PORT__#${WEB_PORT}#g" \
       -e "s#__WEB_BASE__#${WEB_BASE}#g" \

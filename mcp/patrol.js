@@ -64,6 +64,12 @@ function latestByProject(events) {
   return [...map.values()];
 }
 
+function latestByKey(events, keyFn) {
+  const map = new Map();
+  for (const e of events) map.set(keyFn(e), e);
+  return [...map.values()];
+}
+
 async function runPatrol(options = {}) {
   const startedAt = Date.now();
   const windowMs = num(options.windowMs, num(process.env.PATROL_WINDOW_MS, 24 * 3600e3));
@@ -122,13 +128,14 @@ async function runPatrol(options = {}) {
   }
 
   const engineReads = engineEvents.filter((e) => e.kind === 'read');
-  for (const e of engineReads) {
+  // Latest outcome per (project, tool) only: a later success clears an earlier failure.
+  for (const e of latestByKey(engineReads, (x) => `${x.projectId}\u0000${x.tool}`)) {
     if (e.status && e.status !== 'ok') {
       findings.push({ level: 'warn', code: 'read_failed', projectId: e.projectId, tool: e.tool, status: e.status, reason: e.reason });
     }
   }
   const storeReads = storeEvents.filter((e) => e.kind === 'graph_read');
-  for (const e of storeReads) {
+  for (const e of latestByProject(storeReads)) {
     if (e.reason === 'engine_unreachable') findings.push({ level: 'error', code: 'engine_unreachable_read', projectId: e.projectId, requester: e.requester });
   }
   const readTotal = engineReads.length + storeReads.length;

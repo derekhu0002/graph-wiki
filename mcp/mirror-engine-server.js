@@ -31,6 +31,7 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const obs = require('./obs.js');
 const { git, fetchRepo } = require('./mirror-git.js');
+const { extractSchemaEnums } = require('./schema-adapt.js');
 
 const HOME = process.env.HOME || '/root';
 const ARGO_ROOT = process.env.ARGO_ROOT || path.join(HOME, '.argo');
@@ -67,15 +68,21 @@ function argoVersion() {
   const readVersion = (p) => {
     try { return JSON.parse(fs.readFileSync(p, 'utf8')).version || null; } catch { return null; }
   };
+  const names = [...new Set([process.env.ARGO_NPM_PACKAGE, 'archgraph-argo', 'archgraph-argo-beta'].filter(Boolean))];
   let v = process.env.ARGO_VERSION || readVersion(path.join(ARGO_ROOT, 'package.json'));
   if (!v) {
-    const sibling = path.join(path.dirname(process.execPath), '..', 'lib', 'node_modules', 'archgraph-argo', 'package.json');
-    v = readVersion(sibling);
+    for (const n of names) {
+      v = readVersion(path.join(path.dirname(process.execPath), '..', 'lib', 'node_modules', n, 'package.json'));
+      if (v) break;
+    }
   }
   if (!v) {
     try {
       const prefix = execFileSync('npm', ['root', '-g'], { encoding: 'utf8', timeout: 5000, stdio: ['ignore', 'pipe', 'ignore'] }).trim();
-      v = readVersion(path.join(prefix, 'archgraph-argo', 'package.json'));
+      for (const n of names) {
+        v = readVersion(path.join(prefix, n, 'package.json'));
+        if (v) break;
+      }
     } catch { v = null; }
   }
   _argoVersionCache = v || null;
@@ -249,13 +256,6 @@ async function readInner(input) {
   return { status: 'ok', projectId, tool: input.tool, result };
 }
 
-function extractToolJson(result) {
-  if (result && Array.isArray(result.content) && result.content[0] && typeof result.content[0].text === 'string') {
-    try { return JSON.parse(result.content[0].text); } catch { return null; }
-  }
-  return result || null;
-}
-
 async function schemaInfo(input) {
   const startedAt = Date.now();
   const projectId = safeId(input && input.projectId);
@@ -266,25 +266,11 @@ async function schemaInfo(input) {
   } else {
     try {
       const { mcp } = engine();
-      const parsed = extractToolJson(await mcp.callTool('queryNeo4jGraph', { schema: true, workspaceRoot: dir }));
-      const schema = parsed && (parsed.schema || parsed);
-      const elementTypes = schema && (schema.archimateElementTypes || schema.elementTypes);
-      const relationshipTypes = schema && (schema.archimateRelationshipTypes || schema.relationshipTypes);
-      if (!schema || !Array.isArray(elementTypes)) {
+      const enums = extractSchemaEnums(await mcp.callTool('queryNeo4jGraph', { schema: true, workspaceRoot: dir }));
+      if (!enums) {
         out = { status: 'failed', reason: 'schema_unparsable', projectId };
       } else {
-        out = {
-          status: 'ok',
-          projectId,
-          schema: {
-            schemaKind: schema.schemaKind || null,
-            schemaLanguage: schema.schemaLanguage || null,
-            elementTypes: elementTypes.map(String),
-            relationshipTypes: Array.isArray(relationshipTypes) ? relationshipTypes.map(String) : [],
-            closed: true,
-            source: 'engine',
-          },
-        };
+        out = { status: 'ok', projectId, schema: { ...enums, closed: true, source: 'engine' } };
       }
     } catch (e) {
       out = { status: 'failed', reason: 'schema_failed', projectId, error: String(e && e.message ? e.message : e) };

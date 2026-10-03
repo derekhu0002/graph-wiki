@@ -6,7 +6,9 @@ Requires=docker.service
 [Service]
 Type=simple
 User=root
-Environment=ARGO_ROOT=__HOME__/.argo
+Environment=ARGO_ROOT=__ARGO_ROOT__
+Environment=ARGO_NPM_PACKAGE=__ARGO_NPM_PACKAGE__
+Environment=ARGO_VERSION=__ARGO_VERSION__
 Environment=MIRRORS_ROOT=__DATA__/mirrors
 Environment=MIRROR_ENGINE_HOST=__MIRROR_HOST__
 Environment=MIRROR_ENGINE_PORT=__MIRROR_PORT__

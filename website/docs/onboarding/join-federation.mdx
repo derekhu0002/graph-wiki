@@ -40,4 +40,14 @@ to use as `requester` and to tell "own repo vs external repo".
 - `registry_discover` shows you and other members; `mirror_list` shows your replica `ok:true`.
 - The federation page visualizes members and authorization relations: [/federation](/federation).
 
+## 5. Framework notes (0.27+)
+
+- **Element / relationship / view ids may be allocated by the framework** as unique semantic slugs
+  (e.g. `billing-capability-002`). Treat ids as opaque — never assume the caller authored them.
+- **Schema bundles** are named `schema-bundle.*` (`schema-bundle.config.json`,
+  `schema-bundle.rules.json`, inline key `x-schema-bundle`, guide `GUIDE.md`); the default ontology is
+  **ArchiMate 3.2**.
+- **Cross-project reads** return `structuredContent` (alongside the text payload) when routed through the
+  framework's optional `projectId` parameter.
+
 > The interface and call contract are detailed in the "Graph project adaptation" spec (cross-project graph query).
