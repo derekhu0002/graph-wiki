@@ -28,10 +28,9 @@
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
-const { execFileSync, execFile } = require('node:child_process');
-const { promisify } = require('node:util');
-const execFileAsync = promisify(execFile);
+const { execFileSync } = require('node:child_process');
 const obs = require('./obs.js');
+const { git, fetchRepo } = require('./mirror-git.js');
 
 const HOME = process.env.HOME || '/root';
 const ARGO_ROOT = process.env.ARGO_ROOT || path.join(HOME, '.argo');
@@ -114,18 +113,6 @@ function writeMeta(projectId, meta) {
   fs.mkdirSync(path.dirname(p), { recursive: true });
   fs.writeFileSync(p, JSON.stringify(meta, null, 2) + '\n', 'utf8');
 }
-function git(args, cwd) {
-  return execFileSync('git', args, { cwd, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' }).trim();
-}
-
-// Async git that does NOT block the event loop. Network ops force HTTP/1.1:
-// git/curl's default HTTP/2 to github.com intermittently fails with
-// "Error in the HTTP2 framing layer", which is fatal for fresh clones.
-function gitAsync(args, cwd) {
-  return execFileAsync('git', args, { cwd, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
-    .then((r) => r.stdout.trim());
-}
-
 // Concurrency limiter: keep at most MAX_CONCURRENT_SYNCS syncs in flight so a
 // burst of registrations can never saturate the single-threaded engine and
 // starve /mirrors or /health (which surfaced as engine_unreachable).
@@ -161,41 +148,6 @@ async function dbExists(projectId) {
   } catch { return false; }
 }
 
-async function cloneWithRetry(dir, sourceRepo, branchName) {
-  let lastErr;
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      await gitAsync(['-c', 'http.version=HTTP/1.1', 'clone', '--depth', '1', '--branch', branchName, sourceRepo, '.'], dir);
-      return;
-    } catch (e) {
-      lastErr = e;
-      // Drop any half-written clone so the next attempt starts clean.
-      try { fs.rmSync(path.join(dir, '.git'), { recursive: true, force: true }); } catch {}
-      await new Promise((r) => setTimeout(r, 1000 * attempt));
-    }
-  }
-  throw lastErr;
-}
-
-async function fetchRepo(projectId, sourceRepo, branch) {
-  const dir = workdir(projectId);
-  const branchName = branch || 'main';
-  if (!sourceRepo) return dir;
-  const netCfg = ['-c', 'http.version=HTTP/1.1'];
-  if (!fs.existsSync(path.join(dir, '.git'))) {
-    fs.mkdirSync(dir, { recursive: true });
-    await cloneWithRetry(dir, sourceRepo, branchName);
-  } else {
-    // Transient network failure must not break an already-built mirror: keep the
-    // existing checkout and let the caller's commit check decide re-projection.
-    try {
-      await gitAsync([...netCfg, 'fetch', '--depth', '1', 'origin', branchName], dir);
-      await gitAsync(['reset', '--hard', `origin/${branchName}`], dir);
-    } catch { /* keep current checkout */ }
-  }
-  return dir;
-}
-
 async function sync(input) {
   const startedAt = Date.now();
   const result = await syncInner(input);
@@ -207,6 +159,9 @@ async function sync(input) {
     synced: !!result.synced,
     reason: result.reason,
     commit: result.commit || null,
+    branch: result.branch || (input && input.branch) || 'main',
+    fetchOk: result.fetchOk !== false,
+    fetchError: result.fetchError,
     neo4jOk: result.neo4j ? result.neo4j.status === 'ok' : result.neo4jOk === true,
     semanticOk: result.semanticLifecycle ? !!result.semanticLifecycle.ok : result.semanticOk === true,
     durationMs: Date.now() - startedAt,
@@ -217,9 +172,13 @@ async function sync(input) {
 
 async function syncInner(input) {
   const projectId = safeId(input.projectId);
-  const dir = await fetchRepo(projectId, input.sourceRepo, input.branch);
+  const dir = workdir(projectId);
+  const fetched = await fetchRepo(dir, input.sourceRepo, input.branch);
+  const branchName = fetched.branch;
   const graphAbs = path.join(dir, DEFAULT_GRAPH_PATH);
-  if (!fs.existsSync(graphAbs)) return { status: 'failed', reason: 'graph_not_found', projectId, graphAbs };
+  if (!fs.existsSync(graphAbs)) {
+    return { status: 'failed', reason: 'graph_not_found', projectId, graphAbs, branch: branchName, fetchOk: fetched.fetchOk, fetchError: fetched.fetchError };
+  }
   let commit = null;
   try { commit = git(['rev-parse', 'HEAD'], dir); } catch { /* not a git dir */ }
 
@@ -228,7 +187,13 @@ async function syncInner(input) {
   const meta = readMeta(projectId);
   if (meta && commit && meta.commit === commit && meta.ok) {
     if (await dbExists(projectId)) {
-      return { status: 'ok', synced: false, reason: 'up-to-date', projectId, workspaceRoot: dir, namespaceKey: `proj:${projectId}`, commit };
+      return {
+        status: 'ok', synced: false,
+        reason: fetched.fetchOk ? 'up-to-date' : 'fetch_failed_kept_checkout',
+        projectId, branch: branchName, fetchOk: fetched.fetchOk, fetchError: fetched.fetchError,
+        workspaceRoot: dir, namespaceKey: `proj:${projectId}`, commit,
+        neo4jOk: !!meta.neo4jOk, semanticOk: !!meta.semanticOk,
+      };
     }
     // DB 缺失：不跳过，继续重建。
   }
@@ -241,12 +206,15 @@ async function syncInner(input) {
   const neo4jOk = !!(report.neo4j && report.neo4j.status === 'ok');
   const semanticOk = !!(report.semanticLifecycle && report.semanticLifecycle.status === 'ok');
   // meta.ok 反映"投影 + 语义"两者是否都就绪，供 mirror_list 与幂等判断使用。
-  writeMeta(projectId, { commit, ok: neo4jOk && semanticOk, neo4jOk, semanticOk, syncedAt: new Date().toISOString() });
+  writeMeta(projectId, { commit, branch: branchName, ok: neo4jOk && semanticOk, neo4jOk, semanticOk, syncedAt: new Date().toISOString() });
   return {
     status: neo4jOk ? 'ok' : 'failed',
     synced: true,
     reason: meta ? 'updated' : 'created',
     projectId,
+    branch: branchName,
+    fetchOk: fetched.fetchOk,
+    fetchError: fetched.fetchError,
     workspaceRoot: dir,
     namespaceKey: `proj:${projectId}`,
     commit,
@@ -369,6 +337,7 @@ function list() {
         synced: fs.existsSync(graphAbs) && ok,
         ok,
         commit: (meta && meta.commit) || null,
+        branch: (meta && meta.branch) || null,
         syncedAt: (meta && meta.syncedAt) || null,
         neo4jOk: meta ? !!meta.neo4jOk : false,
         semanticOk: meta ? !!meta.semanticOk : false,

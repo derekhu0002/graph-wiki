@@ -56,6 +56,7 @@ async function main() {
   const reg = registry.emptyRegistry();
   registry.registerMember(reg, { id: 'A', name: '项目 A' });
   registry.registerMember(reg, { id: 'B', name: '项目 B', sourceRepo: repo.dir, branch: 'main' });
+  registry.registerMember(reg, { id: 'C', name: '项目 C', sourceRepo: repo.dir, branch: 'dev' });
   registry.save(path.join(assetRoot, 'registry', 'registry.json'), reg);
 
   const now = Date.now();
@@ -63,7 +64,8 @@ async function main() {
   fs.writeFileSync(path.join(logDir, 'engine.ndjson'), [
     ev(3 * 3600e3, { kind: 'start', argoVersion: '0.26.2' }),
     ev(3600e3, { kind: 'sync', projectId: 'A', status: 'failed', reason: 'graph_not_found' }),
-    ev(3500e3, { kind: 'sync', projectId: 'B', status: 'ok', neo4jOk: true, semanticOk: false, commit: 'mirror-b' }),
+    ev(3400e3, { kind: 'sync', projectId: 'A', status: 'ok', synced: false, reason: 'fetch_failed_kept_checkout', fetchOk: false, fetchError: 'timeout', branch: 'main', commit: 'mirror-a' }),
+    ev(3500e3, { kind: 'sync', projectId: 'B', status: 'ok', synced: true, neo4jOk: true, semanticOk: false, commit: 'mirror-b' }),
     ev(3000e3, { kind: 'schema', projectId: 'B', status: 'failed', reason: 'schema_unparsable' }),
     ev(2000e3, { kind: 'read', projectId: 'A', tool: 'queryNeo4jGraph', status: 'denied', reason: 'not_authorized' }),
     ev(1900e3, { kind: 'read', projectId: 'A', tool: 'queryNeo4jGraph', status: 'denied', reason: 'not_authorized' }),
@@ -79,7 +81,8 @@ async function main() {
   const syncCalls = [];
   const mirrors = [
     { projectId: 'A', synced: false, ok: false },
-    { projectId: 'B', synced: true, ok: true, commit: 'stale-mirror-commit', syncedAt: new Date(now - 3 * 3600e3).toISOString() },
+    { projectId: 'B', synced: true, ok: true, commit: 'stale-mirror-commit', branch: 'main', syncedAt: new Date(now - 3 * 3600e3).toISOString() },
+    { projectId: 'C', synced: true, ok: true, commit: 'mirror-c', branch: 'main', syncedAt: new Date(now - 3 * 3600e3).toISOString() },
   ];
   const health = { status: 'ok', service: 'argo-mirror-engine', argoVersion: '0.26.2', activeSyncs: 0, queuedSyncs: 0 };
 
@@ -101,6 +104,8 @@ async function main() {
   check(codes.has('semantic_failed'), 'THEN3 发现 semantic_failed');
   check(codes.has('schema_failed'), 'THEN4 发现 schema_failed');
   check(codes.has('read_deny_rate_high'), 'THEN5 发现 read_deny_rate_high');
+  check(codes.has('sync_fetch_failed'), 'THEN5b 发现 sync_fetch_failed（fetch 失败不再被静默吞掉）');
+  check(codes.has('mirror_branch_mismatch'), 'THEN5c 发现 mirror_branch_mismatch（镜像分支与注册分支不一致）');
   check(codes.has('mirror_drift'), 'THEN6 发现 mirror_drift');
   check(codes.has('argo_version_changed'), 'THEN7 发现 argo_version_changed（框架升级信号）');
   check(syncCalls.some((c) => c.projectId === 'A'), 'THEN8 heal 对 not ok 副本触发 mirror_sync');

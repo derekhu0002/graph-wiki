@@ -104,7 +104,8 @@ async function runPatrol(options = {}) {
   const syncs = engineEvents.filter((e) => e.kind === 'sync');
   for (const e of syncs) {
     if (e.status !== 'ok') findings.push({ level: 'error', code: 'sync_failed', projectId: e.projectId, reason: e.reason });
-    else if (e.semanticOk === false) findings.push({ level: 'error', code: 'semantic_failed', projectId: e.projectId });
+    else if (e.synced === true && e.semanticOk === false) findings.push({ level: 'error', code: 'semantic_failed', projectId: e.projectId });
+    if (e.fetchOk === false) findings.push({ level: 'warn', code: 'sync_fetch_failed', projectId: e.projectId, branch: e.branch, error: e.fetchError });
   }
   for (const e of engineEvents.filter((e) => e.kind === 'schema' && e.status !== 'ok')) {
     findings.push({ level: 'warn', code: 'schema_failed', projectId: e.projectId, reason: e.reason });
@@ -133,11 +134,16 @@ async function runPatrol(options = {}) {
   for (const m of members) {
     const mirror = byId.get(m.id);
     if (!mirror || !mirror.commit) continue;
+    const registryBranch = m.branch || 'main';
+    if (mirror.branch && mirror.branch !== registryBranch) {
+      findings.push({ level: 'warn', code: 'mirror_branch_mismatch', projectId: m.id, registryBranch, mirrorBranch: mirror.branch });
+      continue;
+    }
     const age = mirror.syncedAt ? now - Date.parse(mirror.syncedAt) : Infinity;
     if (age < staleMs) continue;
-    const upstream = lsRemote(m.sourceRepo, m.branch);
+    const upstream = lsRemote(m.sourceRepo, registryBranch);
     if (upstream && upstream !== mirror.commit) {
-      findings.push({ level: 'warn', code: 'mirror_drift', projectId: m.id, mirrorCommit: mirror.commit, upstreamCommit: upstream });
+      findings.push({ level: 'warn', code: 'mirror_drift', projectId: m.id, branch: registryBranch, mirrorCommit: mirror.commit, upstreamCommit: upstream });
     }
   }
 
