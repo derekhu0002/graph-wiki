@@ -58,6 +58,7 @@ async function main() {
   registry.registerMember(reg, { id: 'B', name: '项目 B', sourceRepo: repo.dir, branch: 'main' });
   registry.registerMember(reg, { id: 'C', name: '项目 C', sourceRepo: repo.dir, branch: 'dev' });
   registry.registerMember(reg, { id: 'D', name: '项目 D', sourceRepo: path.join(os.tmpdir(), 'no-such-repo-for-patrol'), branch: 'main' });
+  registry.registerMember(reg, { id: 'E', name: '项目 E' });
   registry.save(path.join(assetRoot, 'registry', 'registry.json'), reg);
 
   const now = Date.now();
@@ -65,8 +66,10 @@ async function main() {
   fs.writeFileSync(path.join(logDir, 'engine.ndjson'), [
     ev(3 * 3600e3, { kind: 'start', argoVersion: '0.26.2' }),
     ev(3600e3, { kind: 'sync', projectId: 'A', status: 'failed', reason: 'graph_not_found' }),
-    ev(3400e3, { kind: 'sync', projectId: 'A', status: 'ok', synced: false, reason: 'fetch_failed_kept_checkout', fetchOk: false, fetchError: 'timeout', branch: 'main', commit: 'mirror-a' }),
+    ev(3400e3, { kind: 'sync', projectId: 'E', status: 'ok', synced: false, reason: 'fetch_failed_kept_checkout', fetchOk: false, fetchError: 'timeout', branch: 'main', commit: 'mirror-e' }),
     ev(3500e3, { kind: 'sync', projectId: 'B', status: 'ok', synced: true, neo4jOk: true, semanticOk: false, commit: 'mirror-b' }),
+    ev(3700e3, { kind: 'sync', projectId: 'F', status: 'failed', reason: 'graph_not_found' }),
+    ev(3200e3, { kind: 'sync', projectId: 'F', status: 'ok', synced: false, reason: 'up-to-date', fetchOk: true, commit: 'mirror-f' }),
     ev(3000e3, { kind: 'schema', projectId: 'B', status: 'failed', reason: 'schema_unparsable' }),
     ev(2000e3, { kind: 'read', projectId: 'A', tool: 'queryNeo4jGraph', status: 'denied', reason: 'not_authorized' }),
     ev(1900e3, { kind: 'read', projectId: 'A', tool: 'queryNeo4jGraph', status: 'denied', reason: 'not_authorized' }),
@@ -85,6 +88,7 @@ async function main() {
     { projectId: 'B', synced: true, ok: true, commit: 'stale-mirror-commit', branch: 'main', syncedAt: new Date(now - 3 * 3600e3).toISOString() },
     { projectId: 'C', synced: true, ok: true, commit: 'mirror-c', branch: 'main', syncedAt: new Date(now - 3 * 3600e3).toISOString() },
     { projectId: 'D', synced: true, ok: true, commit: 'mirror-d', branch: 'main', syncedAt: new Date(now - 3 * 3600e3).toISOString() },
+    { projectId: 'E', synced: true, ok: true, commit: 'mirror-e', branch: 'main', syncedAt: new Date(now - 3 * 3600e3).toISOString() },
   ];
   const health = { status: 'ok', service: 'argo-mirror-engine', argoVersion: '0.26.2', activeSyncs: 0, queuedSyncs: 0 };
 
@@ -110,6 +114,7 @@ async function main() {
   check(codes.has('mirror_branch_mismatch'), 'THEN5c 发现 mirror_branch_mismatch（镜像分支与注册分支不一致）');
   check(codes.has('mirror_drift'), 'THEN6 发现 mirror_drift');
   check(codes.has('upstream_unreachable'), 'THEN6b ls-remote 失败不再静默，报告 upstream_unreachable');
+  check(!report.findings.some((f) => f.projectId === 'F'), 'THEN6c 后到的成功事件清除先前的失败（按项目取最新）');
   check(codes.has('argo_version_changed'), 'THEN7 发现 argo_version_changed（框架升级信号）');
   check(syncCalls.some((c) => c.projectId === 'A'), 'THEN8 heal 对 not ok 副本触发 mirror_sync');
   check(!syncCalls.some((c) => c.projectId === 'B'), 'THEN8 ok 副本不误重建');

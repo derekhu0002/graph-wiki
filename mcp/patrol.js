@@ -41,18 +41,27 @@ function num(value, fallback) {
   return Number.isFinite(n) ? n : fallback;
 }
 
-function lsRemote(sourceRepo, branch) {
-  try {
-    const out = execFileSync('git', ['ls-remote', sourceRepo, `refs/heads/${branch || 'main'}`], {
-      encoding: 'utf8',
-      timeout: 8000,
-      stdio: ['ignore', 'pipe', 'ignore'],
-    });
-    const line = String(out).split('\n').map((l) => l.trim()).find(Boolean);
-    return line ? line.split(/\s+/)[0] : null;
-  } catch {
-    return null;
+async function lsRemote(sourceRepo, branch) {
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const out = execFileSync('git', ['ls-remote', sourceRepo, `refs/heads/${branch || 'main'}`], {
+        encoding: 'utf8',
+        timeout: 15000,
+        stdio: ['ignore', 'pipe', 'ignore'],
+      });
+      const line = String(out).split('\n').map((l) => l.trim()).find(Boolean);
+      return line ? line.split(/\s+/)[0] : null;
+    } catch {
+      if (attempt === 1) await new Promise((r) => setTimeout(r, 2000));
+    }
   }
+  return null;
+}
+
+function latestByProject(events) {
+  const map = new Map();
+  for (const e of events) map.set(e.projectId, e);
+  return [...map.values()];
 }
 
 async function runPatrol(options = {}) {
@@ -101,14 +110,15 @@ async function runPatrol(options = {}) {
   const engineEvents = obs.read('engine', { since, includeRotated: true });
   const storeEvents = obs.read('store', { since, includeRotated: true });
 
-  const syncs = engineEvents.filter((e) => e.kind === 'sync');
+  // Only the latest event per project counts: a later success must clear an earlier failure.
+  const syncs = latestByProject(engineEvents.filter((e) => e.kind === 'sync'));
   for (const e of syncs) {
     if (e.status !== 'ok') findings.push({ level: 'error', code: 'sync_failed', projectId: e.projectId, reason: e.reason });
     else if (e.synced === true && e.semanticOk === false) findings.push({ level: 'error', code: 'semantic_failed', projectId: e.projectId });
     if (e.fetchOk === false) findings.push({ level: 'warn', code: 'sync_fetch_failed', projectId: e.projectId, branch: e.branch, error: e.fetchError });
   }
-  for (const e of engineEvents.filter((e) => e.kind === 'schema' && e.status !== 'ok')) {
-    findings.push({ level: 'warn', code: 'schema_failed', projectId: e.projectId, reason: e.reason });
+  for (const e of latestByProject(engineEvents.filter((e) => e.kind === 'schema'))) {
+    if (e.status !== 'ok') findings.push({ level: 'warn', code: 'schema_failed', projectId: e.projectId, reason: e.reason });
   }
 
   const engineReads = engineEvents.filter((e) => e.kind === 'read');
@@ -142,7 +152,7 @@ async function runPatrol(options = {}) {
     }
     const age = mirror.syncedAt ? now - Date.parse(mirror.syncedAt) : Infinity;
     if (age < staleMs) continue;
-    const upstream = lsRemote(m.sourceRepo, registryBranch);
+    const upstream = await lsRemote(m.sourceRepo, registryBranch);
     if (!upstream) unreachable.push(m.id);
     else if (upstream !== mirror.commit) {
       findings.push({ level: 'warn', code: 'mirror_drift', projectId: m.id, branch: registryBranch, mirrorCommit: mirror.commit, upstreamCommit: upstream });
