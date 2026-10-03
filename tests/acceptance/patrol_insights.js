@@ -57,6 +57,7 @@ async function main() {
   registry.registerMember(reg, { id: 'A', name: '项目 A' });
   registry.registerMember(reg, { id: 'B', name: '项目 B', sourceRepo: repo.dir, branch: 'main' });
   registry.registerMember(reg, { id: 'C', name: '项目 C', sourceRepo: repo.dir, branch: 'dev' });
+  registry.registerMember(reg, { id: 'D', name: '项目 D', sourceRepo: path.join(os.tmpdir(), 'no-such-repo-for-patrol'), branch: 'main' });
   registry.save(path.join(assetRoot, 'registry', 'registry.json'), reg);
 
   const now = Date.now();
@@ -83,6 +84,7 @@ async function main() {
     { projectId: 'A', synced: false, ok: false },
     { projectId: 'B', synced: true, ok: true, commit: 'stale-mirror-commit', branch: 'main', syncedAt: new Date(now - 3 * 3600e3).toISOString() },
     { projectId: 'C', synced: true, ok: true, commit: 'mirror-c', branch: 'main', syncedAt: new Date(now - 3 * 3600e3).toISOString() },
+    { projectId: 'D', synced: true, ok: true, commit: 'mirror-d', branch: 'main', syncedAt: new Date(now - 3 * 3600e3).toISOString() },
   ];
   const health = { status: 'ok', service: 'argo-mirror-engine', argoVersion: '0.26.2', activeSyncs: 0, queuedSyncs: 0 };
 
@@ -107,6 +109,7 @@ async function main() {
   check(codes.has('sync_fetch_failed'), 'THEN5b 发现 sync_fetch_failed（fetch 失败不再被静默吞掉）');
   check(codes.has('mirror_branch_mismatch'), 'THEN5c 发现 mirror_branch_mismatch（镜像分支与注册分支不一致）');
   check(codes.has('mirror_drift'), 'THEN6 发现 mirror_drift');
+  check(codes.has('upstream_unreachable'), 'THEN6b ls-remote 失败不再静默，报告 upstream_unreachable');
   check(codes.has('argo_version_changed'), 'THEN7 发现 argo_version_changed（框架升级信号）');
   check(syncCalls.some((c) => c.projectId === 'A'), 'THEN8 heal 对 not ok 副本触发 mirror_sync');
   check(!syncCalls.some((c) => c.projectId === 'B'), 'THEN8 ok 副本不误重建');

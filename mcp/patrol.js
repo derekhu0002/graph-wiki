@@ -131,6 +131,7 @@ async function runPatrol(options = {}) {
   try { members = (registry.load(registryPath).members || []).filter((m) => m.status === 'active' && m.sourceRepo); } catch { members = []; }
   const byId = new Map(mirrors.map((m) => [m.projectId, m]));
   const now = Date.now();
+  const unreachable = [];
   for (const m of members) {
     const mirror = byId.get(m.id);
     if (!mirror || !mirror.commit) continue;
@@ -142,9 +143,13 @@ async function runPatrol(options = {}) {
     const age = mirror.syncedAt ? now - Date.parse(mirror.syncedAt) : Infinity;
     if (age < staleMs) continue;
     const upstream = lsRemote(m.sourceRepo, registryBranch);
-    if (upstream && upstream !== mirror.commit) {
+    if (!upstream) unreachable.push(m.id);
+    else if (upstream !== mirror.commit) {
       findings.push({ level: 'warn', code: 'mirror_drift', projectId: m.id, branch: registryBranch, mirrorCommit: mirror.commit, upstreamCommit: upstream });
     }
+  }
+  if (unreachable.length > 0) {
+    findings.push({ level: 'warn', code: 'upstream_unreachable', count: unreachable.length, projects: unreachable.slice(0, 8) });
   }
 
   const healed = [];

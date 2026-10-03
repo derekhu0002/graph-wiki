@@ -17,14 +17,21 @@ const { execFileSync, execFile } = require('node:child_process');
 const { promisify } = require('node:util');
 
 const execFileAsync = promisify(execFile);
-const NET_CFG = ['-c', 'http.version=HTTP/1.1'];
+// Force HTTP/1.1 (github.com's HTTP/2 framing is intermittently fatal) and abort
+// stalled transfers instead of hanging the sync slot for minutes.
+const NET_CFG = [
+  '-c', 'http.version=HTTP/1.1',
+  '-c', 'http.lowSpeedLimit=1000',
+  '-c', 'http.lowSpeedTime=60',
+];
+const NET_TIMEOUT_MS = Number(process.env.MIRROR_GIT_TIMEOUT_MS || 180000);
 
 function git(args, cwd) {
   return execFileSync('git', args, { cwd, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' }).trim();
 }
 
-function gitAsync(args, cwd) {
-  return execFileAsync('git', args, { cwd, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+function gitAsync(args, cwd, timeoutMs) {
+  return execFileAsync('git', args, { cwd, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, timeout: timeoutMs || NET_TIMEOUT_MS })
     .then((r) => r.stdout.trim());
 }
 
@@ -32,7 +39,7 @@ async function cloneWithRetry(dir, sourceRepo, branchName) {
   let lastErr;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      await gitAsync([...NET_CFG, 'clone', '--depth', '1', '--branch', branchName, sourceRepo, '.'], dir);
+      await gitAsync([...NET_CFG, 'clone', '--depth', '1', '--branch', branchName, sourceRepo, '.'], dir, NET_TIMEOUT_MS);
       return;
     } catch (e) {
       lastErr = e;
@@ -57,7 +64,7 @@ async function fetchRepo(dir, sourceRepo, branch) {
     return { dir, fetchOk: true, branch: branchName };
   }
   try {
-    await gitAsync([...NET_CFG, 'fetch', '--depth', '1', 'origin', refspec], dir);
+    await gitAsync([...NET_CFG, 'fetch', '--depth', '1', 'origin', refspec], dir, NET_TIMEOUT_MS);
     await gitAsync(['reset', '--hard', `origin/${branchName}`], dir);
     return { dir, fetchOk: true, branch: branchName };
   } catch (e) {
