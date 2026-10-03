@@ -1295,6 +1295,14 @@
         {
           "name": "commit",
           "value": "63ec666: docs(kg) register commit 1a09ee8"
+        },
+        {
+          "name": "sessionStatus",
+          "value": "completed"
+        },
+        {
+          "name": "localHarness",
+          "value": "beta 0.27.0-beta.12 verified live 2026-10-03: session MCP children started 21:34 (after 20:15 argo-deploy); projectId routing works; local .argo/federation.json (graph-wiki) created; cross-project getSystemArchitecture -> status passed + namespaceKey proj:archgraph; issue #2 closed as completed"
         }
       ]
     }
