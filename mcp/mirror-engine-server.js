@@ -62,8 +62,25 @@ loadEnv();
 // Isolation is per-member database (derived from workspaceRoot); never pin a global DB.
 delete process.env.ARGO_NEO4J_DATABASE;
 
+let _argoVersionCache;
 function argoVersion() {
-  try { return JSON.parse(fs.readFileSync(path.join(ARGO_ROOT, 'package.json'), 'utf8')).version || null; } catch { return null; }
+  if (_argoVersionCache !== undefined) return _argoVersionCache;
+  const readVersion = (p) => {
+    try { return JSON.parse(fs.readFileSync(p, 'utf8')).version || null; } catch { return null; }
+  };
+  let v = process.env.ARGO_VERSION || readVersion(path.join(ARGO_ROOT, 'package.json'));
+  if (!v) {
+    const sibling = path.join(path.dirname(process.execPath), '..', 'lib', 'node_modules', 'archgraph-argo', 'package.json');
+    v = readVersion(sibling);
+  }
+  if (!v) {
+    try {
+      const prefix = execFileSync('npm', ['root', '-g'], { encoding: 'utf8', timeout: 5000, stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+      v = readVersion(path.join(prefix, 'archgraph-argo', 'package.json'));
+    } catch { v = null; }
+  }
+  _argoVersionCache = v || null;
+  return _argoVersionCache;
 }
 
 let _engine = null;
