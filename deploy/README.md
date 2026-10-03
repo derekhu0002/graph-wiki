@@ -22,7 +22,7 @@ npm publish            # 发布 graph-store（如命名冲突，用 @scope/graph
 ```bash
 npm i -g graph-store@<version>
 cp <pkg>/deploy/graph-store.env.example graph-store.env   # 或直接编辑后 --config 指定
-vi graph-store.env     # 填 NEO4J_PASSWORD、QWEN_KEY、（可选）GITHUB_TOKEN
+vi graph-store.env     # 通常无需改（仅 host/port/拓扑）；（可选）GITHUB_TOKEN
 graph-store deploy --config ./graph-store.env
 # 或：graph-store deploy（读取包内 deploy/graph-store.env）
 ```
@@ -41,12 +41,12 @@ REST:  http://127.0.0.1:18792/graph/read
 ```bash
 git clone <repo> && cd graph-wiki
 cp deploy/graph-store.env.example deploy/graph-store.env
-vi deploy/graph-store.env          # 至少填 NEO4J_PASSWORD、QWEN_KEY、（可选）GITHUB_TOKEN
+vi deploy/graph-store.env          # 通常无需改（仅 host/port/拓扑）；（可选）GITHUB_TOKEN
 sudo bash deploy/install-graph-store.sh
 ```
 
-安装脚本会：装 Node（缺则装）→ 装 ARGO 引擎 + 写 `~/.argo/.env`(600) → 起 Neo4j（Enterprise，支持多库）
-→ 装并启动 systemd 单元（`asset-mcp`、`argo-mirror-engine`、`sync-mirrors.timer`）→ 健康检查。
+安装脚本会：装 Node（缺则装）→ 装 ARGO 引擎 → 维护 **ARGO 自己的** `~/.argo/.env`(600)（引擎配置；Neo4j 密码读取/生成）
+→ 起 Neo4j（Enterprise，支持多库）→ 装并启动 systemd 单元（`asset-mcp`、`argo-mirror-engine`、`sync-mirrors.timer`、`graph-store-patrol.timer`）→ 健康检查。
 
 MCP 客户端配置（本机项目）：
 
@@ -134,11 +134,11 @@ graph-store patrol --heal
 
 ## 8. 标准流程与常见坑（务必遵守）
 
-**标准流程**：`npm i -g graph-store` → `cp <pkg>/deploy/graph-store.env.example ./graph-store.env` → 填 `QWEN_KEY`、`NEO4J_PASSWORD`（**必填**，缺则安装器报错退出）→ `graph-store deploy --config ./graph-store.env`。一次部署起：Store + 网站 + 引擎 + 定时同步。
+**标准流程**：`npm i -g graph-store` → `cp <pkg>/deploy/graph-store.env.example ./graph-store.env`（通常无需改；Graph Store env **不承载引擎密钥**：Neo4j 密码/embedding/QWEN_KEY 归 `~/.argo/.env`，安装器读取/生成）→ `graph-store deploy --config ./graph-store.env`。一次部署起：Store + 网站 + 引擎 + 定时同步 + 巡检。
 
 **检查清单 / 常见坑（踩坑后固化）**：
 
-1. **配置归属**：ARGO 引擎配置（`ARGO_EMBEDDING_*`/`QWEN_KEY`/`ARGO_NEO4J_*`/gates/rerank）写入 **ARGO 自己的 `~/.argo/.env`**——ARGO 引擎/接口会自动读取，**无需我们注入**（也不要设 `ARGO_ENV_FILE`，会被 provenance 校验拒绝）；安装器**合并式**写入（先备份、不覆盖已有键）。Graph Store **服务**配置在 `DATA_DIR/graph-store.env`。其中 `ARGO_LIVE_PROVIDER_E2E` 与 `ARGO_W31_LIVE_MUTATION_VECTOR_E2E` **必须同时 `=1`**（否则 `SEMANTIC_LIFECYCLE_GATE_INVALID`）；开启 rerank 但无 `ARGO_RERANK_API_KEY` → `EXTERNAL_CREDENTIALS_REQUIRED`（无 key 时自动 `ARGO_SEMANTIC_RERANK=0`）。
+1. **配置归属**：ARGO 引擎配置（`ARGO_EMBEDDING_*`/`QWEN_KEY`/`ARGO_NEO4J_*`/gates/rerank）归 **ARGO 自己的 `~/.argo/.env`**——由 ARGO 引擎直接消费，**Graph Store env 不承载这些密钥**（也不要设 `ARGO_ENV_FILE`，会被 provenance 校验拒绝）；安装器**合并式**维护（先备份、不覆盖已有键；Neo4j 密码缺省从 `~/.argo/.env` 读取、缺失则生成并写回）。Graph Store **服务/拓扑**配置在 `DATA_DIR/graph-store.env`。其中 `ARGO_LIVE_PROVIDER_E2E` 与 `ARGO_W31_LIVE_MUTATION_VECTOR_E2E` **必须同时 `=1`**（否则 `SEMANTIC_LIFECYCLE_GATE_INVALID`）；开启 rerank 但无 `ARGO_RERANK_API_KEY` → `EXTERNAL_CREDENTIALS_REQUIRED`（无 key 时自动 `ARGO_SEMANTIC_RERANK=0`）。
 2. **改配置必须 `systemctl restart`**（`enable --now` 不会重启运行中的服务，改了 `HOST` 之类不生效）。
 3. **Neo4j 必须 Enterprise**（多 database，一成员一库）；Community **不支持** `CREATE DATABASE`。
 4. 每成员一个 workspace → ARGO 派生独立 database；读取用 **per-call `workspaceRoot`**（并发安全，**禁止**改进程级 `env`/`setMcpWorkspaceRoots`）。

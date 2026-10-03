@@ -99,13 +99,12 @@ if [ "$INSTALL_ENGINE" = "true" ]; then
   cp "$PKG_ARGO/package.json" "$ARGO_ROOT/"
   ( cd "$ARGO_ROOT" && npm install --registry="$NPM_REGISTRY" >/dev/null )
 
-  [ -n "$NEO4J_PASSWORD" ] || { echo "ERROR: 请设置 NEO4J_PASSWORD"; exit 1; }
-  [ -n "${QWEN_KEY:-}" ] || { echo "ERROR: 请设置 QWEN_KEY"; exit 1; }
-
-  # ARGO 引擎配置写入 **ARGO 自己的 ~/.argo/.env**（ARGO 引擎/接口会自动读取，无需我们注入）；合并式（先备份、不覆盖已有键）。
-  # Graph Store 的服务配置另在 ${DATA_DIR}/graph-store.env，两者分离。
+  # 引擎配置（Neo4j 凭据 / embedding / QWEN_KEY / gates / rerank）归 **ARGO 自己的 ~/.argo/.env**，
+  # 由 ARGO 引擎直接消费；Graph Store 的 env 只承载服务拓扑（host/port/engine URL/log dir），不承载引擎密钥。
+  # 安装器在此仅为 provision 本机 Neo4j 容器读取/生成所需密码，并对显式提供的引擎配置做合并写入。
   ENV_FILE_ARG="$ARGO_ROOT/.env"
   [ -f "$ENV_FILE_ARG" ] && cp "$ENV_FILE_ARG" "${ENV_FILE_ARG}.bak.$(date +%s)"
+  argo_env_get() { [ -f "$ENV_FILE_ARG" ] && sed -n "s/^$1=//p" "$ENV_FILE_ARG" | tail -n1; }
   set_kv() {
     local k="$1" v="$2"
     [ -z "$v" ] && return   # 空值不写（避免把已有值清空/写坏）
@@ -115,29 +114,43 @@ if [ "$INSTALL_ENGINE" = "true" ]; then
       echo "${k}=${v}" >> "$ENV_FILE_ARG"
     fi
   }
-  set_kv ARGO_EMBEDDING_BASE_URL "${ARGO_EMBEDDING_BASE_URL:-}"
-  set_kv ARGO_EMBEDDING_MODEL "${ARGO_EMBEDDING_MODEL:-qwen3.7-text-embedding}"
-  set_kv ARGO_EMBEDDING_PROVIDER "alibaba-cloud-model-studio-openai-compatible-cn-beijing"
-  set_kv ARGO_EMBEDDING_DIMENSIONS "${ARGO_EMBEDDING_DIMENSIONS:-1536}"
+
+  # Neo4j 密码：显式 env > ~/.argo/.env > 生成随机（写回 ARGO env，供容器与引擎一致使用）。
+  NEO4J_PASSWORD="${NEO4J_PASSWORD:-$(argo_env_get ARGO_NEO4J_DATABASE_PASSWORD)}"
+  if [ -z "$NEO4J_PASSWORD" ]; then
+    NEO4J_PASSWORD="$(openssl rand -hex 16 2>/dev/null || head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+    echo "NOTE: 已在 $ENV_FILE_ARG 生成 Neo4j 密码（ARGO 引擎配置；Graph Store env 无需保存）"
+  fi
   set_kv ARGO_NEO4J_DATABASE_URL "neo4j://127.0.0.1:7687"
   set_kv ARGO_NEO4J_DATABASE_USERNAME "${NEO4J_USER}"
   set_kv ARGO_NEO4J_DATABASE_PASSWORD "${NEO4J_PASSWORD}"
-  set_kv QWEN_KEY "${QWEN_KEY}"
-  # 语义生命周期：两个 gate 必须同时为 1（或同时关闭），否则 embedding 不执行。
-  set_kv ARGO_LIVE_PROVIDER_E2E "1"
-  set_kv ARGO_W31_LIVE_MUTATION_VECTOR_E2E "1"
-  set_kv ARGO_EMBEDDING_MODEL_VERSION "${ARGO_EMBEDDING_MODEL_VERSION:-qualification-2026-07-25}"
-  set_kv ARGO_SEMANTIC_HYBRID "${ARGO_SEMANTIC_HYBRID:-0}"
-  set_kv ARGO_SEMANTIC_MEMORY_THRESHOLD "${ARGO_SEMANTIC_MEMORY_THRESHOLD:-0.70}"
-  # rerank 可选：提供 ARGO_RERANK_API_KEY 才开启，否则关闭（只用 Qwen embedding 检索）。
-  if [ -n "${ARGO_RERANK_API_KEY:-}" ]; then
-    set_kv ARGO_RERANK_API_KEY "${ARGO_RERANK_API_KEY}"
-    set_kv ARGO_RERANK_BASE_URL "${ARGO_RERANK_BASE_URL:-}"
-    set_kv ARGO_RERANK_MODEL "${ARGO_RERANK_MODEL:-}"
-    set_kv ARGO_RERANK_PROVIDER "${ARGO_RERANK_PROVIDER:-}"
-    set_kv ARGO_SEMANTIC_RERANK "1"
+
+  # embedding / 语义生命周期：仅当显式提供或 ARGO env 已有配置时维护；缺失只提示，不报错、不阻塞部署。
+  if [ -n "${QWEN_KEY:-}" ] || [ -n "$(argo_env_get QWEN_KEY)" ]; then
+    set_kv ARGO_EMBEDDING_BASE_URL "${ARGO_EMBEDDING_BASE_URL:-$(argo_env_get ARGO_EMBEDDING_BASE_URL)}"
+    set_kv ARGO_EMBEDDING_MODEL "${ARGO_EMBEDDING_MODEL:-$(argo_env_get ARGO_EMBEDDING_MODEL)}"
+    set_kv ARGO_EMBEDDING_PROVIDER "alibaba-cloud-model-studio-openai-compatible-cn-beijing"
+    set_kv ARGO_EMBEDDING_DIMENSIONS "${ARGO_EMBEDDING_DIMENSIONS:-$(argo_env_get ARGO_EMBEDDING_DIMENSIONS)}"
+    set_kv QWEN_KEY "${QWEN_KEY:-}"
+    # 语义生命周期：两个 gate 必须同时为 1（或同时关闭），否则 embedding 不执行。
+    set_kv ARGO_LIVE_PROVIDER_E2E "1"
+    set_kv ARGO_W31_LIVE_MUTATION_VECTOR_E2E "1"
+    set_kv ARGO_EMBEDDING_MODEL_VERSION "${ARGO_EMBEDDING_MODEL_VERSION:-$(argo_env_get ARGO_EMBEDDING_MODEL_VERSION)}"
+    set_kv ARGO_SEMANTIC_HYBRID "${ARGO_SEMANTIC_HYBRID:-$(argo_env_get ARGO_SEMANTIC_HYBRID)}"
+    set_kv ARGO_SEMANTIC_MEMORY_THRESHOLD "${ARGO_SEMANTIC_MEMORY_THRESHOLD:-$(argo_env_get ARGO_SEMANTIC_MEMORY_THRESHOLD)}"
+    # rerank：显式提供或 ARGO env 已有 key 才开启；两者皆无才关闭。
+    if [ -n "${ARGO_RERANK_API_KEY:-}" ]; then
+      set_kv ARGO_RERANK_API_KEY "${ARGO_RERANK_API_KEY}"
+      set_kv ARGO_RERANK_BASE_URL "${ARGO_RERANK_BASE_URL:-$(argo_env_get ARGO_RERANK_BASE_URL)}"
+      set_kv ARGO_RERANK_MODEL "${ARGO_RERANK_MODEL:-$(argo_env_get ARGO_RERANK_MODEL)}"
+      set_kv ARGO_RERANK_PROVIDER "${ARGO_RERANK_PROVIDER:-$(argo_env_get ARGO_RERANK_PROVIDER)}"
+      set_kv ARGO_SEMANTIC_RERANK "1"
+    elif [ -z "$(argo_env_get ARGO_RERANK_API_KEY)" ]; then
+      set_kv ARGO_SEMANTIC_RERANK "0"
+    fi
   else
-    set_kv ARGO_SEMANTIC_RERANK "0"
+    echo "NOTE: 未检测到 embedding 配置（QWEN_KEY）。引擎可运行，但语义检索不可用；"
+    echo "      请在 ~/.argo/.env 配置 ARGO 引擎侧参数（graph-store.env 不需要这些密钥）。"
   fi
   chmod 600 "$ENV_FILE_ARG"
 
