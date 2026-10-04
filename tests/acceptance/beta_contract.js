@@ -1,5 +1,9 @@
 /**
- * Acceptance Test - ArchGraph 0.27.0-beta.12 契约兼容（schema 响应形状 / 自动 slug id）
+ * Acceptance Test - ArchGraph 0.27.0-beta.14 契约兼容（schema 响应形状 / 自动 slug id）
+ *
+ * 注：schema 响应形状 / 自动 slug id 契约自 beta.12 起未变；beta.13/.14 仅新增
+ * getIntentElementContext/getArchitectureViewContext 的可选输出预算（maxBytes/truncation），
+ * 该契约对中心透明，另见 tests/acceptance/context_budget_passthrough.js。
  *
  * External-view acceptance（GIVEN-WHEN-THEN，可执行）：
  *

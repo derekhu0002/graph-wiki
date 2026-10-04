@@ -750,6 +750,13 @@
           "description": "外部视角验收：镜像引擎暴露版本/日志目录/副本 commit 等巡检元数据，/schema 对未同步成员与内部不可用均优雅失败。",
           "Input": "GIVEN 隔离 ARGO_ROOT（含版本）+ MIRRORS_ROOT（含副本 meta）+ 日志目录\nWHEN 启动镜像引擎并调用 /health、/mirrors、/schema\nTHEN /health 暴露 argoVersion/logDir；/mirrors 暴露 commit/syncedAt/neo4jOk/semanticOk；/schema 未同步成员 403、内部不可用 502 且服务不崩；engine.ndjson 记录 start/schema 打点",
           "acceptanceCriteria": "tests/acceptance/mirror_engine_observability.js"
+        },
+        {
+          "Input": "GIVEN 隔离 ARGO_ROOT（桩 systemarchitecture-mcp-server 回显参数）+ 已同步成员副本\nWHEN 中心经镜像引擎 POST /graph/read 传入可选参数 maxBytes\nTHEN tool 与 args 原样转发（maxBytes 未被吞掉/改写）、按 projectId 注入 workspaceRoot、带 truncation 的结果原样透传",
+          "acceptanceCriteria": "tests/acceptance/context_budget_passthrough.js",
+          "description": "外部视角验收：ARGO 0.27 beta.14 的上下文输出预算对中心透明——中心把可选参数 maxBytes 原样转发给 ARGO，并把带 truncation 的结果原样透传。",
+          "name": "context-budget-passthrough",
+          "type": "Acceptance Test"
         }
       ],
       "type": "Application Service",
@@ -808,7 +815,7 @@
         },
         {
           "name": "argoVersion",
-          "value": "0.27.0-beta.12 @ 47.107.161.168 (2026-10-03 canary→switch; ARGO_ROOT=/root/.argo-beta, unit+tar backups; rollback=restore argo-mirror-engine.service.stable-backup + restart)"
+          "value": "0.27.0-beta.14 @ 47.107.161.168 (2026-10-04 canary→switch; ARGO_ROOT=/root/.argo-beta, ARGO_VERSION pinned in unit + graph-store.env; canary :18802 verified /health+/schema+maxBytes budget then promoted; rollback=/root/argo-beta-backup-20261004-215139.tgz + argo-mirror-engine.service.beta12-backup.20261004-215139)"
         },
         {
           "name": "commit",
@@ -1011,7 +1018,7 @@
         },
         {
           "name": "betaAlignment",
-          "value": "2026-10-03: beta canary+switch on 47; beta client cross-read verified (namespaceKey, no -32600, 314 elements, default deny); upstream bin collision argo-deploy reported in issue #3"
+          "value": "2026-10-04: aligned to archgraph-argo-beta@0.27.0-beta.14; beta.13/.14 only additive context-budget (optional maxBytes + truncation degrade-to-identity on getIntentElementContext/getArchitectureViewContext) — center auto-adapts (regression tests/acceptance/context_budget_passthrough.js); engine 47 canary→switch verified (health beta.14, 23/23 mirrors ok, cross-read ok, no -32600)"
         }
       ],
       "description": "面向 ArchGraph 框架项目（Graph 项目）的适配需求说明书（已刷新）：Graph 项目需 (FR-G1) 注册并本地持久化本仓 projectId（.argo/federation.json）、(FR-G2) 为所有数据查询/检索工具新增可选 projectId（缺省=本仓、提供=外仓，调用中心 POST /graph/read，tool/args 与本地工具同名同参）、(FR-G3) 结果与拒绝原因透传不降级、(FR-G4) 本仓零回归。接口已改为 {requester, projectId, tool, args, contentId?}（tool ∈ ARGO 读工具白名单）；拓扑为 Graph Store(120) 授权 + 镜像引擎(47, ARGO 引擎 + Neo4j Enterprise 一成员一库 + Qwen embedding)。正文见仓库文件。",
@@ -1305,6 +1312,22 @@
           "value": "beta 0.27.0-beta.12 verified live 2026-10-03: session MCP children started 21:34 (after 20:15 argo-deploy); projectId routing works; local .argo/federation.json (graph-wiki) created; cross-project getSystemArchitecture -> status passed + namespaceKey proj:archgraph; issue #2 closed as completed"
         }
       ]
+    },
+    {
+      "attributes": [
+        {
+          "name": "memoryTier",
+          "value": "T2"
+        },
+        {
+          "name": "sessionStatus",
+          "value": "completed"
+        }
+      ],
+      "description": "2026-10-04 会话摘要：ARGO graph beta 新版本适配。目标：下载最新 dev 版 archgraph-argo-beta（0.27.0-beta.14，2026-10-04 发布）并在本仓与镜像宿主适配。现状核对：本地全局包与 ~/.argo 已于 11:29 部署 beta.14（关键文件 sha256 与包一致）；镜像宿主 47 仍 beta.12（/root/.argo-beta，unit ARGO_VERSION 与 /opt/graph-store/graph-store.env 双 pin）。上游差异（beta.12→.13→.14，仅 3 文件）：systemarchitecture-mcp-server.js 新增上下文输出预算（getIntentElementContext/getArchitectureViewContext 可选 maxBytes，默认 32000，超限非焦点成员降级为 id/type/name 并在 truncation 给完整 id 清单；.14 增 overBudgetByFocus）、argo-mcp-server.js schema 描述、graph-rag/liveEmbeddingProviderConfig.js 将 ARGO_CONTEXT_MAX_BYTES 列入 host-only env 白名单。结论：schema 响应形状/工具名//graph/read 契约/external-graph-query.js 均未变 → 中心自动适配，无需改代码。变更：新增验收 tests/acceptance/context_budget_passthrough.js（GIVEN 桩 ARGO_ROOT + 已同步副本，WHEN /graph/read 传 maxBytes，THEN args 原样转发且结果含 truncation 原样透传；通过）；beta_contract.js 标题对齐 beta.14；EXTERNAL-GRAPH-QUERY-ADAPTATION.md §13 刷新 beta.14（新增预算行）。生产：47 金丝雀（/root/.argo-beta-canary + 第二引擎 :18802）验证 /health=beta.14、/schema ok、/graph/read count=79、maxBytes 预算路径，再升级全局包 + 刷新 /root/.argo-beta（.env/node_modules 保留）、unit 与 graph-store.env pin beta.14、重启；验收 /health=0.27.0-beta.14、/mirrors 23/23 ok、公共 https://argo.derekworkspacev5.com/graph/read 自读 79、跨读 archgraph ok（namespaceKey proj:archgraph）、patrol 报 argo_version_changed(beta.12→beta.14) 且无新增故障。回滚：/root/argo-beta-backup-20261004-215139.tgz + argo-mirror-engine.service.beta12-backup.20261004-215139。经验：本地 ~/.argo 部署副本与 npm 全局包用文件 sha256 比对判版本（~/.argo/package.json 无 version）；无 pwsh 的服务器用直拷全局包 argo/* 到 ARGO_ROOT 完成部署；beta 只读工具的预算属加性变更，中心透传即自动适配。TODO：无（全绿）；后续 beta 结构性变化仍需人工适配。",
+      "id": "kb-admin-session-20261004-beta14",
+      "name": "会话记录 2026-10-04 ARGO beta.14 适配",
+      "type": "Business Object"
     }
   ],
   "relationships": [
@@ -1891,7 +1914,8 @@
         "kb-admin-session-20261001-mirror-engine",
         "kb-admin-session-20261001-migrate-store-to-47",
         "kb-admin-session-20261001-xg-accepted",
-        "kb-admin-session-20261003-schema-observability"
+        "kb-admin-session-20261003-schema-observability",
+        "kb-admin-session-20261004-beta14"
       ],
       "included_relationships": []
     },
