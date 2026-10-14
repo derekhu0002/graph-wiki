@@ -1485,6 +1485,14 @@
         {
           "name": "reviewer",
           "value": "archgraph (通过)"
+        },
+        {
+          "name": "commit",
+          "value": "1ed15bc: community/DECENTRALIZED-ORG-KNOWLEDGE-GRAPH.md, community/DECENTRALIZED-ORG-KNOWLEDGE-GRAPH.email.html, community/render-paper-email.js, design/KG/SystemArchitecture.json"
+        },
+        {
+          "name": "deliveryStatus",
+          "value": "delivered"
         }
       ],
       "testcases": [
