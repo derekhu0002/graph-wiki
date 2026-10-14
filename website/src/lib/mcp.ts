@@ -102,3 +102,37 @@ export async function registryGrants(): Promise<FederationGrant[]> {
   const r = await mcpCall('registry_grants', {});
   return r.grants || [];
 }
+
+export type OntologyBundleSummary = {
+  kind?: string;
+  language?: string | null;
+  extends?: string | null;
+  id?: string | null;
+  actorElementType?: string | null;
+  elementTypeCount?: number | null;
+  relationshipTypeCount?: number | null;
+  hasRules?: boolean;
+  hasGuide?: boolean;
+};
+
+export type OntologyAssetMeta = {
+  id: string;
+  name: string;
+  version: string;
+  sourceRepo: string;
+  sourceCommit: string;
+  description: string;
+  bundle?: OntologyBundleSummary;
+};
+
+// Live ontology shelf: served by the graph MCP (same-origin /mcp). Every
+// ontology_submit on any project shows up here on the next page load.
+export async function ontologyList(): Promise<OntologyAssetMeta[]> {
+  const r = await mcpCall('ontology_list', {});
+  return r.ontologies || [];
+}
+
+export async function ontologyGet(id: string): Promise<{asset: OntologyAssetMeta; files: Record<string, unknown>}> {
+  const r = await mcpCall('ontology_get', {id});
+  return {asset: r.asset, files: r.files || {}};
+}

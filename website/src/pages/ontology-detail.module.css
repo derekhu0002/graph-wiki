@@ -1,0 +1,56 @@
+.version {
+  font-size: 0.9rem;
+  color: var(--ifm-color-emphasis-600);
+  font-weight: 400;
+  margin-left: 0.4rem;
+}
+
+.metaLine {
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.92rem;
+  margin-bottom: 0.5rem;
+}
+
+.section {
+  margin: 1.75rem 0;
+}
+
+.table {
+  width: 100%;
+  font-size: 0.95rem;
+}
+
+.table td:first-child {
+  width: 200px;
+  color: var(--ifm-color-emphasis-700);
+  white-space: nowrap;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.chip {
+  font-size: 0.82rem;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 6px;
+  background: var(--ifm-color-emphasis-100);
+}
+
+.guide {
+  max-height: 420px;
+  overflow: auto;
+  padding: 1rem;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 8px;
+  background: var(--ifm-color-emphasis-100);
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+}
+
+.error {
+  color: var(--ifm-color-danger);
+}
