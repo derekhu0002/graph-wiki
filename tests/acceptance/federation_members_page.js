@@ -8,7 +8,7 @@
  * THEN
  *   1. discover 返回全部成员，每个成员含 id/name/role/capabilities[]/openContent[]（含 ref 引用）
  *   2. archgraph 成员带 4 项 capabilities、2 条 openContent，且 openContent 均为引用（ref 非空，指向成员自身位置）
- *   3. 页面源码以 ref 链接呈现 openContent（href 绑定 ref），不内联/抓取他人内容
+ *   3. 页面不再呈现「对外开放内容（引用）」列表（按需求移除）
  *   4. MCP 客户端（website/src/lib/mcp.ts）暴露 registryDiscover，经 registry_discover 拉取成员清单
  */
 const fs = require('fs');
@@ -89,12 +89,9 @@ function main() {
   const pageSrc = fs.readFileSync(PAGE_PATH, 'utf8');
   const libSrc = fs.readFileSync(MCP_LIB_PATH, 'utf8');
 
-  // THEN 3: 页面以 ref 链接呈现 openContent（href 绑定 ref，外部链接 target/_blank），不内联抓取
-  if (!/href=\{c\.ref\}/.test(pageSrc) && !/href=\{.*\.ref\}/.test(pageSrc)) {
-    fail(`THEN3 失败: 页面未以 ref 链接呈现 openContent ${PAGE_PATH}`);
-  }
-  if (!/target="_blank"/.test(pageSrc)) {
-    fail('THEN3 失败: 页面 openContent 引用应新窗口打开（target="_blank"）');
+  // THEN 3: 页面不再呈现「对外开放内容（引用）」列表（按需求移除）
+  if (/Open content \(references\)/.test(pageSrc) || /对外开放内容/.test(pageSrc)) {
+    fail(`THEN3 失败: 页面仍呈现「对外开放内容（引用）」${PAGE_PATH}`);
   }
 
   // THEN 4: MCP 客户端暴露 registryDiscover，经 registry_discover 拉取
@@ -108,7 +105,7 @@ function main() {
   console.log(
     'PASS: 联邦成员页验收通过——registry_discover 返回成员 ' +
       `${members.map((m) => m.id).join(', ')}（含 role/capabilities/openContent 引用），` +
-      '页面以 ref 链接呈现开放内容（不内联内容），客户端经 registry_discover 拉取。'
+      '页面已移除「对外开放内容（引用）」列表，客户端经 registry_discover 拉取。'
   );
 }
 

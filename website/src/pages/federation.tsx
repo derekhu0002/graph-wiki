@@ -53,14 +53,6 @@ function MemberCard({member, grants, selected, onSelect, t}: {member: Federation
             {member.capabilities.map((cap) => (<span key={cap} className={styles.chip}>{cap}</span>))}
           </div>
         )}
-        {member.openContent.length > 0 && (
-          <>
-            <h4>{t('Open content (references)', '对外开放内容（引用）')}</h4>
-            <ul className={styles.openContent}>
-              {member.openContent.map((c) => (<li key={c.id}><a href={c.ref} target="_blank" rel="noopener noreferrer">{c.name}</a></li>))}
-            </ul>
-          </>
-        )}
         {selected && (
           <div className={styles.detail}>
             <GrantList title={t('Granted to (outgoing)', '授权给（出）')} items={outgoing} otherLabel={t('grantee', '被授权方')} t={t} />
