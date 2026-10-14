@@ -524,6 +524,13 @@
           "description": "外部视角验收：registry_grants 必须返回成员间授权关系（grantor/grantee/contentId），供联邦页展示授权图与成员授权明细。",
           "Input": "GIVEN 含授权记录的 registry（A 授权 B）\nWHEN 调用 registry_grants\nTHEN 返回授权关系（含内容范围 contentId）",
           "acceptanceCriteria": "tests/acceptance/federation_grants.js"
+        },
+        {
+          "name": "registry-requires-ontology",
+          "type": "Acceptance Test",
+          "description": "外部视角验收：联邦成员注册（registry_register）必须声明所基于的本体 id（ontology，连接键）——缺失即拒；声明货架本体直接绑定、声明非货架本体自动建占位本体；ontology_list 返回 projectCount、ontology_get 返回 members 关联项目清单。",
+          "Input": "GIVEN Graph Store 服务（独立 temp 资产根）\nWHEN registry_register 缺 ontology（拒）/ 带货架本体（绑定不建占位）/ 带非货架本体（建占位），再查 ontology_list 与 ontology_get\nTHEN 缺 ontology 拒绝；绑定成功；占位本体出现且 files 为空、members 含项目；projectCount/members 关联正确",
+          "acceptanceCriteria": "tests/acceptance/ontology_project_binding.js"
         }
       ],
       "attributes": [
@@ -546,6 +553,10 @@
         {
           "name": "commit",
           "value": "f0b23a2: mcp/registry.js, mcp/asset-mcp-server.js (registry_grants), website/src/pages/federation.tsx, website/src/lib/mcp.ts, tests/acceptance/federation_grants.js"
+        },
+        {
+          "name": "commit",
+          "value": "572acba: mcp/registry.js, mcp/asset-mcp-server.js, mcp/README.md, website/src/pages/federation.tsx, website/src/pages/ontologies.tsx, website/src/pages/ontology-detail.tsx, website/src/lib/mcp.ts, tests/acceptance/ontology_project_binding.js, tests/acceptance/external_graph_read.js, website/docs/onboarding/join-federation.mdx"
         }
       ]
     },
@@ -1418,6 +1429,14 @@
         {
           "name": "website",
           "value": "本体货架 (/archgraph/ontologies) 实时取自 ontology_list；ontology_submit 后刷新即可见；详情页 /ontology-detail?id=<id> 取 ontology_get。部署：47 graph-store website/build 已更新 (2026-10-14)"
+        },
+        {
+          "name": "commit",
+          "value": "572acba: ontology_list.projectCount + ontology_get.members/placeholder (本体↔项目关联); 占位本体（非货架本体被项目引用时自动建立）; mcp/asset-mcp-server.js, website ontology shelf/detail"
+        },
+        {
+          "name": "projectBinding",
+          "value": "本体与项目为 N:N——项目注册时声明 ontology（本体资产 id）；货架显示各项 projectCount，详情页列基于该本体的项目；非货架则建占位本体"
         }
       ]
     },
