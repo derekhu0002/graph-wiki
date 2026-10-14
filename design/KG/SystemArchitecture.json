@@ -1504,6 +1504,18 @@
           "acceptanceCriteria": "community/DECENTRALIZED-ORG-KNOWLEDGE-GRAPH.md"
         }
       ]
+    },
+    {
+      "id": "kb-admin-session-20261014-org-kg-paper",
+      "name": "会话记录 2026-10-14 技术论文《去中心化组织级知识图谱构建》",
+      "type": "Business Object",
+      "description": "2026-10-14 会话摘要：人类伙伴要求基于 archgraph + graph-wiki 两项目撰写技术论文《去中心化组织级知识图谱构建》并邮件发送。交付：草稿 community/DECENTRALIZED-ORG-KNOWLEDGE-GRAPH.md（高层概念、不写细节，含 业界现状与痛点[md 文档 vs 本体图谱]、设计目标、底座[单项目图谱框架]、项目即国家组织即联邦、联邦式图谱共享、关键取舍、初步验证、面向企业级知识库的优劣势[A 优势/B 设计边界与取舍]），渲染脚本 render-paper-email.js → email html；经本地 archgraph 项目评审（opencode run，首轮需修改[内部矛盾：中枢'不载内容'与'托管副本'冲突；数据出处：LongMemEval/LOCOMO 应标注为 Mem0 官方报告]→修订 v0.2→终审通过），邮件已发送 hudonghua@huawei.com（发件 hdhscu@126.com，主题'去中心化组织级知识图谱构建（内部参考）'）。KG 登记：新视图 org-kg-paper-view(parent=kg-service-domain) + 元素 org-kg-paper-decentralized-001(Deliverable, 带验收用例)。关键发现/教训：① 中枢已托管全部 24 个成员镜像副本，'中心只持元数据不载内容'不准确，须区分注册表/镜像宿主两角色；② ~/.argo/.env.mail 被 ACL 拒绝，普通进程读不到（含 takeown/icacls 均拒绝），需 UAC 提权 takeown+icacls /reset 放行，文件仅含 MAIL_126_AUTH_CODE；③ archgraph 项目默认模型 gpt-5.6-terra-pro 连不上，跨项目评审须 opencode run -m deepseek/deepseek-flash；④ 论文'去中心化'按人类要求保留标题，但须显式界定为联邦式去中心化权威(非纯 P2P)。commit 1ed15bc / 2443f76。",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "1ed15bc/2443f76: community/DECENTRALIZED-ORG-KNOWLEDGE-GRAPH.md, community/DECENTRALIZED-ORG-KNOWLEDGE-GRAPH.email.html, community/render-paper-email.js, design/KG/SystemArchitecture.json"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -2093,7 +2105,8 @@
         "kb-admin-session-20261003-schema-observability",
         "kb-admin-session-20261004-beta14",
         "kb-admin-memory-20261014-argo-channel-upgrade",
-        "kb-admin-memory-20261014-ontology-shelf"
+        "kb-admin-memory-20261014-ontology-shelf",
+        "kb-admin-session-20261014-org-kg-paper"
       ],
       "included_relationships": []
     },
