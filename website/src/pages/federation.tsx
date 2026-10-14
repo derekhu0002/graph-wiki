@@ -1,21 +1,9 @@
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useState} from 'react';
 import clsx from 'clsx';
 import Layout from '@theme/Layout';
 import Heading from '@theme/Heading';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import {
-  ReactFlow,
-  Background,
-  Controls,
-  MiniMap,
-  MarkerType,
-  Handle,
-  Position,
-  type Node,
-  type Edge,
-  type NodeProps,
-} from '@xyflow/react';
 
 import {registryDiscover, registryGrants, type FederationMember, type FederationGrant} from '../lib/mcp';
 import styles from './federation.module.css';
@@ -24,87 +12,6 @@ type T = (en: string, zh: string) => string;
 
 function scopeLabel(contentId: string, t: T): string {
   return !contentId || contentId === '*' ? t('All open content', '全部开放内容') : contentId;
-}
-
-function circlePositions(count: number, radius: number): Array<{x: number; y: number}> {
-  const out: Array<{x: number; y: number}> = [];
-  const start = -Math.PI / 2;
-  for (let i = 0; i < count; i += 1) {
-    const a = start + (2 * Math.PI * i) / Math.max(1, count);
-    out.push({x: Math.cos(a) * radius, y: Math.sin(a) * radius});
-  }
-  return out;
-}
-
-function MemberNode({data}: NodeProps) {
-  const hl = (data as any).highlight as boolean;
-  return (
-    <div style={{border: `2px solid ${hl ? '#4d6bfe' : '#94a3b8'}`, background: hl ? '#eef2ff' : '#fff', borderRadius: 8, padding: '6px 10px', textAlign: 'center', minWidth: 140, boxShadow: '0 1px 4px rgba(0,0,0,0.12)', cursor: 'pointer'}}>
-      <Handle type="target" position={Position.Top} style={{opacity: 0}} />
-      <div style={{fontSize: 13, fontWeight: 600, color: '#0f172a'}}>{(data as any).name}</div>
-      <div style={{fontSize: 11, color: '#64748b'}}>{(data as any).id}</div>
-      <Handle type="source" position={Position.Bottom} style={{opacity: 0}} />
-    </div>
-  );
-}
-
-const nodeTypes = {member: MemberNode};
-
-function GrantGraph({members, grants, selectedId, onSelect, t}: {members: FederationMember[]; grants: FederationGrant[]; selectedId: string | null; onSelect: (id: string | null) => void; t: T}) {
-  const ids = new Set(members.map((m) => m.id));
-  const nodes: Node[] = useMemo(() => {
-    const radius = Math.max(200, members.length * 48);
-    const pos = circlePositions(members.length, radius);
-    return members.map((m, i) => ({id: m.id, type: 'member', position: pos[i], data: {name: m.name, id: m.id, highlight: selectedId === m.id}}));
-  }, [members, selectedId]);
-
-  const edges: Edge[] = useMemo(
-    () =>
-      grants
-        .filter((g) => ids.has(g.grantor) && ids.has(g.grantee))
-        .map((g, i) => {
-          const active = selectedId === g.grantor || selectedId === g.grantee;
-          const color = active ? '#4d6bfe' : '#94a3b8';
-          return {
-            id: `g-${i}-${g.grantor}-${g.grantee}-${g.contentId}`,
-            source: g.grantor,
-            target: g.grantee,
-            label: scopeLabel(g.contentId, t),
-            type: 'smoothstep',
-            animated: active,
-            markerEnd: {type: MarkerType.ArrowClosed, color, width: 18, height: 18},
-            style: {stroke: color, strokeWidth: active ? 2.5 : 1.5},
-            labelStyle: {fill: '#475569', fontSize: 11, fontWeight: 600},
-            labelBgStyle: {fill: '#fff', fillOpacity: 0.92},
-            labelBgPadding: [4, 2] as [number, number],
-            labelBgBorderRadius: 3,
-          };
-        }),
-    [grants, members, selectedId, t],
-  );
-
-  return (
-    <div style={{width: '100%', height: 460, border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden', background: '#fafcff'}}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        fitView
-        fitViewOptions={{padding: 0.18}}
-        minZoom={0.2}
-        maxZoom={1.6}
-        nodesDraggable={false}
-        nodesConnectable={false}
-        elementsSelectable
-        onNodeClick={(_e, n) => onSelect(selectedId === n.id ? null : n.id)}
-        onPaneClick={() => onSelect(null)}
-        proOptions={{hideAttribution: true}}>
-        <Background gap={16} size={1} />
-        <Controls showInteractive={false} />
-        <MiniMap pannable zoomable nodeLabel={(n) => (n.data as any).id} style={{width: 130, height: 90}} />
-      </ReactFlow>
-    </div>
-  );
 }
 
 function GrantList({title, items, otherLabel, t}: {title: string; items: Array<{other: string; contentId: string; at?: string}>; otherLabel: string; t: T}) {
@@ -191,8 +98,8 @@ export default function Federation(): JSX.Element {
         <Heading as="h1">{t('Federation members & authorization', '联邦成员与授权关系')}</Heading>
         <p>
           {t(
-            'Live from registry_discover and registry_grants. The center keeps only membership metadata and grants — never content copies; open content is shown as references. In the graph below, nodes are members and directed edges are grants (grantor → grantee, labelled with scope); click a member to see its outgoing/incoming grants.',
-            '实时来自 registry_discover 与 registry_grants。中心只保存成员元数据与授权，绝不保存内容副本；开放内容以引用呈现。下方图中节点为成员、有向边为授权（授权方 → 被授权方，标签为范围）；点击成员可查看其授出/被授明细。',
+            'Live from registry_discover and registry_grants. The center keeps only membership metadata and grants — never content copies; open content is shown as references. Click a member to see its outgoing/incoming grants.',
+            '实时来自 registry_discover 与 registry_grants。中心只保存成员元数据与授权，绝不保存内容副本；开放内容以引用呈现。点击成员可查看其授出/被授明细。',
           )}
         </p>
 
@@ -200,17 +107,14 @@ export default function Federation(): JSX.Element {
         {error && <p className={styles.error}>{t('Load failed: ', '加载失败：')}{error}</p>}
 
         {members && (
-          <>
-            <GrantGraph members={members} grants={grants} selectedId={selectedId} onSelect={setSelectedId} t={t} />
-            <div className="row margin-top--md">
-              {members.length === 0 && <p>{t('No registered members yet.', '暂无已登记成员。')}</p>}
-              {members.map((m) => (
-                <div className="col col--6" key={m.id}>
-                  <MemberCard member={m} grants={grants} selected={selectedId === m.id} onSelect={() => setSelectedId(selectedId === m.id ? null : m.id)} t={t} />
-                </div>
-              ))}
-            </div>
-          </>
+          <div className="row margin-top--md">
+            {members.length === 0 && <p>{t('No registered members yet.', '暂无已登记成员。')}</p>}
+            {members.map((m) => (
+              <div className="col col--6" key={m.id}>
+                <MemberCard member={m} grants={grants} selected={selectedId === m.id} onSelect={() => setSelectedId(selectedId === m.id ? null : m.id)} t={t} />
+              </div>
+            ))}
+          </div>
         )}
       </main>
     </Layout>
