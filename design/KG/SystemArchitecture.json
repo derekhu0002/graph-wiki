@@ -131,6 +131,10 @@
         {
           "view_id": "cross-project-graph-query-view",
           "view_name": "跨项目图谱查询"
+        },
+        {
+          "view_id": "org-kg-paper-view",
+          "view_name": "组织级知识图谱技术论文"
         }
       ],
       "testcases": [
@@ -1459,6 +1463,39 @@
           "value": "4b55297, ab1d96a, bca904a, e01a1d8"
         }
       ]
+    },
+    {
+      "id": "org-kg-paper-decentralized-001",
+      "name": "去中心化组织级知识图谱构建（技术论文）",
+      "type": "Deliverable",
+      "description": "技术论文《去中心化组织级知识图谱构建》：主张组织级知识图谱不建中心大图，而建联邦——单项目以可执行意图架构图为底座，组织层以注册/发现/授权/按引用读取的联邦机制相连；中枢只登记元数据并按需托管只读可用性副本，成员仓是事实源。高层概念文章，不写实现细节；含业界现状与痛点（md 文档 vs 本体图谱）、设计目标、底座与组织层、关键取舍、初步验证与面向企业级知识库的优劣势分析。初稿经本地 archgraph 项目评审通过后，邮件发送至 hudonghua@huawei.com（主题：去中心化组织级知识图谱构建（内部参考））。",
+      "attributes": [
+        {
+          "name": "repoPath",
+          "value": "community/DECENTRALIZED-ORG-KNOWLEDGE-GRAPH.md"
+        },
+        {
+          "name": "emailHtml",
+          "value": "community/DECENTRALIZED-ORG-KNOWLEDGE-GRAPH.email.html"
+        },
+        {
+          "name": "emailTo",
+          "value": "hudonghua@huawei.com"
+        },
+        {
+          "name": "reviewer",
+          "value": "archgraph (通过)"
+        }
+      ],
+      "testcases": [
+        {
+          "name": "org-kg-paper-registered",
+          "type": "Acceptance Test",
+          "description": "外部视角验收：论文《去中心化组织级知识图谱构建》元素登记于意图图、隶属视图 org-kg-paper-view、对应仓文件存在。",
+          "Input": "GIVEN 论文元素 org-kg-paper-decentralized-001 已登记\nWHEN 解析其挂载视图与仓文件\nTHEN 属视图 org-kg-paper-view（parent=kg-service-domain）且 community/DECENTRALIZED-ORG-KNOWLEDGE-GRAPH.md 存在",
+          "acceptanceCriteria": "community/DECENTRALIZED-ORG-KNOWLEDGE-GRAPH.md"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -2267,6 +2304,15 @@
         "schema-autoadapt-realize",
         "patrol-realize",
         "patrol-access-store"
+      ]
+    },
+    {
+      "view_id": "org-kg-paper-view",
+      "view_name": "组织级知识图谱技术论文",
+      "parent_element_id": "kg-service-domain",
+      "description": "去中心化组织级知识图谱构建相关技术论文/文章的登记视图：存放论文元素及其在仓库中的文件路径、投稿去向与评审状态。",
+      "included_elements": [
+        "org-kg-paper-decentralized-001"
       ]
     }
   ]
