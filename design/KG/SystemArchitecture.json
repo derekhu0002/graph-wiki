@@ -1390,7 +1390,21 @@
           "acceptanceCriteria": "tests/acceptance/ontology_assets.js"
         }
       ],
-      "type": "Application Service"
+      "type": "Application Service",
+      "attributes": [
+        {
+          "name": "commit",
+          "value": "4b55297: mcp/ontology-schema.js, mcp/asset-mcp-server.js, tests/acceptance/ontology_assets.js, mcp/README.md, assets/README.md, deploy/install-graph-store.sh, package.json"
+        },
+        {
+          "name": "deliveryStatus",
+          "value": "delivered"
+        },
+        {
+          "name": "deploy",
+          "value": "47.107.161.168:(graph-store) asset-mcp restarted; registered ontology archimate-3.2 (64 element / 11 relationship types) via public graph-mcp; E2E passed 2026-10-14"
+        }
+      ]
     }
   ],
   "relationships": [
