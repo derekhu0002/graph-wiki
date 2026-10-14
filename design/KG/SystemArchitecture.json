@@ -1420,6 +1420,26 @@
           "value": "本体货架 (/archgraph/ontologies) 实时取自 ontology_list；ontology_submit 后刷新即可见；详情页 /ontology-detail?id=<id> 取 ontology_get。部署：47 graph-store website/build 已更新 (2026-10-14)"
         }
       ]
+    },
+    {
+      "id": "kb-admin-memory-20261014-ontology-shelf",
+      "name": "记忆卡 2026-10-14 本体上传接口 + 实时货架 + 远端ARGO升级",
+      "type": "Business Object",
+      "description": "2026-10-14 会话：目标——(1) 增加对外本体上传接口；(2) 远端生产 ARGO 框架升级到正式通道。\n\n成果：\n1) 远端 47.107.161.168 ARGO 镜像引擎 beta(archgraph-argo-beta@0.27.0-beta.14,/root/.argo-beta) → 正式(archgraph-argo@0.29.13,/root/.argo)；systemd unit + graph-store.env 双 pin 更新；适配判断=无需改代码（耦合面 buildHarnessReport/callTool/neo4j-store 签名不变；新增 ARGO_WORKSPACE_WRITE_GUARD 仅在 argo-mcp-server 层且引擎直调不经过；ontology 校验默认关）；canary/promote/E2E/patrol 全绿；回滚点 /root/argo-upgrade-backup-20261014-095252。\n2) Graph MCP 新增对外本体上传接口 ontology_list/get/submit/update；本体=独立资产（assets/ontologies/<id>/ 的 schema bundle，独立索引）；复用 ARGO schema-bundle 契约校验（类型枚举 + actorElementType 契约 + rules，fail-closed）；已注册默认 ArchiMate 3.2 为首个本体（64 元素/11 关系类型）。\n3) 网站本体货架改为实时（ontology_list/ontology_get）；新增 /ontology-detail 详情页；项目 ontology_submit 后刷新货架即可见；已部署 47 graph-store website/build。\n\n提交：4b55297(接口)、ab1d96a(登记)、bca904a(网站)、e01a1d8(登记)。测试：tests/acceptance/ontology_assets.js、ontology_shelf_page.js 全过。KG 元素：ontology-asset-service（含两测试用例）。\n\n关键决策：本体≠子图（独立资产/目录/索引）；校验复用框架契约以保证与运行时一致；升级走金丝雀+回滚点。\n遗留：GitHub fetch 超时告警(abot/my-army/archgraph)属网络问题非本次引入；货架后续可加提交时间/搜索。",
+      "attributes": [
+        {
+          "name": "memoryTier",
+          "value": "T2"
+        },
+        {
+          "name": "milestone",
+          "value": "ontology-upload-interface + live-shelf + remote-argo-upgrade"
+        },
+        {
+          "name": "commits",
+          "value": "4b55297, ab1d96a, bca904a, e01a1d8"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -2008,7 +2028,8 @@
         "kb-admin-session-20261001-xg-accepted",
         "kb-admin-session-20261003-schema-observability",
         "kb-admin-session-20261004-beta14",
-        "kb-admin-memory-20261014-argo-channel-upgrade"
+        "kb-admin-memory-20261014-argo-channel-upgrade",
+        "kb-admin-memory-20261014-ontology-shelf"
       ],
       "included_relationships": []
     },
