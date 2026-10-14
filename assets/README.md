@@ -18,9 +18,16 @@
 assets/
 ├── catalog.json          # 图谱索引（唯一事实源，登记全部图谱元数据）
 ├── README.md             # 本说明
-└── graphs/
-    └── <graphId>/
-        └── graph.json    # 一张完整的 ARCHGRAPH 图谱
+├── graphs/
+│   └── <graphId>/
+│       └── graph.json    # 一张完整的 ARCHGRAPH 图谱
+└── ontologies/           # 本体资产（schema bundle：类型体系 + 校验规则；与图谱不同概念）
+    ├── catalog.json      # 本体索引
+    └── <ontologyId>/
+        ├── SystemArchitecture.schema.json   # 类型枚举（$defs.archimateElementType/…）
+        ├── schema-bundle.config.json        # 描述符（actorElementType/extends/language…）
+        ├── schema-bundle.rules.json         # 可选：本体规则
+        └── GUIDE.md                         # 可选：使用指南
 ```
 
 ## 图谱条目规范

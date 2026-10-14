@@ -61,7 +61,7 @@ log "PKG_DIR=$PKG_DIR  DATA_DIR=$DATA_DIR"
 # 0. 数据目录（writable）+ 规范化配置
 # ---------------------------------------------------------------------------
 log "[0] 初始化数据目录 $DATA_DIR"
-mkdir -p "$DATA_DIR/assets" "$DATA_DIR/mirrors" "$DATA_DIR/logs"
+mkdir -p "$DATA_DIR/assets" "$DATA_DIR/assets/ontologies" "$DATA_DIR/mirrors" "$DATA_DIR/logs"
 if [ ! -d "$DATA_DIR/.git" ]; then git init -q "$DATA_DIR" 2>/dev/null || true; fi
 cat > "$DATA_DIR/graph-store.env" <<EOF
 GRAPH_STORE_HOST=${GRAPH_STORE_HOST}

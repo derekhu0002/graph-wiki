@@ -1340,6 +1340,57 @@
       "id": "kb-admin-session-20261004-beta14",
       "name": "会话记录 2026-10-04 ARGO beta.14 适配",
       "type": "Business Object"
+    },
+    {
+      "attributes": [
+        {
+          "name": "memoryTier",
+          "value": "T2"
+        },
+        {
+          "name": "milestone",
+          "value": "argo-framework-channel-upgrade"
+        },
+        {
+          "name": "host",
+          "value": "47.107.161.168"
+        },
+        {
+          "name": "from",
+          "value": "archgraph-argo-beta@0.27.0-beta.14 (/root/.argo-beta)"
+        },
+        {
+          "name": "to",
+          "value": "archgraph-argo@0.29.13 (/root/.argo)"
+        },
+        {
+          "name": "adaptation",
+          "value": "none-required (interface stable; new guards/validators opt-in)"
+        },
+        {
+          "name": "backup",
+          "value": "/root/argo-upgrade-backup-20261014-095252"
+        }
+      ],
+      "description": "2026-10-14 框架升级（远端生产 47.107.161.168）：ARGO 镜像引擎从 beta 通道切换到正式通道。前：archgraph-argo-beta@0.27.0-beta.14，ARGO_ROOT=/root/.argo-beta（systemd unit 与 /opt/graph-store/graph-store.env 双处 pin）。后：archgraph-argo@0.29.13（npm dist-tag latest，正式通道；无 dev/beta），ARGO_ROOT=/root/.argo。\n\n适配判断（无需改代码）：镜像引擎仅耦合 ARGO 三处——ensureArgoHarnessEnvironment.buildHarnessReport、systemarchitecture-mcp-server.callTool、neo4j-system-architecture-store。diff 结论：buildHarnessReport 签名不变（仅新增 ontologyValidation/ontology 报告字段）；callTool 不变；neo4j-store 与 argo-paths 完全一致；新增 ARGO_WORKSPACE_WRITE_GUARD 仅在 argo-mcp-server.js 生效，而引擎直调 systemarchitecture-mcp-server 且只用只读工具 → 不受影响；新增 ontology 校验默认关闭。\n\n验证：canary :18802 与 promote 后 :18801 /health argoVersion=0.29.13；/schema 正常；语义 memory_search 有命中；直调 buildHarnessReport（mirrors/graph-wiki）写路径 neo4j/semanticLifecycle/subdiagramViews 全 ok；/mirrors 23 副本全 ok+neo4jOk+semanticOk；store 授权读通过、未授权 not_authorized；公有路径 graph_read_external(requester=graph-wiki→archgraph) 通过；patrol engine=up argo=0.29.13。\n\n回滚点：/root/argo-upgrade-backup-20261014-095252（unit + graph-store.env + argo-beta-root.tgz）；回滚脚本 /root/argo-upgrade.sh rollback。遗留（非本次引入）：GitHub fetch 超时致 sync_fetch_failed(abot/my-army/archgraph) 与 upstream_unreachable，属网络问题。",
+      "id": "kb-admin-memory-20261014-argo-channel-upgrade",
+      "name": "记忆卡 2026-10-14 远端生产 ARGO 框架 beta→正式通道升级",
+      "type": "Business Object"
+    },
+    {
+      "description": "Graph MCP 的对外本体（ontology）上传接口：ontology_list / ontology_get / ontology_submit / ontology_update。本体 = schema bundle（类型体系 + 校验规则），与图谱/子图（elements/relationships/views）是不同概念：本体存于 assets/ontologies/<id>/，独立索引 assets/ontologies/catalog.json（图谱在 assets/graphs/ + assets/catalog.json）。ontology_submit/update 复用 ARGO schema-bundle 契约校验：SystemArchitecture.schema.json 的 $defs.<elementTypeEnumKey>/<relationshipTypeEnumKey> 枚举 + schema-bundle.config.json 的 actorElementType 契约（standalone 缺之即 fail-closed）+ 可选 schema-bundle.rules.json / GUIDE.md；不通过则拒收不入库。extends bundle 仅需描述符。可用 bundle(文件名→内容) 或 schema/config/rules/guide 传参。",
+      "id": "ontology-asset-service",
+      "name": "本体资产注册服务",
+      "testcases": [
+        {
+          "name": "ontology-asset-upload",
+          "type": "Acceptance Test",
+          "description": "外部视角验收：ontology_submit/get/list/update 行为正确——合法 standalone bundle 接受并报类型计数；缺 actorElementType / actor 不在枚举 / 缺 schema 文件 / 非法 rules 均拒收且不落盘；extends bundle 接受；部分更新保留旧文件；重复 id 报已存在。本体与图谱两索引相互独立。",
+          "Input": "GIVEN Graph Store 服务（独立 temp 资产根）\nWHEN 调用 ontology_submit / ontology_get / ontology_list / ontology_update\nTHEN 合法 bundle 接受（含类型计数）、非法 bundle 拒收不落盘、extends bundle 接受、部分更新保留旧文件、重复 id 报已存在、graph_list 不含本体",
+          "acceptanceCriteria": "tests/acceptance/ontology_assets.js"
+        }
+      ],
+      "type": "Application Service"
     }
   ],
   "relationships": [
@@ -1927,7 +1978,8 @@
         "kb-admin-session-20261001-migrate-store-to-47",
         "kb-admin-session-20261001-xg-accepted",
         "kb-admin-session-20261003-schema-observability",
-        "kb-admin-session-20261004-beta14"
+        "kb-admin-session-20261004-beta14",
+        "kb-admin-memory-20261014-argo-channel-upgrade"
       ],
       "included_relationships": []
     },
@@ -2045,7 +2097,8 @@
         "xproj-msg-mechanism",
         "xproj-encoding-norm",
         "xproj-isolation-finding",
-        "federation-registry"
+        "federation-registry",
+        "ontology-asset-service"
       ],
       "included_relationships": [
         "fed-isolation-motivates-registry"

@@ -21,6 +21,10 @@ ARCHGRAPH 图谱（不是独立单文件）。
 | `graph_get` | 获取一张图谱资产（元数据 + 完整 ARCHGRAPH 图谱） |
 | `graph_submit` | 提交新图谱资产（内部自动 schema 校验，不通过则拒收不入库） |
 | `graph_update` | 更新图谱资产（内部自动 schema 校验，不通过则拒收不入库） |
+| `ontology_list` | 列出本体资产（schema bundle：类型体系 + 校验规则） |
+| `ontology_get` | 获取一个本体资产（元数据 + 完整 schema bundle 文件） |
+| `ontology_submit` | 提交新本体资产（复用 ARGO schema-bundle 契约校验：类型枚举 / actor 契约 / rules，不通过拒收） |
+| `ontology_update` | 更新本体资产（同上；可只更新部分文件） |
 | `registry_register` | 联邦成员自注册到中心（身份/职责/能力/开放内容清单） |
 | `registry_deregister` | 联邦成员自注销，注销后 discover 不再可见 |
 | `registry_discover` | 发现已注册成员的基础信息（它是谁、做什么、有什么能力） |
@@ -33,6 +37,13 @@ ARCHGRAPH 图谱（不是独立单文件）。
 > 所有写入接口内部自动执行 ARCHGRAPH schema 校验（结构完整性、ArchiMate 类型
 > 合法性、id 唯一、关系端点引用存在、view 成员存在、顶层视图唯一）。
 > 校验不通过则返回错误并停止入库。变更入口唯一化，不支持外部直接写文件。
+
+> **本体 ≠ 子图**：子图是图谱**实例**（elements/relationships/views，`assets/graphs/`）；
+> 本体是**类型体系 + 规则**（schema bundle，`assets/ontologies/<id>/`），两者独立目录、独立索引
+> （`assets/catalog.json` vs `assets/ontologies/catalog.json`）。`ontology_*` 提交的 bundle 需包含
+> `SystemArchitecture.schema.json`（其 `$defs.archimateElementType/.archimateRelationshipType` 枚举）
+> 与 `schema-bundle.config.json`（standalone 必须声明 `actorElementType`，或 `extends` 继承默认本体）；
+> 可选 `schema-bundle.rules.json` / `GUIDE.md`。
 
 ## 联邦注册中心（Registry，P0 只读）
 

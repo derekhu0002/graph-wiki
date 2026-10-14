@@ -34,6 +34,13 @@ const { execFileSync } = require('node:child_process');
 const registry = require('./registry.js');
 const engineClient = require('./mirror-engine-client.js');
 const { validateGraph } = require('./graph-schema.js');
+const {
+  validateSchemaBundle,
+  SCHEMA_BASENAME,
+  CONFIG_BASENAME,
+  RULES_BASENAME,
+  GUIDE_BASENAME,
+} = require('./ontology-schema.js');
 const obs = require('./obs.js');
 
 const PORT = Number(process.env.ASSET_MCP_PORT || 18792);
@@ -60,6 +67,11 @@ const ASSET_ROOT = path.resolve(process.env.ASSET_ROOT || path.join(REPO_ROOT, '
 const GIT_DIR = path.resolve(process.env.ASSET_GIT_DIR || REPO_ROOT);
 const CATALOG_PATH = path.join(ASSET_ROOT, 'catalog.json');
 const GRAPHS_DIR = path.join(ASSET_ROOT, 'graphs');
+// Ontologies are a SEPARATE asset class from graphs/subgraphs: a schema bundle
+// (the type system + rules), not a set of elements. Stored under assets/ontologies/
+// with its own index, so the two concepts never share a namespace.
+const ONTOLOGIES_DIR = path.join(ASSET_ROOT, 'ontologies');
+const ONTOLOGY_CATALOG_PATH = path.join(ONTOLOGIES_DIR, 'catalog.json');
 const REGISTRY_PATH = path.join(ASSET_ROOT, 'registry', 'registry.json');
 
 // ---------- catalog 读写 ----------
@@ -168,6 +180,113 @@ function graphStats(graph) {
     relationships: (graph.relationships || []).length,
     views: (graph.views || []).length,
   };
+}
+
+// ---------- 本体（schema bundle）资产读写 ----------
+// 本体 = 类型体系 + 校验规则（schema bundle），与图谱（elements/relationships/views）不同。
+// 独立存放于 assets/ontologies/<id>/，独立索引 assets/ontologies/catalog.json。
+
+function safeBundleName(name) {
+  const s = String(name == null ? '' : name).trim();
+  if (!s || s === '.' || s === '..' || s.includes('/') || s.includes('\\')) return null;
+  return s;
+}
+
+function loadOntologyCatalog() {
+  if (!fs.existsSync(ONTOLOGY_CATALOG_PATH)) {
+    return { schemaVersion: '1.0', lastUpdated: new Date().toISOString().slice(0, 10), ontologies: [] };
+  }
+  try {
+    const c = JSON.parse(fs.readFileSync(ONTOLOGY_CATALOG_PATH, 'utf8'));
+    if (!Array.isArray(c.ontologies)) c.ontologies = [];
+    return c;
+  } catch {
+    return { schemaVersion: '1.0', lastUpdated: new Date().toISOString().slice(0, 10), ontologies: [] };
+  }
+}
+
+function saveOntologyCatalog(catalog) {
+  catalog.lastUpdated = new Date().toISOString().slice(0, 10);
+  fs.mkdirSync(ONTOLOGIES_DIR, { recursive: true });
+  fs.writeFileSync(ONTOLOGY_CATALOG_PATH, JSON.stringify(catalog, null, 2) + '\n', 'utf8');
+}
+
+function ontologyRelDir(id) {
+  return path.posix.join('ontologies', id);
+}
+
+function ontologyAbsDir(id) {
+  return path.join(ONTOLOGIES_DIR, id);
+}
+
+function listOntologyEntries() {
+  const catalog = loadOntologyCatalog();
+  return (catalog.ontologies || []).map((o) => ({
+    id: o.id,
+    name: o.name,
+    version: o.version,
+    sourceRepo: o.sourceRepo,
+    sourceCommit: o.sourceCommit,
+    description: o.description,
+    bundle: o.bundle,
+  }));
+}
+
+function findOntologyEntry(id) {
+  const catalog = loadOntologyCatalog();
+  return (catalog.ontologies || []).find((o) => o.id === id);
+}
+
+// Collect the bundle files from either a `bundle` object (filename -> content)
+// or explicit schema/config/rules/guide args. Only safe basenames are kept.
+function collectBundleFiles(args) {
+  const files = {};
+  const a = args || {};
+  const bundle = a.bundle || a.files;
+  if (bundle && typeof bundle === 'object' && !Array.isArray(bundle)) {
+    for (const [k, v] of Object.entries(bundle)) {
+      const n = safeBundleName(k);
+      if (n) files[n] = v;
+    }
+  }
+  if (a.schema !== undefined) files[SCHEMA_BASENAME] = a.schema;
+  if (a.config !== undefined) files[CONFIG_BASENAME] = a.config;
+  if (a.rules !== undefined) files[RULES_BASENAME] = a.rules;
+  if (a.guide !== undefined) files[GUIDE_BASENAME] = a.guide;
+  return files;
+}
+
+function readOntologyFiles(id) {
+  const dir = ontologyAbsDir(id);
+  if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) return null;
+  const out = {};
+  for (const name of fs.readdirSync(dir)) {
+    const n = safeBundleName(name);
+    if (!n) continue;
+    const abs = path.join(dir, n);
+    if (!fs.statSync(abs).isFile()) continue;
+    const text = fs.readFileSync(abs, 'utf8');
+    if (n.toLowerCase().endsWith('.json')) {
+      try { out[n] = JSON.parse(text); } catch { out[n] = text; }
+    } else {
+      out[n] = text;
+    }
+  }
+  return out;
+}
+
+function writeOntologyFiles(dir, files) {
+  const written = [];
+  fs.mkdirSync(dir, { recursive: true });
+  for (const [name, content] of Object.entries(files)) {
+    const n = safeBundleName(name);
+    if (!n) continue;
+    const abs = path.join(dir, n);
+    const text = typeof content === 'string' ? content : JSON.stringify(content, null, 2) + '\n';
+    fs.writeFileSync(abs, text, 'utf8');
+    written.push(abs);
+  }
+  return written;
 }
 
 // ---------- 工具实现 ----------
@@ -307,6 +426,144 @@ async function toolGraphUpdate(args) {
   return { status: 'ok', graphId: id, commit: commitResult };
 }
 
+// ---------- 本体资产工具 ----------
+
+function toolOntologyList() {
+  const entries = listOntologyEntries();
+  return { status: 'ok', count: entries.length, ontologies: entries };
+}
+
+function toolOntologyGet(args) {
+  const id = args && args.id;
+  if (!id) throw new Error('缺少 id');
+  const entry = findOntologyEntry(id);
+  if (!entry) throw new Error(`本体资产未找到: ${id}`);
+  const files = readOntologyFiles(id);
+  if (!files) throw new Error(`本体文件缺失或损坏: ${id}`);
+  return {
+    status: 'ok',
+    asset: {
+      id: entry.id,
+      name: entry.name,
+      version: entry.version,
+      sourceRepo: entry.sourceRepo,
+      sourceCommit: entry.sourceCommit,
+      description: entry.description,
+      bundle: entry.bundle,
+    },
+    files,
+  };
+}
+
+function ontologyBundleSummary(files) {
+  return files.map((f) => path.basename(f)).sort();
+}
+
+function toolOntologySubmit(args) {
+  const { id, name, version, description, sourceRepo } = args || {};
+  if (!id) throw new Error('缺少 id（本体资产 id）');
+  const files = collectBundleFiles(args);
+  if (Object.keys(files).length === 0) {
+    throw new Error(`缺少 bundle（schema bundle 文件：${SCHEMA_BASENAME} / ${CONFIG_BASENAME} / ${RULES_BASENAME} / ${GUIDE_BASENAME}）`);
+  }
+
+  // 复用 ARGO schema-bundle 契约校验；不通过则拒收不入库。
+  const startedAt = Date.now();
+  const validation = validateSchemaBundle(files);
+  obs.append('store', {
+    kind: 'ontology_validate',
+    op: 'submit',
+    ontologyId: id,
+    valid: validation.valid,
+    errorCount: validation.errors.length,
+    errors: validation.errors.slice(0, 10),
+    durationMs: Date.now() - startedAt,
+  });
+  if (!validation.valid) {
+    return { status: 'failed', reason: 'bundle_validation_failed', errors: validation.errors };
+  }
+
+  const catalog = loadOntologyCatalog();
+  if ((catalog.ontologies || []).some((o) => o.id === id)) {
+    throw new Error(`本体资产已存在: ${id}（用 ontology_update 更新）`);
+  }
+
+  const written = writeOntologyFiles(ontologyAbsDir(id), files);
+  catalog.ontologies.push({
+    id,
+    name: name || validation.summary.id || id,
+    version: version || '1.0.0',
+    path: ontologyRelDir(id),
+    sourceRepo: sourceRepo || path.basename(REPO_ROOT),
+    sourceCommit: 'pending',
+    description: description || '',
+    bundle: validation.summary,
+  });
+  saveOntologyCatalog(catalog);
+
+  const commitResult = gitCommit(`feat(ontologies): submit ontology ${id}`, [...written, ONTOLOGY_CATALOG_PATH]);
+  if (commitResult.committed) {
+    catalog.ontologies.find((o) => o.id === id).sourceCommit = commitResult.commit;
+    saveOntologyCatalog(catalog);
+  }
+  return {
+    status: 'ok',
+    ontologyId: id,
+    validation: { valid: true, errors: [], ...validation.summary },
+    files: ontologyBundleSummary(written),
+    commit: commitResult,
+  };
+}
+
+function toolOntologyUpdate(args) {
+  const { id, name, version, description, sourceRepo } = args || {};
+  if (!id) throw new Error('缺少 id');
+  const catalog = loadOntologyCatalog();
+  const entry = (catalog.ontologies || []).find((o) => o.id === id);
+  if (!entry) throw new Error(`本体资产未找到: ${id}（用 ontology_submit 新建）`);
+
+  const provided = collectBundleFiles(args);
+  const changed = [];
+
+  if (Object.keys(provided).length > 0) {
+    // Merge with the stored bundle so a partial update still validates against the
+    // full contract, then persist only the provided files.
+    const existing = readOntologyFiles(id) || {};
+    const merged = { ...existing, ...provided };
+    const startedAt = Date.now();
+    const validation = validateSchemaBundle(merged);
+    obs.append('store', {
+      kind: 'ontology_validate',
+      op: 'update',
+      ontologyId: id,
+      valid: validation.valid,
+      errorCount: validation.errors.length,
+      errors: validation.errors.slice(0, 10),
+      durationMs: Date.now() - startedAt,
+    });
+    if (!validation.valid) {
+      return { status: 'failed', reason: 'bundle_validation_failed', errors: validation.errors };
+    }
+    changed.push(...writeOntologyFiles(ontologyAbsDir(id), provided));
+    entry.bundle = validation.summary;
+  }
+  if (version) { entry.version = version; changed.push(ONTOLOGY_CATALOG_PATH); }
+  if (description != null) { entry.description = description; changed.push(ONTOLOGY_CATALOG_PATH); }
+  if (name) { entry.name = name; changed.push(ONTOLOGY_CATALOG_PATH); }
+  if (sourceRepo) { entry.sourceRepo = sourceRepo; changed.push(ONTOLOGY_CATALOG_PATH); }
+  const uniqueChanged = [...new Set(changed)];
+
+  if (uniqueChanged.length > 0) saveOntologyCatalog(catalog);
+  const commitResult = uniqueChanged.length > 0
+    ? gitCommit(`chore(ontologies): update ontology ${id}`, uniqueChanged)
+    : { committed: false, reason: 'no changes' };
+  if (commitResult.committed) {
+    entry.sourceCommit = commitResult.commit;
+    saveOntologyCatalog(catalog);
+  }
+  return { status: 'ok', ontologyId: id, commit: commitResult };
+}
+
 // ---------- 联邦注册中心 Registry（P0 只读） ----------
 
 async function toolRegistryRegister(args) {
@@ -430,6 +687,10 @@ const TOOLS = [
   { name: 'graph_get', description: '获取一张图谱资产（元数据 + 完整 ARCHGRAPH 图谱）', inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
   { name: 'graph_submit', description: '提交新图谱资产（内部自动 schema 校验，不通过则拒收不入库；schema 随项目/资产声明动态解析，中心无内置类型清单）', inputSchema: { type: 'object', required: ['id', 'graph'], properties: { id: { type: 'string' }, graph: { type: 'object' }, name: { type: 'string' }, version: { type: 'string' }, description: { type: 'string' }, sourceRepo: { type: 'string' }, projectId: { type: 'string' }, schema: { type: 'object' } } } },
   { name: 'graph_update', description: '更新图谱资产（内部自动 schema 校验，不通过则拒收不入库；schema 随项目/资产声明动态解析，中心无内置类型清单）', inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' }, graph: { type: 'object' }, version: { type: 'string' }, description: { type: 'string' }, name: { type: 'string' }, projectId: { type: 'string' }, schema: { type: 'object' } } } },
+  { name: 'ontology_list', description: '列出本体资产（schema bundle：类型体系 + 校验规则；与图谱/子图不同）', inputSchema: { type: 'object', properties: {} } },
+  { name: 'ontology_get', description: '获取一个本体资产（元数据 + 完整 schema bundle 文件）', inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
+  { name: 'ontology_submit', description: '提交新本体资产（schema bundle；内部复用 ARGO schema-bundle 契约校验：类型枚举 / actor 契约 / rules，不通过则拒收不入库）。bundle 为文件名→内容的映射，或分别用 schema/config/rules/guide 传入。', inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' }, bundle: { type: 'object' }, schema: { type: 'object' }, config: { type: 'object' }, rules: { type: 'object' }, guide: { type: 'string' }, name: { type: 'string' }, version: { type: 'string' }, description: { type: 'string' }, sourceRepo: { type: 'string' } } } },
+  { name: 'ontology_update', description: '更新本体资产（schema bundle；内部复用 ARGO schema-bundle 契约校验，不通过则拒收不入库）。可只更新部分文件，其余保持。', inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' }, bundle: { type: 'object' }, schema: { type: 'object' }, config: { type: 'object' }, rules: { type: 'object' }, guide: { type: 'string' }, name: { type: 'string' }, version: { type: 'string' }, description: { type: 'string' }, sourceRepo: { type: 'string' } } } },
   { name: 'registry_register', description: '联邦成员自注册到中心（身份/职责/能力/开放内容清单）。注册即异步触发一次镜像建设（best-effort）；中心确认 id 全局唯一', inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' }, name: { type: 'string' }, role: { type: 'string' }, capabilities: { type: 'array' }, openContent: { type: 'array' }, sourceRepo: { type: 'string' }, branch: { type: 'string' } } } },
   { name: 'registry_deregister', description: '联邦成员自注销，注销后 discover 不再可见', inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
   { name: 'registry_discover', description: '发现已注册联邦成员的基础信息（它是谁、做什么、有什么能力）', inputSchema: { type: 'object', properties: {} } },
@@ -446,6 +707,10 @@ const TOOL_HANDLERS = {
   graph_get: toolGraphGet,
   graph_submit: toolGraphSubmit,
   graph_update: toolGraphUpdate,
+  ontology_list: toolOntologyList,
+  ontology_get: toolOntologyGet,
+  ontology_submit: toolOntologySubmit,
+  ontology_update: toolOntologyUpdate,
   registry_register: toolRegistryRegister,
   registry_deregister: toolRegistryDeregister,
   registry_discover: toolRegistryDiscover,
