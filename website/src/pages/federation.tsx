@@ -2,6 +2,7 @@ import {useEffect, useMemo, useState} from 'react';
 import clsx from 'clsx';
 import Layout from '@theme/Layout';
 import Heading from '@theme/Heading';
+import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import {
   ReactFlow,
@@ -134,6 +135,12 @@ function MemberCard({member, grants, selected, onSelect, t}: {member: Federation
       </div>
       <div className="card__body">
         {member.role && <p>{member.role}</p>}
+        <p className={styles.meta}>
+          {t('Based on ontology', '所基于本体')}:{' '}
+          {member.ontology
+            ? <Link to={`/ontology-detail?id=${encodeURIComponent(member.ontology)}`}><code>{member.ontology}</code></Link>
+            : <span>{t('not declared', '未标注')}</span>}
+        </p>
         {member.capabilities.length > 0 && (
           <div className={styles.chips}>
             {member.capabilities.map((cap) => (<span key={cap} className={styles.chip}>{cap}</span>))}

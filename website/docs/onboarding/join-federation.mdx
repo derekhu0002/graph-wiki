@@ -16,11 +16,15 @@ Via **Graph MCP** (remote: `https://argo.derekworkspacev5.com/mcp`):
 ```jsonc
 // registry_register
 { "id": "<your project id>", "name": "<name>", "role": "<purpose>",
+  "ontology": "<ontology asset id your graph is based on>",
   "capabilities": ["..."], "openContent": [ /* {id,name,ref} */ ],
   "sourceRepo": "https://github.com/<owner>/<repo>", "branch": "main" }
 ```
 
 - The center confirms the `id` is **globally unique** (the same id from a different source repo is rejected).
+- **You MUST declare `ontology`** — the id of the ontology your graph is based on (join key). It may be on the
+  ontology shelf or not; if not, the center creates a **placeholder ontology** for it (visible on the shelf,
+  its detail page lists the projects based on it) until someone uploads the definition with `ontology_submit`.
 - Registration **builds your knowledge replica in the background** (clone repo → Neo4j projection + embeddings).
 - Afterwards, **poll `mirror_list`** to see when the replica is ready (it is a long-running task).
 

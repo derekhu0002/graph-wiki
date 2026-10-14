@@ -221,6 +221,11 @@ function ontologyAbsDir(id) {
 
 function listOntologyEntries() {
   const catalog = loadOntologyCatalog();
+  const reg = registry.load(REGISTRY_PATH);
+  const counts = new Map();
+  for (const m of (reg.members || [])) {
+    if (m.status === 'active' && m.ontology) counts.set(m.ontology, (counts.get(m.ontology) || 0) + 1);
+  }
   return (catalog.ontologies || []).map((o) => ({
     id: o.id,
     name: o.name,
@@ -229,6 +234,8 @@ function listOntologyEntries() {
     sourceCommit: o.sourceCommit,
     description: o.description,
     bundle: o.bundle,
+    placeholder: !!o.placeholder,
+    projectCount: counts.get(o.id) || 0,
   }));
 }
 
@@ -287,6 +294,27 @@ function writeOntologyFiles(dir, files) {
     written.push(abs);
   }
   return written;
+}
+
+// 占位本体：项目声明了某个「所基于的本体 id」，但货架上还没有该本体（尚未上传）。
+// 在货架上登记一个占位条目，使其详情页可列出基于它的项目；不接受 schema bundle 文件。
+function ensureOntologyPlaceholder(id) {
+  const catalog = loadOntologyCatalog();
+  const existing = (catalog.ontologies || []).find((o) => o.id === id);
+  if (existing) return { created: false, id, placeholder: !!existing.placeholder };
+  catalog.ontologies.push({
+    id,
+    name: id,
+    version: '',
+    path: null,
+    sourceRepo: '',
+    sourceCommit: '',
+    description: '（占位：被项目引用但尚未上传本体定义）',
+    placeholder: true,
+    bundle: { kind: 'placeholder', elementTypeCount: null, relationshipTypeCount: null, hasRules: false, hasGuide: false },
+  });
+  saveOntologyCatalog(catalog);
+  return { created: true, id, placeholder: true };
 }
 
 // ---------- 工具实现 ----------
@@ -438,8 +466,10 @@ function toolOntologyGet(args) {
   if (!id) throw new Error('缺少 id');
   const entry = findOntologyEntry(id);
   if (!entry) throw new Error(`本体资产未找到: ${id}`);
-  const files = readOntologyFiles(id);
-  if (!files) throw new Error(`本体文件缺失或损坏: ${id}`);
+  // 占位本体没有 schema bundle 文件（尚未上传），返回空文件集与关联项目清单。
+  const files = readOntologyFiles(id) || {};
+  const reg = registry.load(REGISTRY_PATH);
+  const members = registry.membersByOntology(reg, id);
   return {
     status: 'ok',
     asset: {
@@ -450,8 +480,10 @@ function toolOntologyGet(args) {
       sourceCommit: entry.sourceCommit,
       description: entry.description,
       bundle: entry.bundle,
+      placeholder: !!entry.placeholder,
     },
     files,
+    members,
   };
 }
 
@@ -567,11 +599,18 @@ function toolOntologyUpdate(args) {
 // ---------- 联邦注册中心 Registry（P0 只读） ----------
 
 async function toolRegistryRegister(args) {
+  const a = args || {};
+  // 提交规范：每个项目注册时必须声明它所基于的本体资产 id（连接键）。
+  const ontology = String(a.ontology || '').trim();
+  if (!ontology) throw new Error('缺少 ontology（项目所基于的本体资产 id；可在货架上，或不在——不在货架将建占位本体）');
   const reg = registry.load(REGISTRY_PATH);
-  const member = registry.registerMember(reg, args);
+  const member = registry.registerMember(reg, a);
   registry.save(REGISTRY_PATH, reg);
-  obs.append('store', { kind: 'registry', op: 'register', memberId: member.id, sourceRepo: member.sourceRepo, branch: member.branch });
-  const commitResult = gitCommit(`feat(registry): register member ${member.id}`, [REGISTRY_PATH]);
+  obs.append('store', { kind: 'registry', op: 'register', memberId: member.id, ontology, sourceRepo: member.sourceRepo, branch: member.branch });
+  // 本体归属：声明的本体不在货架 → 建占位本体（货架可见、详情页列项目、标注未上传）。
+  const placeholder = ensureOntologyPlaceholder(ontology);
+  const files = placeholder.created ? [REGISTRY_PATH, ONTOLOGY_CATALOG_PATH] : [REGISTRY_PATH];
+  const commitResult = gitCommit(`feat(registry): register member ${member.id} (ontology ${ontology})`, files);
   // 副本建设：注册后**后台异步**触发（不阻塞本调用；构建耗时长，完成后可经 mirror_list / mirror_sync 查看）。
   let mirrorResult;
   if (member.sourceRepo) {
@@ -580,7 +619,7 @@ async function toolRegistryRegister(args) {
   } else {
     mirrorResult = { status: 'skipped', reason: 'no_sourceRepo' };
   }
-  return { status: 'ok', member: registry.discover(reg).find((m) => m.id === member.id), mirror: mirrorResult, commit: commitResult };
+  return { status: 'ok', member: registry.discover(reg).find((m) => m.id === member.id), ontology: placeholder, mirror: mirrorResult, commit: commitResult };
 }
 
 async function toolRegistryDeregister(args) {
@@ -691,7 +730,7 @@ const TOOLS = [
   { name: 'ontology_get', description: '获取一个本体资产（元数据 + 完整 schema bundle 文件）', inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
   { name: 'ontology_submit', description: '提交新本体资产（schema bundle；内部复用 ARGO schema-bundle 契约校验：类型枚举 / actor 契约 / rules，不通过则拒收不入库）。bundle 为文件名→内容的映射，或分别用 schema/config/rules/guide 传入。', inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' }, bundle: { type: 'object' }, schema: { type: 'object' }, config: { type: 'object' }, rules: { type: 'object' }, guide: { type: 'string' }, name: { type: 'string' }, version: { type: 'string' }, description: { type: 'string' }, sourceRepo: { type: 'string' } } } },
   { name: 'ontology_update', description: '更新本体资产（schema bundle；内部复用 ARGO schema-bundle 契约校验，不通过则拒收不入库）。可只更新部分文件，其余保持。', inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' }, bundle: { type: 'object' }, schema: { type: 'object' }, config: { type: 'object' }, rules: { type: 'object' }, guide: { type: 'string' }, name: { type: 'string' }, version: { type: 'string' }, description: { type: 'string' }, sourceRepo: { type: 'string' } } } },
-  { name: 'registry_register', description: '联邦成员自注册到中心（身份/职责/能力/开放内容清单）。注册即异步触发一次镜像建设（best-effort）；中心确认 id 全局唯一', inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' }, name: { type: 'string' }, role: { type: 'string' }, capabilities: { type: 'array' }, openContent: { type: 'array' }, sourceRepo: { type: 'string' }, branch: { type: 'string' } } } },
+  { name: 'registry_register', description: '联邦成员自注册到中心（身份/职责/能力/开放内容清单 + 所基于的本体 id ontology，必填）。注册即异步触发一次镜像建设（best-effort）；中心确认 id 全局唯一。ontology 不在货架时自动建占位本体', inputSchema: { type: 'object', required: ['id', 'ontology'], properties: { id: { type: 'string' }, ontology: { type: 'string' }, name: { type: 'string' }, role: { type: 'string' }, capabilities: { type: 'array' }, openContent: { type: 'array' }, sourceRepo: { type: 'string' }, branch: { type: 'string' } } } },
   { name: 'registry_deregister', description: '联邦成员自注销，注销后 discover 不再可见', inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
   { name: 'registry_discover', description: '发现已注册联邦成员的基础信息（它是谁、做什么、有什么能力）', inputSchema: { type: 'object', properties: {} } },
   { name: 'registry_authorize', description: '成员显式授权某请求方读取其对外开放内容；未授权默认拒绝', inputSchema: { type: 'object', required: ['grantor', 'grantee'], properties: { grantor: { type: 'string' }, grantee: { type: 'string' }, contentId: { type: 'string' } } } },

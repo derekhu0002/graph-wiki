@@ -55,6 +55,7 @@ export type FederationMember = {
   id: string;
   name: string;
   role: string;
+  ontology?: string;
   capabilities: string[];
   openContent: FederationOpenContentRef[];
   sourceRepo: string;
@@ -123,6 +124,8 @@ export type OntologyAssetMeta = {
   sourceCommit: string;
   description: string;
   bundle?: OntologyBundleSummary;
+  placeholder?: boolean;
+  projectCount?: number;
 };
 
 // Live ontology shelf: served by the graph MCP (same-origin /mcp). Every
@@ -132,7 +135,7 @@ export async function ontologyList(): Promise<OntologyAssetMeta[]> {
   return r.ontologies || [];
 }
 
-export async function ontologyGet(id: string): Promise<{asset: OntologyAssetMeta; files: Record<string, unknown>}> {
+export async function ontologyGet(id: string): Promise<{asset: OntologyAssetMeta; files: Record<string, unknown>; members: FederationMember[]}> {
   const r = await mcpCall('ontology_get', {id});
-  return {asset: r.asset, files: r.files || {}};
+  return {asset: r.asset, files: r.files || {}, members: r.members || []};
 }

@@ -25,7 +25,7 @@ ARCHGRAPH 图谱（不是独立单文件）。
 | `ontology_get` | 获取一个本体资产（元数据 + 完整 schema bundle 文件） |
 | `ontology_submit` | 提交新本体资产（复用 ARGO schema-bundle 契约校验：类型枚举 / actor 契约 / rules，不通过拒收） |
 | `ontology_update` | 更新本体资产（同上；可只更新部分文件） |
-| `registry_register` | 联邦成员自注册到中心（身份/职责/能力/开放内容清单） |
+| `registry_register` | 联邦成员自注册到中心（身份/职责/能力/开放内容清单 + 所基于本体 `ontology`，必填） |
 | `registry_deregister` | 联邦成员自注销，注销后 discover 不再可见 |
 | `registry_discover` | 发现已注册成员的基础信息（它是谁、做什么、有什么能力） |
 | `registry_authorize` | 成员显式授权某请求方读取其开放内容 |
@@ -44,6 +44,11 @@ ARCHGRAPH 图谱（不是独立单文件）。
 > `SystemArchitecture.schema.json`（其 `$defs.archimateElementType/.archimateRelationshipType` 枚举）
 > 与 `schema-bundle.config.json`（standalone 必须声明 `actorElementType`，或 `extends` 继承默认本体）；
 > 可选 `schema-bundle.rules.json` / `GUIDE.md`。
+>
+> **本体 ↔ 项目 归属**：每个联邦成员注册时必须声明 `ontology`（所基于的本体资产 **id**，连接键）。
+> 该 id 可在货架上，也可不在——**不在货架时中心自动建「占位本体」**（货架可见、详情页列项目、标注未上传，
+> 待 `ontology_submit` 补全定义）。`ontology_list` 每项带 `projectCount`；`ontology_get` 返回 `members`
+> （基于该本体的项目清单）与 `placeholder`。存量成员（注册时无 ontology 字段）记为「未标注」，不阻断。
 
 ## 联邦注册中心（Registry，P0 只读）
 
@@ -61,7 +66,7 @@ knowledge graphs）」的中心：每个项目是自治「国家」，各自维�
 
 | 工具 | 语义 |
 |---|---|
-| `registry_register` | 自注册（含 id/name/role/capabilities/openContent/sourceRepo） |
+| `registry_register` | 自注册（含 id/name/role/**ontology（必填，所基于本体 id）**/capabilities/openContent/sourceRepo） |
 | `registry_deregister` | 自注销（同时撤销其授予与被授的授权） |
 | `registry_discover` | 读已注册成员基础信息（无鉴权，元数据公开） |
 | `registry_authorize` | grantor 授权 grantee（contentId 缺省 `*` 全部开放内容） |

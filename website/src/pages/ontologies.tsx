@@ -52,6 +52,7 @@ export default function Ontologies(): JSX.Element {
                     <h3>
                       {o.name} {o.version && <span className={styles.version}>v{o.version}</span>}
                       {o.bundle?.extends && <span className={styles.badge}>extends {o.bundle.extends}</span>}
+                      {o.placeholder && <span className={styles.badge}>{t('referenced · not uploaded', '占位 · 未上传')}</span>}
                     </h3>
                     <code>{o.id}</code>
                   </div>
@@ -63,6 +64,11 @@ export default function Ontologies(): JSX.Element {
                         {o.bundle.relationshipTypeCount ?? '—'} {t('relationship types', '关系类型')} · actor{' '}
                         {actor(o.bundle)}
                         {o.bundle.language ? ` · ${o.bundle.language}` : ''}
+                      </p>
+                    )}
+                    {typeof o.projectCount === 'number' && o.projectCount > 0 && (
+                      <p className={styles.meta}>
+                        {o.projectCount} {t('projects based on it', '个项目基于它')}
                       </p>
                     )}
                   </div>

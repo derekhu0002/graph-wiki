@@ -4,7 +4,7 @@ import Layout from '@theme/Layout';
 import Heading from '@theme/Heading';
 import Link from '@docusaurus/Link';
 
-import {ontologyGet, type OntologyAssetMeta} from '../lib/mcp';
+import {ontologyGet, type OntologyAssetMeta, type FederationMember} from '../lib/mcp';
 import styles from './ontology-detail.module.css';
 
 type SchemaDoc = {$defs?: Record<string, {enum?: unknown[]}>};
@@ -41,6 +41,7 @@ export default function OntologyDetail(): JSX.Element {
   const id = getQueryId();
   const [asset, setAsset] = useState<OntologyAssetMeta | null>(null);
   const [files, setFiles] = useState<Record<string, unknown>>({});
+  const [members, setMembers] = useState<FederationMember[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -51,7 +52,7 @@ export default function OntologyDetail(): JSX.Element {
       return;
     }
     ontologyGet(id)
-      .then((r) => { setAsset(r.asset); setFiles(r.files); })
+      .then((r) => { setAsset(r.asset); setFiles(r.files); setMembers(r.members); })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -87,6 +88,28 @@ export default function OntologyDetail(): JSX.Element {
               {asset.sourceCommit && <> · commit <code>{asset.sourceCommit}</code></>}
             </p>
             {asset.description && <p>{asset.description}</p>}
+
+            {asset.placeholder && (
+              <p className={styles.metaLine}>
+                ⚠ 占位本体：尚无项目上传该本体的 schema bundle；此处仅登记被项目引用的本体 id，详情待提交 <code>ontology_submit</code> 后补全。
+              </p>
+            )}
+
+            <section className={styles.section}>
+              <Heading as="h2">基于该本体的项目（{members.length}）</Heading>
+              {members.length === 0 ? (
+                <p className={styles.metaLine}>暂无项目声明基于该本体。</p>
+              ) : (
+                <ul className={styles.members}>
+                  {members.map((m) => (
+                    <li key={m.id}>
+                      <strong>{m.name}</strong> <code>{m.id}</code>
+                      {m.role ? ` · ${m.role}` : ''}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
 
             <section className={styles.section}>
               <Heading as="h2">本体概况</Heading>

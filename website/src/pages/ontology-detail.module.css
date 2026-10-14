@@ -32,6 +32,15 @@
   gap: 0.4rem;
 }
 
+.members {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.members li {
+  margin-bottom: 0.3rem;
+}
+
 .chip {
   font-size: 0.82rem;
   padding: 0.1rem 0.5rem;

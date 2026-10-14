@@ -78,6 +78,9 @@ function registerMember(registry, input) {
     id,
     name: String(input.name || id),
     role: String(input.role || ''),
+    // 项目所基于的本体资产 id（连接键）。可为货架上的本体，或不在货架（提交方仍须声明；
+    // 若不在货架，服务会为其建一个「占位本体」）。存量成员可为空串（未标注）。
+    ontology: String(input.ontology || '').trim(),
     capabilities: Array.isArray(input.capabilities) ? input.capabilities.map(String) : [],
     openContent: normalizeOpenContent(input.openContent),
     sourceRepo,
@@ -110,6 +113,7 @@ function publicMember(m) {
     id: m.id,
     name: m.name,
     role: m.role,
+    ontology: m.ontology || '',
     capabilities: m.capabilities,
     openContent: m.openContent,
     sourceRepo: m.sourceRepo,
@@ -118,6 +122,15 @@ function publicMember(m) {
 
 function discover(registry) {
   return registry.members.filter((m) => m.status === 'active').map(publicMember);
+}
+
+// 按「所基于的本体 id」归集成员（本体 ↔ 项目的关联列表）。
+function membersByOntology(registry, ontologyId) {
+  const key = String(ontologyId || '');
+  if (!key) return [];
+  return registry.members
+    .filter((m) => m.status === 'active' && (m.ontology || '') === key)
+    .map(publicMember);
 }
 
 function authorize(registry, input) {
@@ -187,6 +200,7 @@ module.exports = {
   registerMember,
   deregisterMember,
   discover,
+  membersByOntology,
   authorize,
   isAuthorized,
   readAuthorized,
