@@ -3,3 +3,4 @@ assets/mirrors/
 node_modules/
 graph-store-*.tgz
 /graph-wiki.qea
+.env

@@ -1,0 +1,1 @@
+{"at":"2026-10-15T03:10:10.743Z","op":"removeElement","kind":"element","id":"community-homepage","object":{"description":"ArchGraph 社区站（Docusaurus）门户主页（路由 / 与 /archgraph/）。采用业界优秀设计规范重构布局与视觉展示，集成由大模型直接生成的高科技意图图谱、单项目闭环、组织级联邦组网、可插拔本体与解耦读写引擎全套 3D 视觉卡片，提供痛点、能力、收益与工作流的现代化分栏展示与交互导航。","id":"community-homepage","name":"社区站主页","type":"Application Component"}}

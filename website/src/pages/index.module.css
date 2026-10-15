@@ -1,166 +1,511 @@
+/* ArchGraph Homepage Modern Styling */
+
 .heroBanner {
-  padding: 4rem 0;
-  text-align: center;
+  padding: 5rem 0 3rem;
   position: relative;
   overflow: hidden;
+  background: radial-gradient(circle at 50% 20%, rgba(77, 107, 254, 0.12) 0%, rgba(15, 23, 42, 0) 70%);
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
 }
 
-@media screen and (max-width: 996px) {
-  .heroBanner {
-    padding: 2rem;
-  }
+.heroContent {
+  text-align: center;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.announcementBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  background: rgba(77, 107, 254, 0.1);
+  border: 1px solid rgba(77, 107, 254, 0.3);
+  color: var(--ifm-color-primary);
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  transition: all 0.2s ease;
+}
+
+.announcementBadge:hover {
+  background: rgba(77, 107, 254, 0.18);
+  border-color: var(--ifm-color-primary);
+  text-decoration: none;
+}
+
+.heroTitle {
+  font-size: 3.2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-bottom: 1.25rem;
+  background: linear-gradient(135deg, #0f172a 0%, #334155 50%, #4d6bfe 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-theme='dark'] .heroTitle {
+  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #818cf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.heroSubtitle {
+  font-size: 1.45rem;
+  font-weight: 600;
+  color: var(--ifm-color-primary);
+  margin-bottom: 1rem;
 }
 
 .heroLead {
-  max-width: 720px;
-  margin: 1rem auto 1.5rem;
   font-size: 1.15rem;
-  opacity: 0.92;
+  color: var(--ifm-color-emphasis-700);
+  line-height: 1.7;
+  max-width: 760px;
+  margin: 0 auto 2rem;
 }
 
 .buttons {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 14px;
   flex-wrap: wrap;
+  margin-bottom: 3rem;
 }
 
-.featuresSection {
-  padding: 3rem 0;
+.btnPrimary {
+  background: linear-gradient(135deg, #4d6bfe 0%, #3b50df 100%);
+  border: none;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(77, 107, 254, 0.35);
+  transition: all 0.2s ease;
 }
 
-.featureCard {
-  height: 100%;
-  padding: 1.5rem;
-  margin-bottom: 1rem;
-  border: 1px solid var(--ifm-color-emphasis-200);
-  border-radius: 8px;
+.btnPrimary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(77, 107, 254, 0.45);
+}
+
+.heroVisualWrapper {
+  margin: 1rem auto 2.5rem;
+  max-width: 1040px;
+  border-radius: 16px;
+  padding: 8px;
+  background: linear-gradient(135deg, rgba(77, 107, 254, 0.25) 0%, rgba(99, 102, 241, 0.08) 50%, rgba(18, 183, 106, 0.15) 100%);
+  box-shadow: 0 20px 50px -15px rgba(15, 23, 42, 0.25);
+}
+
+[data-theme='dark'] .heroVisualWrapper {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.35) 0%, rgba(30, 41, 59, 0.5) 50%, rgba(18, 183, 106, 0.2) 100%);
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7);
+}
+
+.heroImage {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: transform 0.3s ease;
+}
+
+.heroImage:hover {
+  transform: scale(1.008);
+}
+
+/* Stats Highlight Strip */
+.statsStrip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.statItem {
+  text-align: center;
+}
+
+.statNumber {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--ifm-color-primary);
+  line-height: 1.2;
+}
+
+.statLabel {
+  font-size: 0.9rem;
+  color: var(--ifm-color-emphasis-600);
+  margin-top: 0.25rem;
+}
+
+/* Workflow Section */
+.workflowSection {
+  padding: 4.5rem 0;
   background: var(--ifm-background-color);
-  transition: border-color 0.2s ease;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
 }
 
-.featureCard:hover {
-  border-color: var(--ifm-color-primary);
+.sectionHeader {
+  text-align: center;
+  max-width: 720px;
+  margin: 0 auto 3rem;
 }
 
-.featureCard h3 {
-  margin-top: 0;
+.sectionHeader h2 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin-bottom: 0.75rem;
 }
 
-.layerSection {
-  padding: 2.5rem 0;
-  border-top: 1px solid var(--ifm-color-emphasis-100);
+.sectionHeader p {
+  font-size: 1.1rem;
+  color: var(--ifm-color-emphasis-700);
 }
 
 .kicker {
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  font-size: 0.8rem;
   font-weight: 700;
   color: var(--ifm-color-primary);
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
-.layerIntro {
-  max-width: 820px;
+.workflowGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.workflowCard {
+  background: var(--ifm-card-background-color);
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 14px;
+  padding: 1.75rem 1.25rem;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.workflowCard:hover {
+  transform: translateY(-4px);
+  border-color: var(--ifm-color-primary);
+  box-shadow: 0 12px 30px -10px rgba(77, 107, 254, 0.15);
+}
+
+.workflowStep {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(77, 107, 254, 0.12);
+  color: var(--ifm-color-primary);
+  font-weight: 800;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.workflowCard h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.workflowCard p {
+  font-size: 0.92rem;
   color: var(--ifm-color-emphasis-700);
+  line-height: 1.6;
+  margin: 0;
 }
 
-.insightSection {
-  padding: 2.5rem 0 3.5rem;
+/* Showcase Panels (Value Streams) */
+.streamSection {
+  padding: 5rem 0;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.streamSectionAlt {
   background: var(--ifm-color-emphasis-100);
 }
 
-.insightSection p {
-  max-width: 860px;
-  color: var(--ifm-color-emphasis-800);
+.streamRow {
+  display: flex;
+  align-items: center;
+  gap: 3.5rem;
 }
 
-.strip {
-  padding: 1.25rem 0;
+.streamRowReverse {
+  flex-direction: row-reverse;
+}
+
+.streamColContent {
+  flex: 1 1 50%;
+}
+
+.streamColVisual {
+  flex: 1 1 50%;
+}
+
+.streamImageWrapper {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px -12px rgba(15, 23, 42, 0.2);
+  border: 1px solid var(--ifm-color-emphasis-300);
+  background: var(--ifm-card-background-color);
+  transition: transform 0.3s ease;
+}
+
+.streamImageWrapper:hover {
+  transform: translateY(-3px);
+}
+
+.streamImage {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.streamTitle {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.25;
+  margin: 0.5rem 0 1rem;
+}
+
+.streamLead {
+  font-size: 1.05rem;
+  color: var(--ifm-color-emphasis-700);
+  line-height: 1.65;
+  margin-bottom: 1.5rem;
+}
+
+.streamTrio {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-bottom: 1.75rem;
+}
+
+.trioItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  background: var(--ifm-card-background-color);
+  border: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.trioBadgeProblem {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.trioBadgeCapability {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.trioBadgeValue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.trioText {
+  font-size: 0.92rem;
+  color: var(--ifm-color-emphasis-800);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.streamActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Advantages Section */
+.advantagesSection {
+  padding: 4.5rem 0;
+  background: var(--ifm-background-color);
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.75rem;
+  margin-bottom: 2rem;
+}
+
+.featureCard {
+  background: var(--ifm-card-background-color);
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 14px;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.2s ease;
+}
+
+.featureCard:hover {
+  transform: translateY(-4px);
+  border-color: var(--ifm-color-primary);
+  box-shadow: 0 12px 30px -10px rgba(77, 107, 254, 0.15);
+}
+
+.featureIcon {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.featureCard h3 {
+  font-size: 1.3rem;
+  margin-bottom: 0.75rem;
+}
+
+.featureCard p {
+  font-size: 0.94rem;
+  color: var(--ifm-color-emphasis-700);
+  line-height: 1.65;
+  flex-grow: 1;
+}
+
+.ontologyNote {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.95rem;
+  color: var(--ifm-color-emphasis-700);
+}
+
+/* Insight / Mission Section */
+.insightSection {
+  padding: 4.5rem 0;
   background: var(--ifm-color-emphasis-100);
   border-bottom: 1px solid var(--ifm-color-emphasis-200);
 }
 
-.constraint {
+.insightCard {
+  max-width: 880px;
+  margin: 0 auto;
+  text-align: center;
+  background: var(--ifm-card-background-color);
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 16px;
+  padding: 2.5rem;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+}
+
+.insightCard h2 {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+}
+
+.insightCard p {
+  font-size: 1.12rem;
+  line-height: 1.75;
+  color: var(--ifm-color-emphasis-800);
+  margin: 0;
+}
+
+/* Bottom CTA Banner */
+.bottomCtaSection {
+  padding: 4.5rem 0;
+  background: radial-gradient(circle at 50% 50%, rgba(77, 107, 254, 0.12) 0%, rgba(15, 23, 42, 0) 70%);
   text-align: center;
 }
 
-.constraint strong {
-  color: var(--ifm-color-primary);
-  font-size: 1.05rem;
+.bottomCtaCard {
+  max-width: 760px;
+  margin: 0 auto;
 }
 
-.constraint p {
-  margin: 0.25rem 0 0;
-  font-size: 0.85rem;
-  color: var(--ifm-color-emphasis-700);
-}
-
-.stream {
-  padding: 2.5rem 0;
-  border-top: 1px solid var(--ifm-color-emphasis-100);
-}
-
-.streamNo {
-  font-size: 2.4rem;
+.bottomCtaCard h2 {
+  font-size: 2.3rem;
   font-weight: 800;
-  color: var(--ifm-color-primary);
-  opacity: 0.55;
-  line-height: 1;
+  margin-bottom: 1rem;
 }
 
-.streamGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 1rem;
-  margin: 1rem 0;
-}
-
-.streamGrid h4 {
-  margin: 0 0 0.25rem;
-  color: var(--ifm-color-primary);
-  font-size: 1.1rem;
-}
-
-.streamGrid p {
-  margin: 0;
-  font-size: 0.9rem;
+.bottomCtaCard p {
+  font-size: 1.15rem;
   color: var(--ifm-color-emphasis-700);
+  margin-bottom: 2rem;
 }
 
-.streamLinks {
-  margin-top: 0.5rem;
-}
-
+/* Responsive Media Queries */
 @media screen and (max-width: 996px) {
-  .streamGrid { grid-template-columns: 1fr; }
+  .heroTitle {
+    font-size: 2.4rem;
+  }
+  .statsStrip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .workflowGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .featuresGrid {
+    grid-template-columns: 1fr;
+  }
+  .streamRow,
+  .streamRowReverse {
+    flex-direction: column;
+    gap: 2rem;
+  }
 }
 
-.advantagesSection {
-  padding: 2.5rem 0;
-  background: var(--ifm-color-emphasis-100);
+@media screen and (max-width: 640px) {
+  .heroBanner {
+    padding: 3rem 1rem 2rem;
+  }
+  .heroTitle {
+    font-size: 2rem;
+  }
+  .statsStrip {
+    grid-template-columns: 1fr;
+  }
+  .workflowGrid {
+    grid-template-columns: 1fr;
+  }
+  .insightCard {
+    padding: 1.75rem 1.25rem;
+  }
 }
-
-.ontologyNote {
-  margin-top: 1rem;
-  color: var(--ifm-color-emphasis-700);
-  font-size: 0.95rem;
-}
-
-.featureCard .button {
-  margin-top: 0.5rem;
-}
-
-.streamDiagram {
-  margin: 0.75rem 0 0.25rem;
-  background: #fbfdff;
-  border: 1px solid var(--ifm-color-emphasis-200);
-  border-radius: 10px;
-  padding: 0.5rem 0.75rem;
-}
-
-
-
-

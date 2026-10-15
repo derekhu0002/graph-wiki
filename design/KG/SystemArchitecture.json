@@ -1516,6 +1516,14 @@
           "value": "1ed15bc/2443f76: community/DECENTRALIZED-ORG-KNOWLEDGE-GRAPH.md, community/DECENTRALIZED-ORG-KNOWLEDGE-GRAPH.email.html, community/render-paper-email.js, design/KG/SystemArchitecture.json"
         }
       ]
+    },
+    {
+      "description": "ArchGraph 社区站（Docusaurus）门户主页（路由 / 与 /archgraph/）。采用业界优秀设计规范重构布局与视觉展示，集成由大模型直接生成的高科技意图图谱、单项目闭环、组织级联邦组网、可插拔本体与解耦读写引擎全套 3D 视觉卡片，提供痛点、能力、收益与工作流的现代化分栏展示与交互导航。",
+      "id": "community-homepage",
+      "name": "社区站主页",
+      "type": "Application Component",
+      "alias": "community-home",
+      "classifier": "tests/acceptance/community_homepage.js"
     }
   ],
   "relationships": [
@@ -2199,7 +2207,8 @@
         "federation-rule-deny",
         "federation-rule-sovereignty",
         "federation-registry-artifact",
-        "federation-members-page"
+        "federation-members-page",
+        "community-homepage"
       ],
       "included_relationships": [
         "fed-reg-realize-artifact",
@@ -2251,7 +2260,8 @@
       ],
       "parent_element_id": "kb-admin-actor",
       "view_id": "kb-admin-memory-archive",
-      "view_name": "个人知识库管理员-长期记忆归档"
+      "view_name": "个人知识库管理员-长期记忆归档",
+      "included_relationships": []
     },
     {
       "description": "Graph Store 作为高权限、始终在线的中心，托管经成员 push/merge 审核后开放的意图图谱副本（可用性副本），按项目 ID 在独立命名空间 proj:<projectId> 内投影 + 向量化，并按 git 版本幂等同步。跨项目查询接口（MCP graph_read_external / REST POST /graph/read）授权后返回托管副本的查询结果；成员仓仍是事实源，中心不改写成员仓。",
@@ -2334,7 +2344,8 @@
       "description": "去中心化组织级知识图谱构建相关技术论文/文章的登记视图：存放论文元素及其在仓库中的文件路径、投稿去向与评审状态。",
       "included_elements": [
         "org-kg-paper-decentralized-001"
-      ]
+      ],
+      "included_relationships": []
     }
   ]
 }
