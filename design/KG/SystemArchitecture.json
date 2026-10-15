@@ -1544,6 +1544,10 @@
         {
           "name": "externalRef",
           "value": "https://github.com/derekhu0002/archgraph/issues/13"
+        },
+        {
+          "name": "commit",
+          "value": "5aedea8: design/KG/SystemArchitecture.json"
         }
       ],
       "description": "2026-10-15 会话：MCP 语义读超时根因 = ~/.argo/.env 把 rerank 配到 DeepSeek（ARGO_RERANK_MODEL=deepseek-pro 为不存在的模型，且当日限流）。探测：百炼有真实专用 rerank 模型 qwen3.7-text-rerank，仅走原生接口 POST /api/v1/services/rerank/text-rerank/text-rerank（QWEN_KEY 实测 200）；不在 compatible-mode（404）；chat 兜底 qwen-plus=200/qwen-turbo=429。已提 issue derekhu0002/archgraph#13（方案 A native 传输/方案 B 临时指向 qwen-plus）。【验证通过 2026-10-15】archgraph 已按方案 A 交付 archgraph-argo@0.29.14，issue #13 已关闭；本机部署副本+~/.argo/.env 已切 dashscope/qwen3.7-text-rerank/native。直测部署产物 5 项全过：provider 解析=native/qwen3.7-text-rerank；endpoint 拼接（origin自动追加/services/rerank路径、完整URL原样）；按 relevance_score 降序映射 id；fail-open（错误→null）；真实调用 295ms 正确排序（非 fail-open）。MCP 症状级：memory_search 与 getArchitectureViewContext（原连续超时）均正常返回。验收=外部视角通过。【新踩坑】本卡首次登记后被并发会话的 git merge（c27b892，homepage redesign 5e3a234 与 e2c1a23）解冲突时整块丢弃：git 层合并绕过 MCP lossless gate，无 tombstone、Neo4j/视图均不可见。教训：并行会话共写同一 JSON 时，合并 KG 文件必须逐元素 diff 确认双方新增都在，不可简单取一边；发现 canonical 有而无 tombstone 的元素消失应查 git log -- 该文件。commit 6eb1abe/e2c1a23（原登记）→本卡为重建版。",
