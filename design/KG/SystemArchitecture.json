@@ -1529,6 +1529,10 @@
         {
           "name": "externalRef",
           "value": "https://github.com/derekhu0002/archgraph/issues/13"
+        },
+        {
+          "name": "commit",
+          "value": "6eb1abe: design/KG/SystemArchitecture.json"
         }
       ],
       "id": "2026-10-15-rerank-archgraph-issue"
