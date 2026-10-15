@@ -1516,6 +1516,22 @@
           "value": "1ed15bc/2443f76: community/DECENTRALIZED-ORG-KNOWLEDGE-GRAPH.md, community/DECENTRALIZED-ORG-KNOWLEDGE-GRAPH.email.html, community/render-paper-email.js, design/KG/SystemArchitecture.json"
         }
       ]
+    },
+    {
+      "type": "Business Object",
+      "name": "会话记录 2026-10-15 rerank 根因定位与 archgraph issue",
+      "description": "2026-10-15 会话：MCP 语义读超时根因 = ~/.argo/.env 把 rerank 配到 DeepSeek（ARGO_RERANK_MODEL=deepseek-pro 是不存在的模型，且当日 DeepSeek 限流）。探测结论：百炼(DashScope)有真实专用 rerank 模型 qwen3.7-text-rerank，仅走原生接口 POST /api/v1/services/rerank/text-rerank/text-rerank（QWEN_KEY 实测 HTTP 200、打分正确）；不在 compatible-mode /rerank 或 /chat/completions（404）；chat 兜底 qwen-plus=200、qwen-turbo=429。ARGO rerankRetrieval.js 目前只支持 listwise chat/completions 传输，需引擎加 native 分支。决策：此事归 archgraph 引擎仓，不在 graph-wiki 改；已提 issue derekhu0002/archgraph#13（含方案 A native 传输 / 方案 B 临时指向 qwen-plus）。未改动本地 .env 与仓库文件。",
+      "attributes": [
+        {
+          "name": "memoryTier",
+          "value": "T2"
+        },
+        {
+          "name": "externalRef",
+          "value": "https://github.com/derekhu0002/archgraph/issues/13"
+        }
+      ],
+      "id": "2026-10-15-rerank-archgraph-issue"
     }
   ],
   "relationships": [
@@ -2106,7 +2122,8 @@
         "kb-admin-session-20261004-beta14",
         "kb-admin-memory-20261014-argo-channel-upgrade",
         "kb-admin-memory-20261014-ontology-shelf",
-        "kb-admin-session-20261014-org-kg-paper"
+        "kb-admin-session-20261014-org-kg-paper",
+        "2026-10-15-rerank-archgraph-issue"
       ],
       "included_relationships": []
     },
